@@ -7,7 +7,7 @@ This file is part of GNU Bash, the Bourne Again SHell.
 
 Bash is free software; you can redistribute it and/or modify it under
 the terms of the GNU General Public License as published by the Free
-Software Foundation; either version 1, or (at your option) any later
+Software Foundation; either version 2, or (at your option) any later
 version.
 
 Bash is distributed in the hope that it will be useful, but WITHOUT ANY
@@ -17,7 +17,7 @@ for more details.
 
 You should have received a copy of the GNU General Public License along
 with Bash; see the file COPYING.  If not, write to the Free Software
-Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
+Foundation, 59 Temple Place, Suite 330, Boston, MA 02111 USA.
 
 $PRODUCES getopts.c
 
@@ -79,7 +79,6 @@ $END
 #define G_ARG_MISSING	-3
 
 extern char *this_command_name;
-extern WORD_LIST *rest_of_args;
 
 /* getopts_reset is magic code for when OPTIND is reset.  N is the
    value that has just been assigned to OPTIND. */
@@ -194,11 +193,11 @@ dogetopts (argc, argv)
 	;
       for (words = rest_of_args; words; words = words->next, i++)
 	;
-      v = (char **)xmalloc ((i + 1) * sizeof (char *));
+      v = alloc_array (i + 1);
       for (i = 0; i < 10 && dollar_vars[i]; i++)
-        v[i] = dollar_vars[i];
+	v[i] = dollar_vars[i];
       for (words = rest_of_args; words; words = words->next, i++)
-        v[i] = words->word->word;
+	v[i] = words->word->word;
       v[i] = (char *)NULL;
       sh_getopt_restore_state (v);
       ret = sh_getopt (i, v, optstr);
@@ -304,14 +303,10 @@ getopts_builtin (list)
     }
 
   reset_internal_getopt ();
-  while ((ret = internal_getopt (list, "")) != -1)
+  if (internal_getopt (list, "") != -1)
     {
-      switch (ret)
-	{
-	default:
-	  builtin_usage ();
-	  return (EX_USAGE);
-	}
+      builtin_usage ();
+      return (EX_USAGE);
     }
   list = loptend;
 

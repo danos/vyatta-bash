@@ -1,0 +1,1693 @@
+
+RCS file: /var/cvs/bash_completion/bash_completion,v
+Working file: bash_completion
+head: 1.264
+branch:
+locks: strict
+access list:
+symbolic names:
+	rel20020408: 1.264
+	rel20020406: 1.262
+	rel20020404: 1.259
+	rel20020402: 1.246
+	rel20020331: 1.239
+	rel20020330: 1.237
+	rel20020328: 1.229
+	rel20020326: 1.221
+	rel20020324: 1.213
+	rel20020322: 1.210
+	rel20020318: 1.204
+	rel20020314: 1.197
+	rel20020311: 1.195
+	rel20020306: 1.180
+	rel20020304: 1.177
+	rel20020227: 1.163
+	rel20020225: 1.145
+	rel20020220: 1.138
+	rel20020215: 1.118
+	rel20020213: 1.108
+	rel20020212: 1.105
+	rel20020209: 1.96
+	rel20020206: 1.93
+	rel20020204: 1.84
+	rel20020130: 1.77
+	rel20020124: 1.70
+	rel20020121: 1.60
+	rel20020115: 1.55
+	rel20020109: 1.53
+	rel20020105: 1.47
+keyword substitution: kv
+total revisions: 264;	selected revisions: 264
+description:
+----------------------------
+revision 1.264
+date: 2002/04/08 16:30:59;  author: ianmacd;  state: Exp;  lines: +2 -2
+
+- updated release to 20020408
+----------------------------
+revision 1.263
+date: 2002/04/07 19:17:13;  author: ianmacd;  state: Exp;  lines: +43 -29
+
+- _apt-get improvements from Laurent Martelli <laurent@bearteam.org>
+- make _rpm()'s helper functions global. Having them within the _rpm() function
+  body doesn't make them global anyway; it just makes them get sourced at
+  run-time when _rpm() gets called, so this should be slightly faster
+----------------------------
+revision 1.262
+date: 2002/04/06 22:21:13;  author: ianmacd;  state: Exp;  lines: +2 -2
+
+- update release to 20020406
+----------------------------
+revision 1.261
+date: 2002/04/06 22:18:59;  author: ianmacd;  state: Exp;  lines: +13 -12
+
+- various fixes to urpmi function names to make them officially valid
+----------------------------
+revision 1.260
+date: 2002/04/05 19:45:05;  author: ianmacd;  state: Exp;  lines: +5 -5
+
+- _rpm(): rpm would try group query completion instead of either uninstalled or
+  installed query completion when passed a long option that ended with 'g'.
+  Similarly, it would attempt uninstalled package completion instead of
+  installed package completion when passed a long option that ended with 'p'.
+
+  verify completion suffered from a similar bug
+----------------------------
+revision 1.259
+date: 2002/04/04 16:49:40;  author: ianmacd;  state: Exp;  lines: +2 -2
+
+- update release to 20020404
+----------------------------
+revision 1.258
+date: 2002/04/04 16:27:06;  author: ianmacd;  state: Exp;  lines: +2 -2
+
+- add compressed files (.Z) to the list that gv and ggv will complete on
+----------------------------
+revision 1.257
+date: 2002/04/04 00:42:14;  author: ianmacd;  state: Exp;  lines: +2 -2
+
+- add .m3u to list of extensions that xmms et al can complete on
+----------------------------
+revision 1.256
+date: 2002/04/03 23:17:10;  author: ianmacd;  state: Exp;  lines: +13 -12
+
+- clean up numerous areas where grep would complain if passed a $cur with
+  a space in it
+----------------------------
+revision 1.255
+date: 2002/04/03 23:10:35;  author: ianmacd;  state: Exp;  lines: +15 -16
+
+- _rpm(): make package group completion a subcase of -q completion
+  It was very buggy before, completing only when 'rpm -g' was given (which is
+  invalid), instead of 'rpm -qg'
+----------------------------
+revision 1.254
+date: 2002/04/03 21:10:49;  author: ianmacd;  state: Exp;  lines: +39 -3
+
+- _route(): add 'default' and 'gw' as possible completions
+- add lftp(1) and autorpm(1) completion from Kirk Bauer <kirk@kaybee.org>
+----------------------------
+revision 1.253
+date: 2002/04/03 19:19:30;  author: ianmacd;  state: Exp;  lines: +47 -42
+
+- attempt to make everything bash 2.04 compatible by putting making the -o
+  switch to comp{lete,gen} a shell variable
+- allow group completion in bash versions > 2.04 (was > 2.05, but that would
+  break group completion for anyone who has installed a suitably patched 2.05)
+----------------------------
+revision 1.252
+date: 2002/04/03 18:56:55;  author: ianmacd;  state: Exp;  lines: +3 -3
+
+- add which(1) to list of commands that complete on commands
+----------------------------
+revision 1.251
+date: 2002/04/03 18:56:01;  author: ianmacd;  state: Exp;  lines: +3 -3
+
+- _umount(): make returned completions behave properly (remove -o filenames)
+  and default to directories if all else fails (add -o dirnames)
+----------------------------
+revision 1.250
+date: 2002/04/03 07:11:06;  author: ianmacd;  state: Exp;  lines: +4 -8
+
+- _cd(): back out some code that attempted to add a trailing slash to
+  completions relative to paths in $CDPATH, since this caused problems
+  elsewhere
+----------------------------
+revision 1.249
+date: 2002/04/03 01:37:51;  author: ianmacd;  state: Exp;  lines: +20 -12
+
+- set $nospace if bash 2.05b
+- only use comp{gen,lete} -g if bash > 2.05
+- _cd(): don't append a space to paths relative to $CDPATH when using bash
+  2.05b
+----------------------------
+revision 1.248
+date: 2002/04/02 19:22:40;  author: ianmacd;  state: Exp;  lines: +11 -9
+
+- _cvs(): set $COMP_CVS_REMOTE to get remote repository completion on
+  'cvs commit'
+- _configure(): set $COMP_CONFIGURE_HINTS to get 'SETTING' included on
+  --option=SETTING style completions
+----------------------------
+revision 1.247
+date: 2002/04/02 16:56:59;  author: ianmacd;  state: Exp;  lines: +8 -4
+
+- _configure(): when a completion is of the form --option=SETTING, make the
+  inclusion of SETTING in the completion be optional (set $hints)
+----------------------------
+revision 1.246
+date: 2002/04/02 10:04:57;  author: ianmacd;  state: Exp;  lines: +2 -2
+
+- update release to 20020402
+----------------------------
+revision 1.245
+date: 2002/04/02 08:22:27;  author: ianmacd;  state: Exp;  lines: +3 -3
+
+- _kill(): call _pids rather than duplicate code
+- _longopt(): when parsing --help output, pipe stderr through stdout
+----------------------------
+revision 1.244
+date: 2002/04/02 08:17:35;  author: ianmacd;  state: Exp;  lines: +46 -2
+
+- add netstat to list of commands that complete on long options
+- add renice completion, submitted by Michael G <michaelg@amerion.net>,
+  and rewritten helper functions _pids() and _pgids()
+----------------------------
+revision 1.243
+date: 2002/04/02 07:27:50;  author: ianmacd;  state: Exp;  lines: +28 -8
+
+- _dpkg-reconfigure() fix and enhancements from
+   Dr.Rafael Sepúlveda <drs@gnulinux.org.mx>
+----------------------------
+revision 1.242
+date: 2002/04/01 18:50:05;  author: ianmacd;  state: Exp;  lines: +4 -3
+
+- _command(): when passing off command lines for subcompletion by other
+  functions, we were passing incorrect information about the current line
+  position when the command line contained wildcards that expanded arguments
+  to multiple arguments
+----------------------------
+revision 1.241
+date: 2002/04/01 16:45:45;  author: ianmacd;  state: Exp;  lines: +18 -10
+
+- _cvs(): make 'cvs commit' default to local file completion, since remote
+  completion is very annoying for those who have to supply a password.
+  Set 'remote=yes' within _cvs() to get the old behaviour.
+----------------------------
+revision 1.240
+date: 2002/04/01 01:12:50;  author: ianmacd;  state: Exp;  lines: +2 -2
+
+- _scp(): silence errors from remote path completion
+----------------------------
+revision 1.239
+date: 2002/03/31 08:06:52;  author: ianmacd;  state: Exp;  lines: +2 -2
+
+- update release to 20020331
+----------------------------
+revision 1.238
+date: 2002/03/31 08:04:48;  author: ianmacd;  state: Exp;  lines: +2 -2
+
+- fix minor quoting problem in _cd()
+----------------------------
+revision 1.237
+date: 2002/03/30 19:33:56;  author: ianmacd;  state: Exp;  lines: +2 -2
+
+- release updated to 20020330
+----------------------------
+revision 1.236
+date: 2002/03/30 19:20:51;  author: ianmacd;  state: Exp;  lines: +10 -1
+
+- _command(): commands like 'sudo chown' return completions of the form
+  'user:'. This gets escaped by _chown() and passed back as 'user\:'.
+  _command() then escapes this further to 'user\\\:', so we need to unescape it
+  to have things work correctly.
+
+  Unfortunately, 'sudo rm' might pass back the name of a file that has a
+  backslash followed by a colon in the name, e.g. 'foo\:bar'. This is
+  escaped by _command() to 'foo\\\:bar', which we should not unescape.
+
+  How to tell the difference between a completion that contains a backslash
+  that is escaping the following character, and one that has literal
+  backslashes?
+
+  We extract the '-o <type>' information from the compspec and, if we are
+  dealing with a spec that does not specify that it passes back filenames or
+  dirnames, we unescape any backslash/colon pairings. Of course, this means
+  that 'sudo chown' will still do the wrong thing when dealing with a
+  directory or filename that contains '\:'. Oh well...
+----------------------------
+revision 1.235
+date: 2002/03/29 16:33:08;  author: ianmacd;  state: Exp;  lines: +18 -17
+
+- fixes to _ant(), _java() and _urpmi() from
+  Guillaume Rousse <rousse@ccr.jussieu.fr>
+----------------------------
+revision 1.234
+date: 2002/03/29 08:30:47;  author: ianmacd;  state: Exp;  lines: +90 -103
+
+- _rpm(): replace add_package_list() with installed_packages()
+- _rpm(): remove uninstalled_packages()
+- _rpm(): only offer rpm options as possible completions if parameter begins
+  with a dash
+----------------------------
+revision 1.233
+date: 2002/03/29 03:43:09;  author: ianmacd;  state: Exp;  lines: +12 -14
+
+- _cd(): checking for CDPATH at the start of the function simplifies things
+  somewhat
+----------------------------
+revision 1.232
+date: 2002/03/29 03:35:42;  author: ianmacd;  state: Exp;  lines: +6 -2
+
+- _insmod(): Mandrake Linux has gzipped modules
+- add comments to make Emacs go into shell-script-mode upon editing
+----------------------------
+revision 1.231
+date: 2002/03/28 23:41:44;  author: ianmacd;  state: Exp;  lines: +12 -8
+
+- _cd(): don't foist the new relative to absolute path conversion on people
+  who don't use $CDPATH
+----------------------------
+revision 1.230
+date: 2002/03/28 19:36:19;  author: ianmacd;  state: Exp;  lines: +4 -4
+
+- urpmi completion fixes from Guillaume Rousse <rousse@ccr.jussieu.fr>
+----------------------------
+revision 1.229
+date: 2002/03/28 17:22:24;  author: ianmacd;  state: Exp;  lines: +2 -2
+
+- update release to 20020328
+----------------------------
+revision 1.228
+date: 2002/03/28 08:41:09;  author: ianmacd;  state: Exp;  lines: +2 -4
+
+- _longopt(): remove call to _expand(), since this gets called indirectly
+  anyway when _filedir() is called. This fixes a double escaping of trailing
+  backslashes when doing something like 'mv foo\<Tab>', which would cause an
+  eval error in _filedir()
+----------------------------
+revision 1.227
+date: 2002/03/27 19:33:34;  author: ianmacd;  state: Exp;  lines: +21 -4
+
+- dpkg completion enhancements from Laurent Martelli <laurent@bearteam.org>
+  - options which complete on package names or .deb files now can
+    complete several of them.
+  - --listfiles complete on installed package names
+  - --list complete on package names
+  - added --force options
+----------------------------
+revision 1.226
+date: 2002/03/27 07:32:19;  author: ianmacd;  state: Exp;  lines: +8 -4
+
+- _cd(): when CDPATH=.:$HOME and $PWD = $HOME, every subdir of $HOME will be
+  returned both as $HOME/foo and foo. bash regards these as separate
+  directories, even though when displayed, bash will strip them to the
+  basename. Add code to turn any directory that is a subdir of $PWD into an
+  absolute path, so that it duplicates $HOME/dir and gets deduped.
+----------------------------
+revision 1.225
+date: 2002/03/26 20:28:58;  author: ianmacd;  state: Exp;  lines: +2 -2
+
+- make fakeroot complete just like sudo
+----------------------------
+revision 1.224
+date: 2002/03/26 20:28:01;  author: ianmacd;  state: Exp;  lines: +2 -2
+
+- simplify gv and ggv completion
+----------------------------
+revision 1.223
+date: 2002/03/26 19:45:45;  author: ianmacd;  state: Exp;  lines: +6 -5
+
+- _querybts(): compgen was missing a continuation line that probably
+  resulted in lots of memory being eaten
+- _querybts() and _reportbug(): --ui and --interface were missing '|'
+  separator
+----------------------------
+revision 1.222
+date: 2002/03/26 19:41:47;  author: ianmacd;  state: Exp;  lines: +3 -3
+
+- _java(): escape arguments to grep and find
+----------------------------
+revision 1.221
+date: 2002/03/26 16:55:10;  author: ianmacd;  state: Exp;  lines: +2 -2
+
+- update release to 20020326
+----------------------------
+revision 1.220
+date: 2002/03/26 16:36:00;  author: ianmacd;  state: Exp;  lines: +3 -3
+
+- _ncftp(): slight modification to sed command to make it more compatible
+  across versions of sed
+----------------------------
+revision 1.219
+date: 2002/03/26 16:27:02;  author: ianmacd;  state: Exp;  lines: +3 -3
+
+- _tar(): some distros (notably Slackware and Sorceror), use -y as the
+  bzip compression switch, so we add this, along with -I, as that is sometimes
+  used, too
+----------------------------
+revision 1.218
+date: 2002/03/26 16:17:12;  author: ianmacd;  state: Exp;  lines: +7 -10
+
+- _chown(): make ':' the user:group separator, since only GNU chown supports
+  '.'. This requires some escaping work, but makes chown completion work on
+  any *NIX based system.
+----------------------------
+revision 1.217
+date: 2002/03/24 20:26:34;  author: ianmacd;  state: Exp;  lines: +3 -3
+
+- _ncftp(): replace cut with sed, since the existing cut command uses
+  --output-delimiter, which FreeBSD's cut doesn't have. We now also output
+  only the name of the bookmark, not the expansion to which it points.
+----------------------------
+revision 1.216
+date: 2002/03/24 20:05:07;  author: ianmacd;  state: Exp;  lines: +2 -2
+
+- _screen(): when dealing with -s, /etc/shells can have comment lines in it
+----------------------------
+revision 1.215
+date: 2002/03/24 19:57:37;  author: ianmacd;  state: Exp;  lines: +4 -4
+
+- _mount(): showmount is in /bin on FreeBSD
+- _mount(): --show-headers is a GNU option not supported on FreeBSD's
+  showmount, so pipe through 'sed 1d' instead
+- _killall(): 'c' switch to ps is superfluous
+----------------------------
+revision 1.214
+date: 2002/03/24 19:44:55;  author: ianmacd;  state: Exp;  lines: +31 -2
+
+- add handling of -r|--remove|--purge to dpkg completion
+- add completion for dpkg-reconfigure
+- add time to list of commands that use _command() for completion
+----------------------------
+revision 1.213
+date: 2002/03/24 08:11:30;  author: ianmacd;  state: Exp;  lines: +2 -2
+
+- updated release to 20020324
+----------------------------
+revision 1.212
+date: 2002/03/24 01:34:33;  author: ianmacd;  state: Exp;  lines: +6 -5
+
+- killall completion now also works on FreeBSD
+----------------------------
+revision 1.211
+date: 2002/03/23 22:59:49;  author: ianmacd;  state: Exp;  lines: +5 -17
+
+- alter _kill() to use /proc, so that it also works on FreeBSD and maybe other
+  systems, too
+- alter _killall() to use simpler and more reliable way of getting at the
+  process name
+----------------------------
+revision 1.210
+date: 2002/03/22 16:54:52;  author: ianmacd;  state: Exp;  lines: +2 -2
+
+- update release to 20020322
+----------------------------
+revision 1.209
+date: 2002/03/22 16:50:29;  author: ianmacd;  state: Exp;  lines: +1 -62
+
+- move p4 completion into contrib, since not many people have this
+----------------------------
+revision 1.208
+date: 2002/03/22 16:45:42;  author: ianmacd;  state: Exp;  lines: +8 -10
+
+- _rpm(): RPM kan also verify uninstalled packages these days, so detect
+  and act on -p
+- _rpm(): add --querytags, --specfile, --whatrequires and --whatprovides
+  to options that 'rpm -V' can take
+----------------------------
+revision 1.207
+date: 2002/03/22 04:29:30;  author: ianmacd;  state: Exp;  lines: +3 -1
+
+- one-liners for vi, vim, emacs and wine
+----------------------------
+revision 1.206
+date: 2002/03/22 04:18:54;  author: ianmacd;  state: Exp;  lines: +4 -3
+
+- only ee & display can handle .ico files
+- realplay can also handle .smi and .smil files
+----------------------------
+revision 1.205
+date: 2002/03/19 16:19:58;  author: ianmacd;  state: Exp;  lines: +3 -2
+
+- timidity and playmidi complete on .mid and .midi files
+----------------------------
+revision 1.204
+date: 2002/03/18 18:12:00;  author: ianmacd;  state: Exp;  lines: +2 -2
+
+- updated release to 20020318
+----------------------------
+revision 1.203
+date: 2002/03/18 18:10:57;  author: ianmacd;  state: Exp;  lines: +2 -2
+
+- gv ggv now also complete on compressed PDF files
+----------------------------
+revision 1.202
+date: 2002/03/16 20:49:44;  author: ianmacd;  state: Exp;  lines: +21 -12
+
+- add completion for -S|--search in dpkg completion
+----------------------------
+revision 1.201
+date: 2002/03/15 20:02:48;  author: ianmacd;  state: Exp;  lines: +2 -2
+
+- add chage, write, talk and chfn to list of commands that complete on user
+----------------------------
+revision 1.200
+date: 2002/03/15 20:02:06;  author: ianmacd;  state: Exp;  lines: +3 -2
+
+- _insmod(): the output of modinfo has changed in recent versions of modutils,
+  so alter the awk script to also deal with the case of the new output
+----------------------------
+revision 1.199
+date: 2002/03/15 17:39:18;  author: ianmacd;  state: Exp;  lines: +5 -4
+
+- add .ico completion to ee, display, etc.
+----------------------------
+revision 1.198
+date: 2002/03/15 07:20:04;  author: ianmacd;  state: Exp;  lines: +17 -4
+
+- _scp(): try to perform remote path completion when parameter contains a
+  colon. This is subject to usual bash trailing whitespace issue.
+----------------------------
+revision 1.197
+date: 2002/03/14 18:27:13;  author: ianmacd;  state: Exp;  lines: +2 -2
+
+- update release to 20020314
+----------------------------
+revision 1.196
+date: 2002/03/13 07:29:52;  author: ianmacd;  state: Exp;  lines: +2 -2
+
+- _man(): eval requires double backslash escaping of ls
+----------------------------
+revision 1.195
+date: 2002/03/11 19:36:44;  author: ianmacd;  state: Exp;  lines: +4 -3
+
+- check that $BASH_COMPLETION_DIR is actually a directory
+- update release to 20020311
+----------------------------
+revision 1.194
+date: 2002/03/11 18:38:17;  author: ianmacd;  state: Exp;  lines: +10 -6
+
+- use $BASH_COMPLETION_DIR to determine where loose completon scripts are
+----------------------------
+revision 1.193
+date: 2002/03/11 02:15:09;  author: ianmacd;  state: Exp;  lines: +103 -1
+
+- add Debian Linux reportbug(1) and querybts(1) completion (submitted by
+  Chris Lawrence <lawrencc@debian.org>)
+----------------------------
+revision 1.192
+date: 2002/03/11 02:10:17;  author: ianmacd;  state: Exp;  lines: +10 -4
+
+- _dpkg(): add dpkg-deb options and give dpkg-deb the same expansions as dpkg
+  (patch submitted by Chris Lawrence <lawrencc@debian.org>
+----------------------------
+revision 1.191
+date: 2002/03/08 19:50:24;  author: ianmacd;  state: Exp;  lines: +8 -3
+
+- source files in /etc/bash_completion.d prior to sourcing ~/.bash_completion
+----------------------------
+revision 1.190
+date: 2002/03/08 19:46:15;  author: ianmacd;  state: Exp;  lines: +5 -1
+
+- _cd(): trim leading './' from relative completions, since bash will see
+  './foo' and 'foo' as two distinct completions and return both, even though
+  the './' will be cropped when displaying them
+----------------------------
+revision 1.189
+date: 2002/03/08 18:26:41;  author: ianmacd;  state: Exp;  lines: +2 -2
+
+- _java(): fixed reference to wrong local variable
+----------------------------
+revision 1.188
+date: 2002/03/08 18:21:30;  author: ianmacd;  state: Exp;  lines: +8 -7
+
+- _dpkg(): -i|--install|--unpack|-A|--record-avail was not completing on
+  directories
+- _dpkg(): -s|--status|-p|--print-avail|-L|--listfiles ignored current
+  parameter and thus returned full list of installed packages
+----------------------------
+revision 1.187
+date: 2002/03/07 19:04:05;  author: ianmacd;  state: Exp;  lines: +14 -15
+
+- some white space clean-up, removal of e-mail addresses and removal of
+  comment pertaining to an ssh completion bug that was fixed a while ago
+----------------------------
+revision 1.186
+date: 2002/03/07 19:00:48;  author: ianmacd;  state: Exp;  lines: +123 -1
+
+- add _urpmi.media(), _urpmi(), _urpmi.update(), _urpmi.addmedia() and
+  _urpmi.removemedia() for Mandrake urpmi completion. These were submitted by
+  Guillaume Rousse <rousse@ccr.jussieu.fr>
+----------------------------
+revision 1.185
+date: 2002/03/07 18:47:12;  author: ianmacd;  state: Exp;  lines: +5 -2
+
+- add initial option support to _tar()
+----------------------------
+revision 1.184
+date: 2002/03/07 18:44:48;  author: ianmacd;  state: Exp;  lines: +55 -1
+
+- add java completion submitted by Guillaume Rousse <rousse@ccr.jussieu.fr>,
+  with just a couple of modifications
+----------------------------
+revision 1.183
+date: 2002/03/07 18:35:32;  author: ianmacd;  state: Exp;  lines: +31 -1
+
+- add jar(1) completion from Guillaume Rousse <rousse@ccr.jussieu.fr>
+----------------------------
+revision 1.182
+date: 2002/03/07 18:32:03;  author: ianmacd;  state: Exp;  lines: +38 -12
+
+- ant completion replaced by function provided by
+  Guillaume Rousse <rousse@ccr.jussieu.fr>, with a few changes to trap
+  compgen errors and other minor issues
+----------------------------
+revision 1.181
+date: 2002/03/07 17:16:43;  author: ianmacd;  state: Exp;  lines: +33 -21
+
+- _rpm(): handle query of uninstalled packages when options are not
+   concatenated, i.e. rpm -qp worked, but rpm -q -p did not. Further
+   complicated by fact that other options could be interspersed,
+   e.g. rpm -q -l -p -i, and that partial concatenation could be given,
+   e.g. rpm -q -ipl
+----------------------------
+revision 1.180
+date: 2002/03/06 20:24:06;  author: ianmacd;  state: Exp;  lines: +2 -2
+
+- updated release to 20020306
+----------------------------
+revision 1.179
+date: 2002/03/06 18:38:37;  author: ianmacd;  state: Exp;  lines: +2 -2
+
+- _man(): Debian does not support man --path, so try setting path using
+  manpath and, if that fails, use man --path instead
+----------------------------
+revision 1.178
+date: 2002/03/06 00:23:30;  author: ianmacd;  state: Exp;  lines: +5 -4
+
+- _export() and _configure() default to default bash completion if all else
+  fails
+- before sourcing ~/.bash_completion, check that the current file being
+  sourced is not this very file. Otherwise, we cause an infinite loop.
+----------------------------
+revision 1.177
+date: 2002/03/04 16:33:30;  author: ianmacd;  state: Exp;  lines: +2 -2
+
+- release updated to 20020304
+----------------------------
+revision 1.176
+date: 2002/03/04 04:46:42;  author: ianmacd;  state: Exp;  lines: +6 -2
+
+- _rpm(): perform path completion for --whatprovides if parameter contains a /
+----------------------------
+revision 1.175
+date: 2002/03/02 01:56:21;  author: ianmacd;  state: Exp;  lines: +14 -10
+
+- make _man() work on Darwin systems (MacOS X)
+----------------------------
+revision 1.174
+date: 2002/03/02 01:13:23;  author: ianmacd;  state: Exp;  lines: +127 -118
+
+- moved some functions around, so that all helper functions, completion
+  functions for built-ins, and completion functions for externals are grouped
+  together
+----------------------------
+revision 1.173
+date: 2002/03/01 23:41:42;  author: ianmacd;  state: Exp;  lines: +13 -6
+
+- _longopt(): make vague attempt at path completion after the '=' in
+  --long-opt= options
+- _filedir(): don't bother to set $cur, since every function that calls
+  it will have already set it
+----------------------------
+revision 1.172
+date: 2002/03/01 19:29:34;  author: ianmacd;  state: Exp;  lines: +14 -11
+
+- _cvs(): cvs import now traverses entire CVSROOT. Also cleaned up code a
+  little more
+----------------------------
+revision 1.171
+date: 2002/03/01 08:55:36;  author: ianmacd;  state: Exp;  lines: +5 -5
+
+- _cvs(): assign to $changed() and $newremoved() as arrays, not scalars
+----------------------------
+revision 1.170
+date: 2002/03/01 07:58:23;  author: ianmacd;  state: Exp;  lines: +39 -29
+
+- a few more changes to _cvs() from Kyle Wheeler <memoryhole@mac.com>
+  (e.g. cvs checkout now descends through the CVSROOT) and some code clean-up
+  to _cvs() by me
+----------------------------
+revision 1.169
+date: 2002/03/01 02:02:39;  author: ianmacd;  state: Exp;  lines: +13 -5
+
+- expand _function() with typeset/declare completion
+----------------------------
+revision 1.168
+date: 2002/03/01 01:42:13;  author: ianmacd;  state: Exp;  lines: +18 -16
+
+- large clean-up of sed and awk usage throughout code, where interpolating a
+  shell variable that contained a / would cause the sed or awk command to fail,
+  since it expected the / as its own delimiter. Use | instead.
+----------------------------
+revision 1.167
+date: 2002/02/28 23:37:10;  author: ianmacd;  state: Exp;  lines: +3 -2
+
+- _cd() was not correctly completing on subdirs of $CDPATH (why is this
+  function so damn hard to get right? :-) )
+- _configure() suffered a sed error when completing on options of the type
+  --option=PATH
+----------------------------
+revision 1.166
+date: 2002/02/28 23:23:14;  author: ianmacd;  state: Exp;  lines: +168 -10
+
+- Kyle Wheeler <memoryhole@mac.com> submitted a large _cvs() patch with many
+  improvements. I rewrote this and fixed a few bugs found on the way.
+----------------------------
+revision 1.165
+date: 2002/02/28 06:39:10;  author: ianmacd;  state: Exp;  lines: +5 -2
+
+- minor typo corrected in _longopt()
+- stop eval error in _expand() when parameter ends with a \
+----------------------------
+revision 1.164
+date: 2002/02/27 22:36:10;  author: ianmacd;  state: Exp;  lines: +4 -4
+
+- _man(): quote $manpath to avoid premature expansion and remove local
+  variable $i
+----------------------------
+revision 1.163
+date: 2002/02/27 16:59:49;  author: ianmacd;  state: Exp;  lines: +2 -2
+
+- updated release to 20020227
+----------------------------
+revision 1.162
+date: 2002/02/27 16:48:20;  author: ianmacd;  state: Exp;  lines: +18 -18
+
+- more code clean-up. Replace many instances of compgen -[df] by calls to
+  _filedir and removed a few more potential compgen error areas.
+----------------------------
+revision 1.161
+date: 2002/02/27 16:28:26;  author: ianmacd;  state: Exp;  lines: +3 -3
+
+- _command(): call _filedir() when subcompletion commands return no matches
+----------------------------
+revision 1.160
+date: 2002/02/27 11:01:21;  author: ianmacd;  state: Exp;  lines: +2 -2
+
+- _root_command() wasn't passing name of command that had called it to
+  _command()
+----------------------------
+revision 1.159
+date: 2002/02/27 10:34:17;  author: ianmacd;  state: Exp;  lines: +2 -2
+
+- make psql completion perform default bash completion if all else fails
+----------------------------
+revision 1.158
+date: 2002/02/27 09:55:30;  author: ianmacd;  state: Exp;  lines: +4 -8
+
+- simplify _root_command() and actually install it for use by sudo
+----------------------------
+revision 1.157
+date: 2002/02/27 07:47:09;  author: ianmacd;  state: Exp;  lines: +43 -2
+
+- add dpkg completion, based largely on code submitted by Laurent Martelli
+  <laurent@bearteam.org>
+----------------------------
+revision 1.156
+date: 2002/02/27 02:18:08;  author: ianmacd;  state: Exp;  lines: +14 -14
+
+- _make(): add long option completion
+- cleaned up _configure(), _longopt() and _gcc()
+----------------------------
+revision 1.155
+date: 2002/02/27 02:02:43;  author: ianmacd;  state: Exp;  lines: +45 -39
+
+multiple potential causes of compgen errors removed
+----------------------------
+revision 1.154
+date: 2002/02/27 01:41:56;  author: ianmacd;  state: Exp;  lines: +21 -27
+
+- minor bug fixes to _make()
+- multiple potential compgen error clean-ups
+----------------------------
+revision 1.153
+date: 2002/02/27 01:24:04;  author: ianmacd;  state: Exp;  lines: +10 -25
+
+- _rpm(): removed some superfluous returns
+- _apt-cache(): renamed _apt_cache and caught some potential compgen errors
+- _apt-get(): renamed _apt_get and caught some potential compgen errors
+----------------------------
+revision 1.152
+date: 2002/02/27 01:14:52;  author: ianmacd;  state: Exp;  lines: +61 -84
+
+- _rpm(): major clean-up, including removal of dashify()
+- _rpm(): fix bug that caused --prefix, --relocate and --root to not complete
+  on directories
+----------------------------
+revision 1.151
+date: 2002/02/27 00:35:39;  author: ianmacd;  state: Exp;  lines: +3 -7
+
+- clean up superluous returns in _ipsec()
+----------------------------
+revision 1.150
+date: 2002/02/27 00:29:54;  author: ianmacd;  state: Exp;  lines: +21 -28
+
+- _find(): code clean-up and removal of potential compgen errors
+----------------------------
+revision 1.149
+date: 2002/02/27 00:13:04;  author: ianmacd;  state: Exp;  lines: +6 -6
+
+prevent compgen errors in _chown(), _chgrp and _man()
+fix [ ] test in _chown() and _chgrp() that should have been [[ ]] test
+----------------------------
+revision 1.148
+date: 2002/02/26 23:59:47;  author: ianmacd;  state: Exp;  lines: +22 -26
+
+code clean-up
+prevent compgen error in _man()
+----------------------------
+revision 1.147
+date: 2002/02/26 23:21:39;  author: ianmacd;  state: Exp;  lines: +11 -1
+
+sudo now calls _root_command(), which is a wrapper around _command(), but also
+  sets the PATH to include {,/usr{,/local}}/sbin
+----------------------------
+revision 1.146
+date: 2002/02/26 21:48:32;  author: ianmacd;  state: Exp;  lines: +20 -2
+
+add cardctl completion
+----------------------------
+revision 1.145
+date: 2002/02/25 06:50:23;  author: ianmacd;  state: Exp;  lines: +2 -2
+
+updated release to 20020225
+----------------------------
+revision 1.144
+date: 2002/02/24 20:52:22;  author: ianmacd;  state: Exp;  lines: +5 -1
+
+_rpm(): fixed minor bug in --re{build,compile}/--clean/--rms{ource,pec} that
+  caused compgen error when passed parameter with hyphens
+----------------------------
+revision 1.143
+date: 2002/02/24 06:43:48;  author: ianmacd;  state: Exp;  lines: +4 -2
+
+_psql(): try to get list of valid users from Postgres before resorting to
+  system user list
+----------------------------
+revision 1.142
+date: 2002/02/22 16:48:21;  author: ianmacd;  state: Exp;  lines: +8 -3
+
+modified _filedir() and _longopt() to allow mkdir and rmdir to complete only
+  on directories
+----------------------------
+revision 1.141
+date: 2002/02/22 08:41:05;  author: ianmacd;  state: Exp;  lines: +4 -5
+
+_cd(): sigh, completion on dirs and subdirs of entries in $CDPATH was broken
+  yet again, this time due to the space having been removed from local $IFS.
+  This is fixed now, but there's still a bug remaining, namely that completion
+  does not work correctly if dirs or subdirs of entries in $CDPATH contain
+  embedded spaces
+_longopt(): install completion for {mk,rm}dir as -o filenames, not dirnames
+----------------------------
+revision 1.140
+date: 2002/02/21 20:26:36;  author: ianmacd;  state: Exp;  lines: +3 -1
+
+_tar(): prevent error if user tries to complete on first parameter using a
+  string like -x (compgen sees the -x as an option to itself)
+----------------------------
+revision 1.139
+date: 2002/02/20 19:09:45;  author: ianmacd;  state: Exp;  lines: +2 -2
+
+_known_hosts(): fix bug where defaulting to standard hostname completion
+  would yield a compgen error
+----------------------------
+revision 1.138
+date: 2002/02/20 06:41:50;  author: ianmacd;  state: Exp;  lines: +2 -2
+
+update release to 20020220
+----------------------------
+revision 1.137
+date: 2002/02/20 06:26:08;  author: ianmacd;  state: Exp;  lines: +3 -3
+
+_longopt(): add irb to list of commands
+_longopt(): refine sed command that filters long options
+----------------------------
+revision 1.136
+date: 2002/02/20 03:56:08;  author: ianmacd;  state: Exp;  lines: +2 -2
+
+_man(): manpath doesn't exist on Sorceror Linux, so use man --path instead
+----------------------------
+revision 1.135
+date: 2002/02/20 01:12:52;  author: ianmacd;  state: Exp;  lines: +2 -2
+
+_function(): declare won't allow a function that starts with a '-', so use
+  type instead
+----------------------------
+revision 1.134
+date: 2002/02/19 22:49:13;  author: ianmacd;  state: Exp;  lines: +4 -7
+
+_rpm(): some clean up
+----------------------------
+revision 1.133
+date: 2002/02/19 18:37:15;  author: ianmacd;  state: Exp;  lines: +45 -27
+
+take signal completion from _killall() and put it in _signals()
+_killall() now calls _signals()
+new _kill() function for kill completion
+_killall() now only completes on signals if parameter starts with a '-'.
+  It would previously return process names AND signals for a blank parameter.
+----------------------------
+revision 1.132
+date: 2002/02/18 23:40:23;  author: ianmacd;  state: Exp;  lines: +8 -4
+
+_man(): remove compgen -G glob in favour of compgen -f -X
+----------------------------
+revision 1.131
+date: 2002/02/18 19:21:14;  author: ianmacd;  state: Exp;  lines: +23 -11
+
+_tar(): eradicate use of compgen -G in favour of compgen -f -X
+----------------------------
+revision 1.130
+date: 2002/02/18 19:07:37;  author: ianmacd;  state: Exp;  lines: +9 -8
+
+_rpm(): more removal of compgen -G in favour of compgen -f -X
+----------------------------
+revision 1.129
+date: 2002/02/18 18:55:25;  author: ianmacd;  state: Exp;  lines: +3 -13
+
+vastly simplify _rpm()'s local file_glob() function by removing compgen -G
+  glob in favour of a compgen -f -X construction
+----------------------------
+revision 1.128
+date: 2002/02/18 18:36:00;  author: ianmacd;  state: Exp;  lines: +5 -3
+
+check that $modpath directory can be entered in _insmod()
+----------------------------
+revision 1.127
+date: 2002/02/18 18:26:54;  author: ianmacd;  state: Exp;  lines: +12 -11
+
+only install route completion if running Linux
+check for existence of make before installing its completion
+----------------------------
+revision 1.126
+date: 2002/02/18 11:09:59;  author: ianmacd;  state: Exp;  lines: +36 -41
+
+check for Linux before installing killall completion
+check for existence of cvs before installing its completion
+clean up _longopt()
+clean up _gcc()
+clean up _configure()
+----------------------------
+revision 1.125
+date: 2002/02/18 09:39:02;  author: ianmacd;  state: Exp;  lines: +9 -11
+
+_configure_func() now calls _longopt(), rather than duplicating code
+----------------------------
+revision 1.124
+date: 2002/02/18 09:32:56;  author: ianmacd;  state: Exp;  lines: +5 -31
+
+remove _redir_op() and _redir_test()
+----------------------------
+revision 1.123
+date: 2002/02/18 09:27:09;  author: ianmacd;  state: Exp;  lines: +2 -2
+
+$prev wasn't local to _psql()
+----------------------------
+revision 1.122
+date: 2002/02/18 09:26:34;  author: ianmacd;  state: Exp;  lines: +29 -12
+
+mkdir and rmdir now bound to _longopt(), default to dirnames
+a2ps, autoconf, automake, bc, gprof, ld, nm, objcopy, objdump, readelf, strip,
+  bison, cpio, diff, patch, enscript, cp, df, dir, du, ln, ls, mkfifo, mknod,
+  mv, rm, touch, vdir, xargs, awk, gperf, grep, gpg, grub, indent, less, m4,
+  sed, shar, date, env, seq, su, tee, uname, who, texindex, cat, csplit, cut,
+  expand, fmt, fold, head, md5sum, nl, od, paste, pr, ptx, sha1sum, sort,
+  split, tac, tail, tr, unexpand, uniq, wc, units and rsync now all have
+  GNU long option completion from _longopt()
+gpc completion added into _gcc()
+cat, less, more, ln and strip no longer bound to _filedir()
+----------------------------
+revision 1.121
+date: 2002/02/17 16:50:17;  author: ianmacd;  state: Exp;  lines: +2 -2
+
+ee, xv, qiv and display also complete on .xpm files
+----------------------------
+revision 1.120
+date: 2002/02/16 01:13:00;  author: ianmacd;  state: Exp;  lines: +36 -21
+
+break part of _gcc() into _longopt() and use this for ldd, wget, bash, id and
+  info completion, as demonstrated by Manu Rouat <emmanuel.rouat@wanadoo.fr>
+----------------------------
+revision 1.119
+date: 2002/02/15 23:53:58;  author: ianmacd;  state: Exp;  lines: +57 -1
+
+completion for gcc and back-ends (g++, c++, g77, and gcj) from
+  Phil Edwards <phil@jaj.com>
+----------------------------
+revision 1.118
+date: 2002/02/15 07:18:22;  author: ianmacd;  state: Exp;  lines: +2 -2
+
+update release to 20020215
+----------------------------
+revision 1.117
+date: 2002/02/15 00:44:21;  author: ianmacd;  state: Exp;  lines: +2 -2
+
+mplayer also completes on .wmv files
+----------------------------
+revision 1.116
+date: 2002/02/14 23:39:04;  author: ianmacd;  state: Exp;  lines: +15 -16
+
+_man(): use manpath instead of /etc/man{,path}.config to find list of paths
+  to search. This approach honours $MANPATH
+_man(): fixed bug that caused a spurious ':' to be returned as a possible
+  completion for all manual sections
+----------------------------
+revision 1.115
+date: 2002/02/14 21:11:31;  author: ianmacd;  state: Exp;  lines: +9 -14
+
+_rpm(): add --nodeps and --nodirtokens to possible completions for rpm -b*
+  and rpm -t*
+_rpm(): add --rmsource, --rmspec, --sign & --nodirtokens to possible
+  completions for rpm --rebuild and rpm --recompile
+_rpm(): rpm --recompile and --rebuild now offer compatible long options as
+  possible completions, even when current parameter does not start with a '-'
+_rpm(): rpm --clean, --rmsource and --rmspec now offer compatible long options
+  as possible completions, even when current parameter does not start with a '-'
+----------------------------
+revision 1.114
+date: 2002/02/14 20:07:42;  author: ianmacd;  state: Exp;  lines: +8 -5
+
+_rpm(): default to directory completion as a last resort in more cases
+----------------------------
+revision 1.113
+date: 2002/02/14 17:49:43;  author: ianmacd;  state: Exp;  lines: +7 -4
+
+_man(): check for /etc/manpath.config as well as /etc/man.config, since
+  Debian uses the former
+----------------------------
+revision 1.112
+date: 2002/02/13 19:25:22;  author: ianmacd;  state: Exp;  lines: +2 -4
+
+user name completion for passwd was accidentally later replaced by group
+  name completion (duh)
+----------------------------
+revision 1.111
+date: 2002/02/13 19:23:52;  author: ianmacd;  state: Exp;  lines: +4 -5
+
+add rsh, rlogin & ftp to commands that use _known_hosts()
+----------------------------
+revision 1.110
+date: 2002/02/13 19:20:59;  author: ianmacd;  state: Exp;  lines: +29 -1
+
+beginnings of psql completion
+----------------------------
+revision 1.109
+date: 2002/02/13 18:33:29;  author: ianmacd;  state: Exp;  lines: +2 -2
+
+mplayer also completes on .mov files
+----------------------------
+revision 1.108
+date: 2002/02/13 17:02:57;  author: ianmacd;  state: Exp;  lines: +8 -6
+
+update release to 20020213
+----------------------------
+revision 1.107
+date: 2002/02/13 16:54:03;  author: ianmacd;  state: Exp;  lines: +2 -2
+
+add line continuation character to _tcpdump(), or compgen will eat up all of
+  the memory on the system
+----------------------------
+revision 1.106
+date: 2002/02/13 16:46:15;  author: ianmacd;  state: Exp;  lines: +4 -7
+
+breaking completion definitions that use -X over multiple lines broke them,
+  when later reassigning them to _filedir_xspec()
+----------------------------
+revision 1.105
+date: 2002/02/12 18:36:17;  author: ianmacd;  state: Exp;  lines: +2 -2
+
+updated release to 20020212
+----------------------------
+revision 1.104
+date: 2002/02/12 17:05:22;  author: ianmacd;  state: Exp;  lines: +8 -12
+
+clean up _man() a little
+----------------------------
+revision 1.103
+date: 2002/02/11 23:28:47;  author: ianmacd;  state: Exp;  lines: +36 -3
+
+beginnings of gdb completion
+type now simply completes on commands (complete -c) rather than using
+  _command()
+----------------------------
+revision 1.102
+date: 2002/02/11 06:06:19;  author: ianmacd;  state: Exp;  lines: +5 -4
+
+in _apt-cache(), return package list for --show, --showpkg, --depends
+  and --dotty
+----------------------------
+revision 1.101
+date: 2002/02/11 03:14:08;  author: ianmacd;  state: Exp;  lines: +6 -7
+
+_scp() now suffixes a ':' on hostnames
+----------------------------
+revision 1.100
+date: 2002/02/11 02:49:26;  author: ianmacd;  state: Exp;  lines: +22 -4
+
+add bash export completion
+change $cword reference to $cur in alias completion
+remove local from list of built-ins that complete on variables, since local
+  can't be used interactively
+----------------------------
+revision 1.99
+date: 2002/02/11 00:11:03;  author: ianmacd;  state: Exp;  lines: +35 -1
+
+alias and function completion based on code submitted by
+  ulf.bartelt@t-online.de <Ulf Bartelt>
+----------------------------
+revision 1.98
+date: 2002/02/10 21:45:46;  author: ianmacd;  state: Exp;  lines: +18 -1
+
+ncftp bookmark completion from Markus Dobel <mdobel@kawo2.rwth-aachen.de>
+----------------------------
+revision 1.97
+date: 2002/02/10 21:32:39;  author: ianmacd;  state: Exp;  lines: +3 -2
+
+add qiv and display to list of programs that complete on image files
+xfig completes on .fig files
+----------------------------
+revision 1.96
+date: 2002/02/09 08:30:49;  author: ianmacd;  state: Exp;  lines: +2 -2
+
+update release to 20020209
+----------------------------
+revision 1.95
+date: 2002/02/08 18:16:44;  author: ianmacd;  state: Exp;  lines: +4 -3
+
+fixed minor quoting bug in _filedir() and _filedir_xspec() that caused paths
+  with embedded spaces to still not be correctly completed in some cases
+----------------------------
+revision 1.94
+date: 2002/02/08 17:49:05;  author: ianmacd;  state: Exp;  lines: +17 -18
+
+_man(): some systems (e.g. Mandrake) have bzipped man pages
+_man(): remove code duplication
+more file types for ee and xv
+----------------------------
+revision 1.93
+date: 2002/02/06 19:02:53;  author: ianmacd;  state: Exp;  lines: +2 -2
+
+updated release to 20020206
+----------------------------
+revision 1.92
+date: 2002/02/06 18:41:06;  author: ianmacd;  state: Exp;  lines: +3 -3
+
+make -name, -lname, -iname & -ilname complete on files in _find() and
+  change default completion from -o default to -o filenames
+----------------------------
+revision 1.91
+date: 2002/02/06 17:05:12;  author: ianmacd;  state: Exp;  lines: +3 -2
+
+make xdvi also complete on .Z, .gz and .bz2 files
+----------------------------
+revision 1.90
+date: 2002/02/06 16:54:09;  author: ianmacd;  state: Exp;  lines: +15 -15
+
+change instances of -X '!*.+(foo|bar)' to -X '!*.@(foo|bar) in the various
+  one-liners, so that e.g. baz would complete on .foo or .bar, but not .foobar
+----------------------------
+revision 1.89
+date: 2002/02/06 05:02:46;  author: ianmacd;  state: Exp;  lines: +9 -6
+
+added a bunch of one-liners from patch by Matthias Klose <doko@cs.tu-berlin.de>
+----------------------------
+revision 1.88
+date: 2002/02/06 02:51:20;  author: ianmacd;  state: Exp;  lines: +2 -2
+
+add --pkgid, --hdrid, --fileid & --tid query options to _rpm() for rpm 4.0.4
+----------------------------
+revision 1.87
+date: 2002/02/05 16:55:30;  author: ianmacd;  state: Exp;  lines: +3 -3
+
+unzip also completes on .pk3 (Quake map) files
+xmms, gqmpeg & freeamp also complete on .pls files
+----------------------------
+revision 1.86
+date: 2002/02/04 19:11:42;  author: ianmacd;  state: Exp;  lines: +3 -2
+
+in _rpm(), consult /var/log/rpmpkgs for package list only if it is newer
+  than /var/lib/rpm/Packages
+----------------------------
+revision 1.85
+date: 2002/02/04 19:07:33;  author: ianmacd;  state: Exp;  lines: +5 -5
+
+make scp work with files with embedded spaces (grr...)
+----------------------------
+revision 1.84
+date: 2002/02/04 03:15:42;  author: ianmacd;  state: Exp;  lines: +2 -2
+
+updated release to 20020204
+----------------------------
+revision 1.83
+date: 2002/02/04 03:12:10;  author: ianmacd;  state: Exp;  lines: +62 -1
+
+screen completion added  - _screen()
+beginnings of openssl completion added - _openssl()
+----------------------------
+revision 1.82
+date: 2002/02/03 22:01:43;  author: ianmacd;  state: Exp;  lines: +13 -2
+
+make --clean --rmsource and --rmspec work together in _rpm()
+----------------------------
+revision 1.81
+date: 2002/01/31 18:03:19;  author: ianmacd;  state: Exp;  lines: +3 -3
+
+not all awks are created equal, so use sub() instead of gensub() in _killall()
+----------------------------
+revision 1.80
+date: 2002/01/31 17:01:43;  author: ianmacd;  state: Exp;  lines: +2 -2
+
+in _zip(), $xspec needs to be quoted to stop it from acting as a shell glob,
+  rather than a parameter to compgen
+----------------------------
+revision 1.79
+date: 2002/01/31 01:35:52;  author: ianmacd;  state: Exp;  lines: +2 -2
+
+unzip now also handles .exe files
+----------------------------
+revision 1.78
+date: 2002/01/30 19:48:45;  author: ianmacd;  state: Exp;  lines: +19 -12
+
+fix _find() so that if first command line parameter does not begin with -,
+  directory completion is performed. Previously 'find h<Tab>' would result
+  in 'find -help'.
+----------------------------
+revision 1.77
+date: 2002/01/30 05:08:47;  author: ianmacd;  state: Exp;  lines: +2 -2
+
+update release to 20020130
+----------------------------
+revision 1.76
+date: 2002/01/30 05:04:28;  author: ianmacd;  state: Exp;  lines: +3 -3
+
+--clean can be used stand-alone in _rpm()
+----------------------------
+revision 1.75
+date: 2002/01/29 23:06:26;  author: ianmacd;  state: Exp;  lines: +16 -10
+
+make _ifupdown() detect a Debian Linux system and act accordingly
+in _man(), check that /etc/man.config is readable, not just that it exists
+in _rpm(), check that /var/log/rpmpkgs is readable, not just that it exists
+----------------------------
+revision 1.74
+date: 2002/01/29 21:33:49;  author: ianmacd;  state: Exp;  lines: +8 -3
+
+define $BASH_COMPLETION to hold location of completion script. This is a
+  read-only variable used by _filedir_xspec(). Why doesn't bash have a
+  built-in variable to return the path of the file currently being sourced?
+----------------------------
+revision 1.73
+date: 2002/01/29 20:30:00;  author: ianmacd;  state: Exp;  lines: +2 -2
+
+apparently, it should be aviplay, not avifile
+----------------------------
+revision 1.72
+date: 2002/01/29 18:31:22;  author: ianmacd;  state: Exp;  lines: +4 -1
+
+call _expand() from a couple more places in _rpm()
+----------------------------
+revision 1.71
+date: 2002/01/24 21:20:31;  author: ianmacd;  state: Exp;  lines: +2 -2
+
+make _filedir_xspec() use the basename of commands when looking for matching
+  exclusion specs (acroread <Tab> worked, whereas /opt/bin/acroread <Tab>
+  did not)
+----------------------------
+revision 1.70
+date: 2002/01/24 05:03:26;  author: ianmacd;  state: Exp;  lines: +11 -6
+
+release updated to 20020124
+call _expand() from some of the completion routines()
+find now performs default completion, rather than dirnames, if nothing else
+  is returned
+----------------------------
+revision 1.69
+date: 2002/01/24 00:41:00;  author: ianmacd;  state: Exp;  lines: +3 -3
+
+_rpm() now performs tilde expansion when file globbing
+removed commented out gzip and bzip2 one-liners
+----------------------------
+revision 1.68
+date: 2002/01/24 00:36:30;  author: ianmacd;  state: Exp;  lines: +17 -6
+
+renamed _file_and_dir() _filedir_xspec()
+created _filedir(), which is used by cat, less, more, ln and strip, so that
+  tilde expansion can be performed, prior to pathname expansion
+----------------------------
+revision 1.67
+date: 2002/01/24 00:13:21;  author: ianmacd;  state: Exp;  lines: +41 -11
+
+_zip() added for gzip and bzip2, so that they complete on .gz2 and .bz2 files
+  when invoked with the -d flag.
+_expand() created for doing tilde expansion on path names. It returns the
+  number of elements in the COMPREPLY array. _zip(), _cd() and
+  _file_and_dir() now call this.
+fixed minor bug in _file_and_dir() that was removing the '-' from the front of
+ its parameter
+----------------------------
+revision 1.66
+date: 2002/01/23 21:35:17;  author: ianmacd;  state: Exp;  lines: +5 -3
+
+by popular request, comment out compspecs for gzip and bzip2. Added a
+  conditional to installation section of _file_and_dir() to not bind commented
+  out compspecs to commands
+----------------------------
+revision 1.65
+date: 2002/01/23 18:24:46;  author: ianmacd;  state: Exp;  lines: +5 -5
+
+add --rmspec handling to _rpm()
+----------------------------
+revision 1.64
+date: 2002/01/23 18:14:19;  author: ianmacd;  state: Exp;  lines: +7 -8
+
+turn off command tracing when DEBUG is unset
+unzip also unpacks .jar files
+add ggv to commands that take PostScript files
+mplayer CAN'T use MP3 files
+_command() wasn't redirecting stderr, so would display a harmless error message
+  when in 'sudo x <Tab>', 'x' didn't have its own compspec
+in 'sudo x $1 $2 $n', _command() was calling x's own completion function and
+  passing the rest of the command line as a single parameter, rather than as
+  individual tokens. This is fixed, but there may be other breakage as a
+  result. Need to do more testing.
+----------------------------
+revision 1.63
+date: 2002/01/22 08:19:47;  author: ianmacd;  state: Exp;  lines: +2 -2
+
+handle rpm -qip (and similar) as well as rpm -qpi
+----------------------------
+revision 1.62
+date: 2002/01/21 16:48:10;  author: ianmacd;  state: Exp;  lines: +3 -1
+
+fix bug in 'sudo x <Tab>' where 'x' has no compspec of its own
+----------------------------
+revision 1.61
+date: 2002/01/21 16:29:54;  author: ianmacd;  state: Exp;  lines: +3 -3
+
+errors caused by missing quotes fixed (duh!)
+----------------------------
+revision 1.60
+date: 2002/01/21 04:58:42;  author: ianmacd;  state: Exp;  lines: +2 -20
+
+remove previous _command() completion function
+updated release to 20010121
+----------------------------
+revision 1.59
+date: 2002/01/18 16:54:22;  author: ianmacd;  state: Exp;  lines: +49 -2
+
+completely rewrote _command(), so that commands like sudo and strace first
+  complete on a command, then complete according to that command's own
+  completion specification. E.g. sudo rpm <Tab> would further complete
+  according to _rpm(), as if it were being called directly
+iptables completion was being installed, even if it were not in user's PATH
+----------------------------
+revision 1.58
+date: 2002/01/16 08:18:11;  author: ianmacd;  state: Exp;  lines: +7 -1
+
+added some one-liners for multimedia programs
+----------------------------
+revision 1.57
+date: 2002/01/16 08:14:14;  author: ianmacd;  state: Exp;  lines: +10 -7
+
+_known_hosts(): finally thought of a way to correctly perform completion
+  when host specification is of the form user@host
+_known_hosts(): moved escaping of dots in $cur to within 'if' block that
+  requires it
+----------------------------
+revision 1.56
+date: 2002/01/16 03:16:56;  author: ianmacd;  state: Exp;  lines: +2 -2
+
+_man() wasn't completing on filenames with a relative path
+----------------------------
+revision 1.55
+date: 2002/01/15 18:20:48;  author: ianmacd;  state: Exp;  lines: +2 -2
+
+updated release to 20020115
+----------------------------
+revision 1.54
+date: 2002/01/14 21:38:22;  author: ianmacd;  state: Exp;  lines: +33 -1
+
+mysqladmin completion
+----------------------------
+revision 1.53
+date: 2002/01/09 16:32:30;  author: ianmacd;  state: Exp;  lines: +2 -2
+
+updated release to 20020109
+----------------------------
+revision 1.52
+date: 2002/01/08 05:49:06;  author: ianmacd;  state: Exp;  lines: +35 -11
+
+added _chgrp() completion
+----------------------------
+revision 1.51
+date: 2002/01/08 01:33:08;  author: ianmacd;  state: Exp;  lines: +19 -1
+
+added _ifupdown() for Red Hat Linux if{up,down} completion
+----------------------------
+revision 1.50
+date: 2002/01/08 01:26:49;  author: ianmacd;  state: Exp;  lines: +45 -7
+
+improve _iptables() with some chain name completion
+----------------------------
+revision 1.49
+date: 2002/01/06 19:11:12;  author: ianmacd;  state: Exp;  lines: +3 -2
+
+fix iptables - it no longer worked at all, because $prev wasn't set
+----------------------------
+revision 1.48
+date: 2002/01/06 04:21:04;  author: ianmacd;  state: Exp;  lines: +2 -2
+
+_cd() was no longer completing relative to $CDPATH
+----------------------------
+revision 1.47
+date: 2002/01/05 21:04:01;  author: ianmacd;  state: Exp;  lines: +3 -1
+
+add release date
+----------------------------
+revision 1.46
+date: 2002/01/05 20:48:59;  author: ianmacd;  state: Exp;  lines: +6 -4
+
+fixed _cd() so that if $CDPATH is set and no completions are returned
+  relative to its paths, we still attempt directory completion relative to $PWD
+----------------------------
+revision 1.45
+date: 2002/01/05 20:42:41;  author: ianmacd;  state: Exp;  lines: +9 -5
+
+make gv also complete on encapsulated PostScript files
+add jadetex and pdfjadetex to commands that complete on tex files
+improved tar completion to handle .tgz and .tar files
+inproved tar completion to perform file completion when c*f is the first
+  parameter
+----------------------------
+revision 1.44
+date: 2002/01/04 19:29:18;  author: ianmacd;  state: Exp;  lines: +4 -4
+
+add 'conflicts' and 'obsoletes' query completions to _rpm()
+----------------------------
+revision 1.43
+date: 2002/01/04 05:34:21;  author: ianmacd;  state: Exp;  lines: +7 -6
+
+make gv also complete on PDF files
+include --repackage for rpm -[ei]
+fix _cd so that it completes on directories with an embedded space
+fix _file_and_dir so that it completes on directories with an embedded space
+----------------------------
+revision 1.42
+date: 2002/01/03 01:17:44;  author: ianmacd;  state: Exp;  lines: +2 -2
+
+no group completion for chgrp, since we ideally also want filename completion
+  on second and subsequent parameters
+----------------------------
+revision 1.41
+date: 2002/01/03 01:16:41;  author: ianmacd;  state: Exp;  lines: +17 -15
+
+add group completion for chgrp
+change embedded tabs in the file to $'\t' syntax
+be a bit more elegant in determining location of showmount in _mount()
+condense awk|grep combo in _configure() to a single sed command
+be more intelligent about parsing for exclusion (-X) compspecs when
+  binding commands to _file_and_dir()
+----------------------------
+revision 1.40
+date: 2001/12/21 08:56:18;  author: ianmacd;  state: Exp;  lines: +6 -4
+
+check for showmount in /sbin or /usr/sbin in _mount()
+----------------------------
+revision 1.39
+date: 2001/12/20 19:26:49;  author: ianmacd;  state: Exp;  lines: +4 -3
+
+add a compspec for mpg123
+condense grep | head into a single sed command in _file_and_dir
+----------------------------
+revision 1.38
+date: 2001/12/20 17:12:44;  author: ianmacd;  state: Exp;  lines: +16 -17
+
+avoid use of extra file descriptor and grep in _file_and_dir by using
+  parameter substitutions
+----------------------------
+revision 1.37
+date: 2001/12/20 08:52:12;  author: ianmacd;  state: Exp;  lines: +44 -4
+
+added _file_and_dir as a meta-function for compspecs requiring the -X flag
+  This allows us to exclude files without excluding directories
+use IFS=$'\t' instead of IFS=$(echo -e "\t")
+----------------------------
+revision 1.36
+date: 2001/12/18 04:43:25;  author: ianmacd;  state: Exp;  lines: +137 -137
+
+replace spaces with tabs
+----------------------------
+revision 1.35
+date: 2001/12/18 04:25:04;  author: ianmacd;  state: Exp;  lines: +23 -3
+
+basic nslookup completion added
+----------------------------
+revision 1.34
+date: 2001/12/13 21:34:17;  author: ianmacd;  state: Exp;  lines: +3 -7
+
+make ee and xv complete on more file-types
+----------------------------
+revision 1.33
+date: 2001/12/11 21:25:53;  author: ianmacd;  state: Exp;  lines: +21 -2
+
+ant completion added
+----------------------------
+revision 1.32
+date: 2001/12/05 18:05:49;  author: ianmacd;  state: Exp;  lines: +2 -2
+
+use type (built-in) instead of which (external) to determine whether a
+  particular command is available
+----------------------------
+revision 1.31
+date: 2001/12/05 17:32:24;  author: ianmacd;  state: Exp;  lines: +17 -23
+
+- removed misleading comment on _man completion
+- use -g, not -u for group completion (duh!)
+- avoid unnecessary use of $COMPREPLY_SAVE in _ssh/_scp
+- use '-' as prefix (-P) to kill, not '%', and put it *before* command
+- default to filename completion on _scp
+- removed a couple of definitions of $prev that weren't actually used
+- source ~/.bash_completion if it exists
+----------------------------
+revision 1.30
+date: 2001/11/29 01:37:54;  author: ianmacd;  state: Exp;  lines: +8 -24
+
+removed _gid_function and made other modifications to account for the fact
+  that group completion is now standard in bash 2.05a
+----------------------------
+revision 1.29
+date: 2001/11/26 19:19:59;  author: ianmacd;  state: Exp;  lines: +5 -2
+
+make _known_hosts() escape meta-characters in paths before handing off to awk
+added missing ` in _service
+----------------------------
+revision 1.28
+date: 2001/11/20 21:35:19;  author: ianmacd;  state: Exp;  lines: +2 -3
+
+$prev not needed in _scp
+----------------------------
+revision 1.27
+date: 2001/11/20 05:15:48;  author: ianmacd;  state: Exp;  lines: +43 -22
+
+- default to _dirnames on _find
+- fixed bug in _known_hosts that caused keys to be printed from known_hosts2
+  files
+- made _ssh a little more intelligent
+- added _scp
+- made _cd expand ~ in directory specs
+- declared i as a local variable in many functions
+----------------------------
+revision 1.26
+date: 2001/11/05 00:11:48;  author: ianmacd;  state: Exp;  lines: +11 -5
+
+_rpm now uses /var/log/rpmpkgs if available (in RHL 7.2), since this is much
+  faster than rpm -qa, at the expense of actuality
+_man completion now looks at section 'l' (local) of the manual
+----------------------------
+revision 1.25
+date: 2001/09/21 20:51:30;  author: ianmacd;  state: Exp;  lines: +5 -3
+
+fixed bug in _cd that caused no completions to be returned if CDPATH was not
+set and user was not trying to complete on an absolute path
+----------------------------
+revision 1.24
+date: 2001/08/22 17:20:27;  author: ianmacd;  state: Exp;  lines: +23 -23
+
+reverted to previous version of _rpm, since last time's fixes broke more things than
+  they fixed.
+----------------------------
+revision 1.23
+date: 2001/08/16 17:49:39;  author: ianmacd;  state: Exp;  lines: +70 -17
+
+added _command completion function and extended Perforce completion, both written by
+  Frank Cusack (frank@google.com)
+----------------------------
+revision 1.22
+date: 2001/08/16 17:27:02;  author: ianmacd;  state: Exp;  lines: +23 -23
+
+made rpm completion work when -p option to check uninstalled packages is not concatenated
+with other options (e.g. -ql -p instead of -qlp)
+----------------------------
+revision 1.21
+date: 2001/07/12 05:52:25;  author: ianmacd;  state: Exp;  lines: +6 -6
+
+tune cd completion for standard dir completion when all else fails
+p4 completion completes on files after first parameter
+p4 completion now gives default completion if all else fails
+----------------------------
+revision 1.20
+date: 2001/07/09 02:55:01;  author: ianmacd;  state: Exp;  lines: +41 -21
+
+corrected bug in have() support function - it returned false positives
+umount, rmmod, find, rpm, apt-get, apt-cache, make use '-o filenames'
+mount uses '-o default' to get default completion if all else fails
+added basic perforce completion
+----------------------------
+revision 1.19
+date: 2001/07/09 01:14:13;  author: ianmacd;  state: Exp;  lines: +91 -12
+
+added have() function for checking for presence of binaries
+check for binaries before installing functions and completions
+use '-o' option to 'complete' for optimal completion behaviour
+basic tar(1), iptables(8), tcpdump(8) completion added
+----------------------------
+revision 1.18
+date: 2001/05/21 22:10:29;  author: ianmacd;  state: Exp;  lines: +10 -121
+
+various clean-ups for bash 2.05 ('complete -o' means we can simplify a
+  bunch of default code)
+_cd function made active again
+meta default completion function removed (bash 2.05 has 'complete -o default')
+----------------------------
+revision 1.17
+date: 2001/03/22 00:33:02;  author: ianmacd;  state: Exp;  lines: +2 -2
+
+fixed typo in rpm completion
+----------------------------
+revision 1.16
+date: 2001/03/05 20:12:48;  author: ianmacd;  state: Exp;  lines: +207 -21
+
+don't try to do NFS mount completion if we don't seem to have showmount
+fix quoting issue in insmod completion
+add --specfile, --what{provides,requires} sections to RPM completion
+move -*g) case glob down to end of case, to avoid catching --checksig in RPM
+  completion
+check /etc/known_hosts2 & ~/.ssh/known_hosts2 for hosts in _known_hosts
+  completion
+fixed typo in service completion
+added preliminary _cd meta-function
+added some more meta-functions from sample completions supplied with bash 2.04
+  source
+----------------------------
+revision 1.15
+date: 2001/01/31 23:57:06;  author: ianmacd;  state: Exp;  lines: +16 -1
+
+modprobe -r now completes a la insmod
+insmod/modprobe now complete on filenames if parameter contains a /
+----------------------------
+revision 1.14
+date: 2001/01/31 23:30:49;  author: ianmacd;  state: Exp;  lines: +8 -7
+
+insmod completion was not completing module parameters correctly
+man completion now resorts to filename completion if no /etc/man.config
+----------------------------
+revision 1.13
+date: 2001/01/11 00:09:48;  author: ianmacd;  state: Exp;  lines: +29 -1
+
+added Red Hat service completion
+----------------------------
+revision 1.12
+date: 2000/12/20 03:04:54;  author: ianmacd;  state: Exp;  lines: +6 -2
+
+added --rmsource as stand-alone option to RPM completion
+----------------------------
+revision 1.11
+date: 2000/12/19 20:54:49;  author: ianmacd;  state: Exp;  lines: +28 -11
+
+fixed bug in killall completion that caused swapped out processes to not be
+  completed
+added file_glob() function to rpm completion
+----------------------------
+revision 1.10
+date: 2000/11/20 21:41:43;  author: ianmacd;  state: Exp;  lines: +76 -45
+
+rpm completion updated for extra options in rpm 4.x (added --eval, --pipe,
+  --rcfile, etc.)
+some minor bug fixes to rpm completion; code tidied in places
+added some outstanding long options to rpm completion (--install, --freshen,
+  --upgrade, --info, --list, --state, --docfiles, --queryformat, --verify  etc.)
+added -g group completion
+----------------------------
+revision 1.9
+date: 2000/10/29 23:17:19;  author: ianmacd;  state: Exp;  lines: +5 -5
+
+fixed RPM completion. Not all RPMs were found when completing -e, etc.
+----------------------------
+revision 1.8
+date: 2000/10/19 17:25:36;  author: ianmacd;  state: Exp;  lines: +4 -20
+
+reverted cd, mkdir & pushd to standard -d directory completion
+----------------------------
+revision 1.7
+date: 2000/10/09 20:07:50;  author: ianmacd;  state: Exp;  lines: +164 -16
+
+default to filename completion if all else fails on _mound() and _find()
+do filename completion in _man() if parameter contains a /
+add filename completion to list of _man completions if no manual section
+  specified
+added functionality to FreeS/WAN IPSec completion
+added Debian apt-get & apt-cache completion
+added more intelligent directory completion in new _directory function
+----------------------------
+revision 1.6
+date: 2000/09/25 23:38:11;  author: ianmacd;  state: Exp;  lines: +118 -30
+
+added Makefile completion
+split _ssh function up into a _known_hosts function for use by other commands
+improved insmod completion with module paramter completion
+----------------------------
+revision 1.5
+date: 2000/09/11 20:46:39;  author: ianmacd;  state: Exp;  lines: +66 -10
+
+fixed bug in man completion that caused pages with a dot in them
+  (e.g. lilo.conf) not to be found
+ssh completion enhanced with command completion after host has been given
+fixed bug in ssh completion that caused bad completions when completing on
+  a digit
+added route(8) completion
+----------------------------
+revision 1.4
+date: 2000/08/29 21:21:00;  author: ianmacd;  state: Exp;  lines: +20 -11
+
+fixed bug in killall completion (processes with a path were not completed)
+added cipher completion to -c option of ssh
+----------------------------
+revision 1.3
+date: 2000/08/29 02:41:27;  author: ianmacd;  state: Exp;  lines: +116 -63
+
+added ssh completion
+cleaned the code in some of the other functions
+----------------------------
+revision 1.2
+date: 2000/08/11 23:20:41;  author: ianmacd;  state: Exp;  lines: +253 -1
+
+added cvs, rpm, chkconfig and chsh completion
+----------------------------
+revision 1.1
+date: 2000/08/09 00:17:29;  author: ianmacd;  state: Exp;
+
+initial check-in of bash 2.04 programmable completion stuff
+=============================================================================

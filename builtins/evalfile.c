@@ -4,7 +4,7 @@
 
    Bash is free software; you can redistribute it and/or modify it under
    the terms of the GNU General Public License as published by the Free
-   Software Foundation; either version 1, or (at your option) any later
+   Software Foundation; either version 2, or (at your option) any later
    version.
 
    Bash is distributed in the hope that it will be useful, but WITHOUT ANY
@@ -14,7 +14,7 @@
    
    You should have received a copy of the GNU General Public License along
    with Bash; see the file COPYING.  If not, write to the Free Software
-   Foundation, 675 Mass Ave, Cambridge, MA 02139, USA. */
+   Foundation, 59 Temple Place, Suite 330, Boston, MA 02111 USA. */
 
 #include <config.h>
 
@@ -23,8 +23,8 @@
 #endif
 
 #include "../bashtypes.h"
-#include "../posixstat.h"
-#include "../filecntl.h"
+#include "posixstat.h"
+#include "filecntl.h"
 
 #include <stdio.h>
 #include <signal.h>
@@ -56,8 +56,10 @@ extern int errno;
 #define FEVAL_NONINT		0x008
 #define FEVAL_LONGJMP		0x010
 #define FEVAL_HISTORY		0x020
+#define FEVAL_CHECKBINARY	0x040
+#define FEVAL_REGFILE		0x080
 
-extern int interactive, interactive_shell, posixly_correct;
+extern int posixly_correct;
 extern int indirection_level, startup_state, subshell_environment;
 extern int return_catch_flag, return_catch_value;
 extern int last_command_exit_value;
@@ -67,7 +69,7 @@ int sourcelevel = 0;
 
 static int
 _evalfile (filename, flags)
-     char *filename;
+     const char *filename;
      int flags;
 {
   volatile int old_interactive;
@@ -76,7 +78,9 @@ _evalfile (filename, flags)
   char *string;
   struct stat finfo;
   size_t file_size;
-  VFunction *errfunc;
+  sh_vmsg_func_t *errfunc;
+
+  USE_VAR(pflags);
 
   fd = open (filename, O_RDONLY);
 
@@ -87,7 +91,7 @@ file_error_and_exit:
 	file_error (filename);
 
       if (flags & FEVAL_LONGJMP)
-        {
+	{
 	  last_command_exit_value = 1;
 	  jump_to_top_level (EXITPROG);
 	}
@@ -96,14 +100,14 @@ file_error_and_exit:
       				      : ((errno == ENOENT) ? 0 : -1));
     }
 
-  errfunc = (VFunction *)((flags & FEVAL_BUILTIN) ? builtin_error : internal_error);
+  errfunc = ((flags & FEVAL_BUILTIN) ? builtin_error : internal_error);
 
   if (S_ISDIR (finfo.st_mode))
     {
       (*errfunc) ("%s: is a directory", filename);
       return ((flags & FEVAL_BUILTIN) ? EXECUTION_FAILURE : -1);
     }
-  else if (S_ISREG (finfo.st_mode) == 0)
+  else if ((flags & FEVAL_REGFILE) && S_ISREG (finfo.st_mode) == 0)
     {
       (*errfunc) ("%s: not a regular file", filename);
       return ((flags & FEVAL_BUILTIN) ? EXECUTION_FAILURE : -1);
@@ -116,7 +120,12 @@ file_error_and_exit:
       (*errfunc) ("%s: file is too large", filename);
       return ((flags & FEVAL_BUILTIN) ? EXECUTION_FAILURE : -1);
     }      
-  string = xmalloc (1 + file_size);
+
+#if defined (__CYGWIN__) && defined (O_TEXT)
+  setmode (fd, O_TEXT);
+#endif
+
+  string = (char *)xmalloc (1 + file_size);
   result = read (fd, string, file_size);
   string[result] = '\0';
 
@@ -136,7 +145,8 @@ file_error_and_exit:
       return ((flags & FEVAL_BUILTIN) ? EXECUTION_SUCCESS : 1);
     }
       
-  if (check_binary_file ((unsigned char *)string, (result > 80) ? 80 : result))
+  if ((flags & FEVAL_CHECKBINARY) && 
+      check_binary_file (string, (result > 80) ? 80 : result))
     {
       free (string);
       (*errfunc) ("%s: cannot execute binary file", filename);
@@ -200,7 +210,7 @@ file_error_and_exit:
 
 int
 maybe_execute_file (fname, force_noninteractive)
-     char *fname;
+     const char *fname;
      int force_noninteractive;
 {
   char *filename;
@@ -218,20 +228,20 @@ maybe_execute_file (fname, force_noninteractive)
 #if defined (HISTORY)
 int
 fc_execute_file (filename)
-     char *filename;
+     const char *filename;
 {
   int flags;
 
   /* We want these commands to show up in the history list if
      remember_on_history is set. */
-  flags = FEVAL_ENOENTOK|FEVAL_HISTORY;
+  flags = FEVAL_ENOENTOK|FEVAL_HISTORY|FEVAL_REGFILE;
   return (_evalfile (filename, flags));
 }
 #endif /* HISTORY */
 
 int
 source_file (filename)
-     char *filename;
+     const char *filename;
 {
   int flags;
 

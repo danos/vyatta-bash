@@ -8,6 +8,25 @@
  * Chet Ramey
  * chet@ins.cwru.edu
  */
+
+/* Copyright (C) 1997 Free Software Foundation, Inc.
+
+   This file is part of GNU Bash, the Bourne Again SHell.
+
+   Bash is free software; you can redistribute it and/or modify it under
+   the terms of the GNU General Public License as published by the Free
+   Software Foundation; either version 2, or (at your option) any later
+   version.
+
+   Bash is distributed in the hope that it will be useful, but WITHOUT ANY
+   WARRANTY; without even the implied warranty of MERCHANTABILITY or
+   FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+   for more details.
+
+   You should have received a copy of the GNU General Public License along
+   with Bash; see the file COPYING.  If not, write to the Free Software
+   Foundation, 59 Temple Place, Suite 330, Boston, MA 02111 USA. */
+
 #include "config.h"
 
 #if defined (ARRAY_VARS)
@@ -25,8 +44,6 @@
 #include "shell.h"
 #include "array.h"
 #include "builtins/common.h"
-
-extern char *quote_string ();	/* XXX */
 
 #define ADD_BEFORE(ae, new) \
 	do { \
@@ -47,7 +64,7 @@ char	*value;
 {
 	ARRAY_ELEMENT *r;
 
-	r = (ARRAY_ELEMENT *) xmalloc(sizeof(ARRAY_ELEMENT));
+	r = (ARRAY_ELEMENT *)xmalloc(sizeof(ARRAY_ELEMENT));
 	r->ind = indx;
 	r->value = value ? savestring(value) : (char *)NULL;
 	r->next = r->prev = (ARRAY_ELEMENT *) NULL;
@@ -68,7 +85,7 @@ new_array()
 	ARRAY	*r;
 	ARRAY_ELEMENT	*head;
 
-	r =(ARRAY *) xmalloc(sizeof(ARRAY));
+	r =(ARRAY *)xmalloc(sizeof(ARRAY));
 	r->type = array_indexed;
 	r->max_index = r->max_size = -1;
 	r->num_elements = 0;
@@ -140,7 +157,7 @@ ARRAY_ELEMENT	*s, *e;
 {
 	ARRAY	*a;
 	ARRAY_ELEMENT *p, *n;
-	int	i;
+	arrayind_t i;
 
 	a = new_array ();
 	a->type = array->type;
@@ -261,7 +278,7 @@ arrayind_t	i;
 void
 array_walk(a, func)
 ARRAY	*a;
-Function *func;
+sh_ae_map_func_t *func;
 {
 	register ARRAY_ELEMENT *ae;
 
@@ -290,9 +307,10 @@ int	quoted;
 		return ((char *)NULL);
 
 	slen = strlen(sep);
+	result = NULL;
 	for (rsize = rlen = 0, ae = start; ae != end; ae = element_forw(ae)) {
 		if (rsize == 0)
-			result = xmalloc (rsize = 64);
+			result = (char *)xmalloc (rsize = 64);
 		if (element_value(ae)) {
 			t = quoted ? quote_string(element_value(ae)) : element_value(ae);
 			reg = strlen(t);
@@ -311,7 +329,8 @@ int	quoted;
 			}
 		}
 	}
-	result[rlen] = '\0';	/* XXX */
+	if (result)
+	  result[rlen] = '\0';	/* XXX */
 	return(result);
 }
 
@@ -339,13 +358,13 @@ ARRAY	*a;
 	if (a == 0 || array_empty (a))
 		return((char *)NULL);
 
-	result = xmalloc (rsize = 128);
+	result = (char *)xmalloc (rsize = 128);
 	result[0] = '(';
 	rlen = 1;
 
 	for (ae = element_forw(a->head); ae != a->head; ae = element_forw(ae)) {
 		indstr = itos (element_index(ae));
-		valstr = element_value (ae) ? double_quote (element_value(ae))
+		valstr = element_value (ae) ? sh_double_quote (element_value(ae))
 					    : (char *)NULL;
 		elen = STRLEN (indstr) + 8 + STRLEN (valstr);
 		RESIZE_MALLOCED_BUFFER (result, rlen, (elen + 1), rsize, rsize);
@@ -382,7 +401,7 @@ ARRAY	*a;
 	if (sv == 0)
 		return ((char *)NULL);
 
-	vstr = single_quote (sv);
+	vstr = sh_single_quote (sv);
 	free (sv);
 	return (vstr);
 }
@@ -441,6 +460,26 @@ ARRAY	*a;
 	return (REVERSE_LIST(list, WORD_LIST *));
 }
 
+char **
+array_to_argv (a)
+ARRAY	*a;
+{
+	char		**ret, *t;
+	int		i;
+	ARRAY_ELEMENT	*ae;
+
+	if (a == 0 || array_empty(a))
+		return ((char **)NULL);
+	ret = alloc_array (array_num_elements (a) + 1);
+	i = 0;
+	for (ae = element_forw(a->head); ae != a->head; ae = element_forw(ae)) {
+		t = element_value (ae);
+		ret[i++] = t ? savestring (t) : (char *)NULL;
+	}
+	ret[i] = (char *)NULL;
+	return (ret);
+}
+	
 ARRAY *
 assign_word_list (array, list)
 ARRAY	*array;
@@ -486,10 +525,11 @@ ARRAY	*array;
 char *
 array_subrange (a, start, end, quoted)
 ARRAY	*a;
-int	start, end, quoted;
+arrayind_t	start, end;
+int	quoted;
 {
 	ARRAY_ELEMENT	*h, *p;
-	int	i;
+	arrayind_t	i;
 
 	p = array_head (a);
 	if (p == 0 || array_empty (a) || start > array_num_elements (a))
@@ -538,7 +578,7 @@ int	mflags;
 print_element(ae)
 ARRAY_ELEMENT	*ae;
 {
-	printf("array[%d] = %s\n",(int)element_index(ae), element_value(ae));
+	printf("array[%ld] = %s\n", element_index(ae), element_value(ae));
 }
 
 print_array(a)

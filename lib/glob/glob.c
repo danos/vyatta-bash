@@ -3,7 +3,7 @@
 
    This program is free software; you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
-   the Free Software Foundation; either version 1, or (at your option)
+   the Free Software Foundation; either version 2, or (at your option)
    any later version.
 
    This program is distributed in the hope that it will be useful,
@@ -13,7 +13,7 @@
 
    You should have received a copy of the GNU General Public License
    along with this program; if not, write to the Free Software
-   Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.  */
+   Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111 USA.  */
 
 /* To whomever it may concern: I have never seen the code which most
    Unix programs use to perform this function.  I wrote this from scratch
@@ -67,7 +67,7 @@
 #  endif
 #endif /* !HAVE_DIRENT_H */
 
-#if defined (_POSIX_SOURCE)
+#if defined (_POSIX_SOURCE) && !defined (STRUCT_DIRENT_HAS_D_INO) || defined (BROKEN_DIRENT_D_INO)
 /* Posix does not require that the d_ino field be present, and some
    systems do not provide it. */
 #  define REAL_DIR_ENTRY(dp) 1
@@ -94,7 +94,7 @@
 #  include "memalloc.h"
 #endif
 
-#include "fnmatch.h"
+#include "strmatch.h"
 
 #if !defined (HAVE_STDLIB_H) && !defined (SHELL)
 extern char *malloc (), *realloc ();
@@ -131,9 +131,9 @@ char *glob_error_return;
 /* Return nonzero if PATTERN has any special globbing chars in it.  */
 int
 glob_pattern_p (pattern)
-     char *pattern;
+     const char *pattern;
 {
-  register char *p;
+  register const char *p;
   register char c;
   int bopen;
 
@@ -256,7 +256,7 @@ glob_vector (pat, dir)
   int lose, skip;
   register char **name_vector;
   register unsigned int i;
-  int flags;		/* Flags passed to fnmatch (). */
+  int flags;		/* Flags passed to strmatch (). */
 
   lastlink = 0;
   count = lose = skip = 0;
@@ -342,8 +342,8 @@ glob_vector (pat, dir)
       if (d == NULL)
 	return ((char **) &glob_error_return);
 
-      /* Compute the flags that will be passed to fnmatch().  We don't
-         need to do this every time through the loop. */
+      /* Compute the flags that will be passed to strmatch().  We don't
+	 need to do this every time through the loop. */
       flags = (noglob_dot_filenames ? FNM_PERIOD : 0) | FNM_PATHNAME;
 
 #ifdef FNM_CASEFOLD
@@ -394,7 +394,7 @@ glob_vector (pat, dir)
 		(pat[0] != '\\' || pat[1] != '.'))
 	    continue;
 
-	  if (fnmatch (pat, dp->d_name, flags) != FNM_NOMATCH)
+	  if (strmatch (pat, dp->d_name, flags) != FNM_NOMATCH)
 	    {
 	      nextlink = (struct globval *) alloca (sizeof (struct globval));
 	      nextlink->next = lastlink;
@@ -480,14 +480,11 @@ glob_dir_to_array (dir, array)
 				   + strlen (array[i]) + 1);
       if (result[i] == NULL)
 	return (NULL);
-#if 1
+
       strcpy (result[i], dir);
       if (add_slash)
-        result[i][l] = '/';
+	result[i][l] = '/';
       strcpy (result[i] + l + add_slash, array[i]);
-#else
-      (void)sprintf (result[i], "%s%s%s", dir, add_slash ? "/" : "", array[i]);
-#endif
     }
   result[i] = NULL;
 

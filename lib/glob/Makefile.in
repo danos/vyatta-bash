@@ -3,6 +3,22 @@
 # Makefile for the GNU Glob Library.				   #
 #								   #
 ####################################################################
+#
+# Copyright (C) 1996 Free Software Foundation, Inc.     
+
+# This program is free software; you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation; either version 2, or (at your option)
+# any later version.
+
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+
+# You should have received a copy of the GNU General Public License
+# along with this program; if not, write to the Free Software
+# Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111 USA.
 
 srcdir = @srcdir@
 VPATH = .:@srcdir@
@@ -31,7 +47,9 @@ LDFLAGS = @LDFLAGS@ @LOCAL_LDFLAGS@
 DEFS = @DEFS@
 LOCAL_DEFS = @LOCAL_DEFS@
 
-INCLUDES = -I. -I../.. -I$(topdir) -I$(topdir)/lib
+BASHINCDIR = ${topdir}/include
+
+INCLUDES = -I. -I../.. -I$(topdir) -I$(BASHINCDIR) -I$(topdir)/lib
 
 CCFLAGS = $(DEFS) $(LOCAL_DEFS) $(CPPFLAGS) ${INCLUDES} $(LOCAL_CFLAGS) $(CFLAGS)
 
@@ -44,12 +62,12 @@ CCFLAGS = $(DEFS) $(LOCAL_DEFS) $(CPPFLAGS) ${INCLUDES} $(LOCAL_CFLAGS) $(CFLAGS
 LIBRARY_NAME = libglob.a
 
 # The C code source files for this library.
-CSOURCES = $(srcdir)/glob.c $(srcdir)/fnmatch.c
+CSOURCES = $(srcdir)/glob.c $(srcdir)/strmatch.c
 
 # The header files for this library.
-HSOURCES = $(srcdir)/fnmatch.h
+HSOURCES = $(srcdir)/strmatch.h
 
-OBJECTS = glob.o fnmatch.o
+OBJECTS = glob.o strmatch.o
 
 # The texinfo files which document this library.
 DOCSOURCE = doc/glob.texi
@@ -103,14 +121,15 @@ mostlyclean: clean
 #								     #
 ######################################################################
 
-fnmatch.o: fnmatch.h
-fnmatch.o: $(BUILD_DIR)/config.h
+strmatch.o: strmatch.h
+strmatch.o: $(BUILD_DIR)/config.h
+strmatch.o: $(BASHINCDIR)/chartypes.h
 
 glob.o: $(BUILD_DIR)/config.h
-glob.o: $(topdir)/bashtypes.h $(topdir)/ansi_stdlib.h $(topdir)/bashansi.h
-glob.o: $(topdir)/posixstat.h $(topdir)/memalloc.h
-glob.o: fnmatch.h
+glob.o: $(topdir)/bashtypes.h $(BASHINCDIR)/ansi_stdlib.h $(topdir)/bashansi.h
+glob.o: $(BASHINCDIR)/posixstat.h $(BASHINCDIR)/memalloc.h
+glob.o: strmatch.h
 
 # Rules for deficient makes, like SunOS and Solaris
-fnmatch.o: fnmatch.c
+strmatch.o: strmatch.c
 glob.o: glob.c

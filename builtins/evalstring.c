@@ -4,7 +4,7 @@
 
    Bash is free software; you can redistribute it and/or modify it under
    the terms of the GNU General Public License as published by the Free
-   Software Foundation; either version 1, or (at your option) any later
+   Software Foundation; either version 2, or (at your option) any later
    version.
 
    Bash is distributed in the hope that it will be useful, but WITHOUT ANY
@@ -14,7 +14,7 @@
    
    You should have received a copy of the GNU General Public License along
    with Bash; see the file COPYING.  If not, write to the Free Software
-   Foundation, 675 Mass Ave, Cambridge, MA 02139, USA. */
+   Foundation, 59 Temple Place, Suite 330, Boston, MA 02111 USA. */
 
 #include <config.h>
 
@@ -30,7 +30,7 @@
 
 #include <errno.h>
 
-#include "../filecntl.h"
+#include "filecntl.h"
 #include "../bashansi.h"
 
 #include "../shell.h"
@@ -40,6 +40,7 @@
 #include "../input.h"
 #include "../execute_cmd.h"
 #include "../redir.h"
+#include "../trap.h"
 
 #if defined (HISTORY)
 #  include "../bashhist.h"
@@ -53,19 +54,15 @@ extern int errno;
 
 #define IS_BUILTIN(s)	(builtin_address_internal(s, 0) != (struct builtin *)NULL)
 
-extern void run_trap_cleanup ();
-
-extern int interactive, interactive_shell;
 extern int indirection_level, startup_state, subshell_environment;
 extern int line_number;
 extern int last_command_exit_value;
 extern int running_trap;
 extern int posixly_correct;
-extern COMMAND *global_command;
 
 int parse_and_execute_level = 0;
 
-static int cat_file ();
+static int cat_file __P((REDIRECT *));
 
 /* How to force parse_and_execute () to clean up after itself. */
 void
@@ -91,10 +88,10 @@ parse_and_execute_cleanup ()
 int
 parse_and_execute (string, from_file, flags)
      char *string;
-     char *from_file;
+     const char *from_file;
      int flags;
 {
-  int code;
+  int code, x;
   volatile int should_jump_to_top_level, last_result;
   char *orig_string;
   COMMAND *volatile command;
@@ -119,6 +116,12 @@ parse_and_execute (string, from_file, flags)
 #  endif /* BANG_HISTORY */
 #endif /* HISTORY */
 
+  if (interactive_shell)
+    {
+      x = get_current_prompt_level ();
+      add_unwind_protect (set_current_prompt_level, x);
+    }
+  
   add_unwind_protect (pop_stream, (char *)NULL);
   if (orig_string)
     add_unwind_protect (xfree, orig_string);
@@ -168,7 +171,7 @@ parse_and_execute (string, from_file, flags)
 
 	    case DISCARD:
 	      run_unwind_frame ("pe_dispose");
-	      last_command_exit_value = 1;	/* XXX */
+	      last_result = last_command_exit_value = EXECUTION_FAILURE; /* XXX */
 	      if (subshell_environment)
 		{
 		  should_jump_to_top_level = 1;
@@ -231,7 +234,7 @@ parse_and_execute (string, from_file, flags)
 
 	      /* See if this is a candidate for $( <file ). */
 	      if (startup_state == 2 &&
-		  subshell_environment == SUBSHELL_COMSUB &&
+		  (subshell_environment & SUBSHELL_COMSUB) &&
 		  *bash_input.location.string == '\0' &&
 		  command->type == cm_simple && !command->redirects &&
 		  (command->flags & CMD_TIME_PIPELINE) == 0 &&
@@ -270,8 +273,8 @@ parse_and_execute (string, from_file, flags)
   if (interrupt_state && parse_and_execute_level == 0)
     {
       /* An interrupt during non-interactive execution in an
-         interactive shell (e.g. via $PROMPT_COMMAND) should
-         not cause the shell to exit. */
+	 interactive shell (e.g. via $PROMPT_COMMAND) should
+	 not cause the shell to exit. */
       interactive = interactive_shell;
       throw_to_top_level ();
     }
@@ -282,36 +285,6 @@ parse_and_execute (string, from_file, flags)
   return (last_result);
 }
 
-/* Write NB bytes from BUF to file descriptor FD, retrying the write if
-   it is interrupted.  We retry three times if we get a zero-length
-   write.  Any other signal causes this function to return prematurely. */
-static int
-zwrite (fd, buf, nb)
-     int fd;
-     unsigned char *buf;
-     int nb;
-{
-  int n, i, nt;
-
-  for (n = nb, nt = 0;;)
-    {
-      i = write (fd, buf, n);
-      if (i > 0)
-	{
-	  n -= i;
-	  if (n <= 0)
-	    return nb;
-	}
-      else if (i == 0)
-	{
-	  if (++nt > 3)
-	    return (nb - n);
-	}
-      else if (errno != EINTR)
-	return -1;
-    }
-}
-
 /* Handle a $( < file ) command substitution.  This expands the filename,
    returning errors as appropriate, then just cats the file to the standard
    output. */
@@ -320,7 +293,8 @@ cat_file (r)
      REDIRECT *r;
 {
   char lbuf[128], *fn;
-  int nr, fd, rval;
+  int fd, rval;
+  ssize_t nr;
 
   if (r->instruction != r_input_direction)
     return -1;
@@ -349,10 +323,7 @@ cat_file (r)
   rval = 0;
   while (1)
     {
-      /* Retry the reads on EINTR.  Any other error causes a break from the
-	 loop. */
-      while ((nr = read (fd, lbuf, sizeof(lbuf))) < 0 && errno == EINTR)
- 	;
+      nr = zread (fd, lbuf, sizeof(lbuf));
       if (nr == 0)
 	break;
       else if (nr < 0)
@@ -370,5 +341,5 @@ cat_file (r)
   free (fn);
   close (fd);
 
-  return (0);  
+  return (rval);
 }

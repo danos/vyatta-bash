@@ -13,12 +13,14 @@
 
    You should have received a copy of the GNU General Public License
    along with this program; if not, write to the Free Software
-   Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.  */
+   Foundation, 59 Temple Place, Suite 330, Boston, MA 02111 USA.  */
 
 /* XXX THIS HAS BEEN MODIFIED FOR INCORPORATION INTO BASH XXX */
 
 #ifndef _SH_GETOPT_H
 #define _SH_GETOPT_H 1
+
+#include "stdc.h"
 
 /* For communication from `getopt' to the caller.
    When `getopt' finds an option that takes an argument,
@@ -54,7 +56,7 @@ extern int sh_optopt;
 /* Set to 1 when an unrecognized option is encountered. */
 extern int sh_badopt;
 
-extern int sh_getopt ();
-extern void sh_getopt_restore_state ();
+extern int sh_getopt __P((int, char *const *, const char *));
+extern void sh_getopt_restore_state __P((char **));
 
 #endif /* _SH_GETOPT_H */

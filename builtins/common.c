@@ -4,7 +4,7 @@
 
    Bash is free software; you can redistribute it and/or modify it under
    the terms of the GNU General Public License as published by the Free
-   Software Foundation; either version 1, or (at your option) any later
+   Software Foundation; either version 2, or (at your option) any later
    version.
 
    Bash is distributed in the hope that it will be useful, but WITHOUT ANY
@@ -14,7 +14,7 @@
    
    You should have received a copy of the GNU General Public License along
    with Bash; see the file COPYING.  If not, write to the Free Software
-   Foundation, 675 Mass Ave, Cambridge, MA 02139, USA. */
+   Foundation, 59 Temple Place, Suite 330, Boston, MA 02111 USA. */
 
 #include <config.h>
 
@@ -26,8 +26,9 @@
 #endif
 
 #include <stdio.h>
+#include <chartypes.h>
 #include "../bashtypes.h"
-#include "../posixstat.h"
+#include "posixstat.h"
 #include <signal.h>
 
 #include <errno.h>
@@ -43,7 +44,7 @@
 #include "../bashansi.h"
 
 #include "../shell.h"
-#include "../maxpath.h"
+#include "maxpath.h"
 #include "../flags.h"
 #include "../jobs.h"
 #include "../builtins.h"
@@ -63,20 +64,18 @@
 extern int errno;   
 #endif /* !errno */
 
-extern int no_symbolic_links, interactive, interactive_shell;
+extern int no_symbolic_links;
 extern int indirection_level, startup_state, subshell_environment;
 extern int line_number;
 extern int last_command_exit_value;
 extern int running_trap;
-extern int variable_context;
 extern int posixly_correct;
 extern char *this_command_name, *shell_name;
-extern COMMAND *global_command;
 extern char *bash_getcwd_errstr;
 
 /* Used by some builtins and the mainline code. */
-Function *last_shell_builtin = (Function *)NULL;
-Function *this_shell_builtin = (Function *)NULL;
+sh_builtin_func_t *last_shell_builtin = (sh_builtin_func_t *)NULL;
+sh_builtin_func_t *this_shell_builtin = (sh_builtin_func_t *)NULL;
 
 /* **************************************************************** */
 /*								    */
@@ -321,7 +320,7 @@ set_dollar_vars_changed ()
 
 /* **************************************************************** */
 /*								    */
-/*	        Validating numeric input and arguments		    */
+/*		Validating numeric input and arguments		    */
 /*								    */
 /* **************************************************************** */
 
@@ -331,7 +330,7 @@ set_dollar_vars_changed ()
    follow.  If FATAL is true, call throw_to_top_level, which exits the
    shell; if not, call jump_to_top_level (DISCARD), which aborts the
    current command. */
-int
+long
 get_numeric_arg (list, fatal)
      WORD_LIST *list;
      int fatal;
@@ -353,7 +352,29 @@ get_numeric_arg (list, fatal)
 	}
       no_args (list->next);
     }
+
   return (count);
+}
+
+/* Get an eight-bit status value from LIST */
+int
+get_exitstat (list)
+     WORD_LIST *list;
+{
+  int status;
+  long sval;
+  char *arg;
+
+  arg = list->word->word;
+  if (arg == 0 || legal_number (arg, &sval) == 0)
+    {
+      builtin_error ("bad non-numeric arg `%s'", list->word->word);
+      return 255;
+    }
+  no_args (list->next);
+
+  status = sval & 255;
+  return status;
 }
 
 /* Return the octal number parsed from STRING, or -1 to indicate
@@ -365,13 +386,15 @@ read_octal (string)
   int result, digits;
 
   result = digits = 0;
-  while (*string && *string >= '0' && *string < '8')
+  while (*string && ISOCTAL (*string))
     {
       digits++;
-      result = (result * 8) + *string++ - '0';
+      result = (result * 8) + (*string++ - '0');
+      if (result > 0777)
+	return -1;
     }
 
-  if (!digits || result > 0777 || *string)
+  if (digits == 0 || *string)
     result = -1;
 
   return (result);
@@ -403,17 +426,14 @@ get_working_directory (for_whom)
 
   if (the_current_working_directory == 0)
     {
-      the_current_working_directory = xmalloc (PATH_MAX);
+      the_current_working_directory = (char *)xmalloc (PATH_MAX);
       the_current_working_directory[0] = '\0';
       directory = getcwd (the_current_working_directory, PATH_MAX);
       if (directory == 0)
 	{
 	  fprintf (stderr, "%s: could not get current directory: %s: %s\n",
 		   (for_whom && *for_whom) ? for_whom : get_name_for_error (),
-		   the_current_working_directory[0]
-			? the_current_working_directory
-			: bash_getcwd_errstr,
-		   strerror (errno));
+		   bash_getcwd_errstr, strerror (errno));
 
 	  free (the_current_working_directory);
 	  the_current_working_directory = (char *)NULL;
@@ -446,7 +466,7 @@ get_job_spec (list)
      WORD_LIST *list;
 {
   register char *word;
-  int job, substring;
+  int job, substring_search;
 
   if (list == 0)
     return (current_job);
@@ -459,13 +479,13 @@ get_job_spec (list)
   if (*word == '%')
     word++;
 
-  if (digit (*word) && all_digits (word))
+  if (DIGIT (*word) && all_digits (word))
     {
       job = atoi (word);
-      return (job - 1);
+      return (job >= job_slots ? NO_JOB : job - 1);
     }
 
-  substring = 0;
+  substring_search = 0;
   switch (*word)
     {
     case 0:
@@ -477,7 +497,7 @@ get_job_spec (list)
       return (previous_job);
 
     case '?':			/* Substring search requested. */
-      substring++;
+      substring_search++;
       word++;
       /* FALLTHROUGH */
 
@@ -495,15 +515,17 @@ get_job_spec (list)
 		p = jobs[i]->pipe;
 		do
 		  {
-		    if ((substring && strindex (p->command, word)) ||
+		    if ((substring_search && strindex (p->command, word)) ||
 			(STREQN (p->command, word, wl)))
-		      if (job != NO_JOB)
-			{
-			  builtin_error ("ambigious job spec: %s", word);
-			  return (DUP_JOB);
-			}
-		      else
-			job = i;
+		      {
+			if (job != NO_JOB)
+			  {
+			    builtin_error ("ambigious job spec: %s", word);
+			    return (DUP_JOB);
+			  }
+			else
+			  job = i;
+		      }
 
 		    p = p->next;
 		  }
@@ -655,33 +677,33 @@ builtin_address_internal (name, disabled_okay)
 }
 
 /* Return the pointer to the function implementing builtin command NAME. */
-Function *
+sh_builtin_func_t *
 find_shell_builtin (name)
      char *name;
 {
   current_builtin = builtin_address_internal (name, 0);
-  return (current_builtin ? current_builtin->function : (Function *)NULL);
+  return (current_builtin ? current_builtin->function : (sh_builtin_func_t *)NULL);
 }
 
 /* Return the address of builtin with NAME, whether it is enabled or not. */
-Function *
+sh_builtin_func_t *
 builtin_address (name)
      char *name;
 {
   current_builtin = builtin_address_internal (name, 1);
-  return (current_builtin ? current_builtin->function : (Function *)NULL);
+  return (current_builtin ? current_builtin->function : (sh_builtin_func_t *)NULL);
 }
 
 /* Return the function implementing the builtin NAME, but only if it is a
    POSIX.2 special builtin. */
-Function *
+sh_builtin_func_t *
 find_special_builtin (name)
      char *name;
 {
   current_builtin = builtin_address_internal (name, 0);
   return ((current_builtin && (current_builtin->flags & SPECIAL_BUILTIN)) ?
   			current_builtin->function :
-  			(Function *)NULL);
+  			(sh_builtin_func_t *)NULL);
 }
   
 static int
@@ -701,162 +723,6 @@ shell_builtin_compare (sbp1, sbp2)
 void
 initialize_shell_builtins ()
 {
-#ifdef _MINIX
   qsort (shell_builtins, num_shell_builtins, sizeof (struct builtin),
-    (int (*)(const void *, const void *))shell_builtin_compare);
-#else
-  qsort (shell_builtins, num_shell_builtins, sizeof (struct builtin),
-    shell_builtin_compare);
-#endif
-}
-
-/* **************************************************************** */
-/*								    */
-/*	 Functions for quoting strings to be re-read as input	    */
-/*								    */
-/* **************************************************************** */
-
-/* Return a new string which is the single-quoted version of STRING.
-   Used by alias and trap, among others. */
-char *
-single_quote (string)
-     char *string;
-{
-  register int c;
-  char *result, *r, *s;
-
-  result = (char *)xmalloc (3 + (4 * strlen (string)));
-  r = result;
-  *r++ = '\'';
-
-  for (s = string; s && (c = *s); s++)
-    {
-      *r++ = c;
-
-      if (c == '\'')
-	{
-	  *r++ = '\\';	/* insert escaped single quote */
-	  *r++ = '\'';
-	  *r++ = '\'';	/* start new quoted string */
-	}
-    }
-
-  *r++ = '\'';
-  *r = '\0';
-
-  return (result);
-}
-
-/* Quote STRING using double quotes.  Return a new string. */
-char *
-double_quote (string)
-     char *string;
-{
-  register int c;
-  char *result, *r, *s;
-
-  result = (char *)xmalloc (3 + (2 * strlen (string)));
-  r = result;
-  *r++ = '"';
-
-  for (s = string; s && (c = *s); s++)
-    {
-      switch (c)
-        {
-	case '"':
-	case '$':
-	case '`':
-	case '\\':
-	  *r++ = '\\';
-	default:
-	  *r++ = c;
-	  break;
-        }
-    }
-
-  *r++ = '"';
-  *r = '\0';
-
-  return (result);
-}
-
-/* Quote special characters in STRING using backslashes.  Return a new
-   string. */
-char *
-backslash_quote (string)
-     char *string;
-{
-  int c;
-  char *result, *r, *s;
-
-  result = xmalloc (2 * strlen (string) + 1);
-
-  for (r = result, s = string; s && (c = *s); s++)
-    {
-      switch (c)
-	{
-	case ' ': case '\t': case '\n':		/* IFS white space */
-	case '\'': case '"': case '\\':		/* quoting chars */
-	case '|': case '&': case ';':		/* shell metacharacters */
-	case '(': case ')': case '<': case '>':
-	case '!': case '{': case '}':		/* reserved words */
-	case '*': case '[': case '?': case ']':	/* globbing chars */
-	case '^':
-	case '$': case '`':			/* expansion chars */
-	  *r++ = '\\';
-	  *r++ = c;
-	  break;
-#if 0
-	case '~':				/* tilde expansion */
-	  if (s == string || s[-1] == '=' || s[-1] == ':')
-	    *r++ = '\\';
-	  *r++ = c;
-	  break;
-#endif
-	case '#':				/* comment char */
-	  if (s == string)
-	    *r++ = '\\';
-	  /* FALLTHROUGH */
-	default:
-	  *r++ = c;
-	  break;
-	}
-    }
-
-  *r = '\0';
-  return (result);
-}
-
-int
-contains_shell_metas (string)
-     char *string;
-{
-  char *s;
-
-  for (s = string; s && *s; s++)
-    {
-      switch (*s)
-	{
-	case ' ': case '\t': case '\n':		/* IFS white space */
-	case '\'': case '"': case '\\':		/* quoting chars */
-	case '|': case '&': case ';':		/* shell metacharacters */
-	case '(': case ')': case '<': case '>':
-	case '!': case '{': case '}':		/* reserved words */
-	case '*': case '[': case '?': case ']':	/* globbing chars */
-	case '^':
-	case '$': case '`':			/* expansion chars */
-	  return (1);
-	case '~':				/* tilde expansion */
-	  if (s == string || s[-1] == '=' || s[-1] == ':')
-	    return (1);
-	case '#':
-	  if (s == string)			/* comment char */
-	    return (1);
-	  /* FALLTHROUGH */
-	default:
-	  break;
-	}
-    }
-
-  return (0);
+    (QSFUNC *)shell_builtin_compare);
 }

@@ -17,57 +17,27 @@ exit 0
 
 # DP: Modified readline examples to properly build with Debian setup.
 
---- ./lib/readline/examples/fileman.c.orig	Wed Jan 29 18:03:11 1997
-+++ ./lib/readline/examples/fileman.c	Thu Nov 11 20:31:41 1999
-@@ -5,7 +5,7 @@
-  * Remove the next line if you're compiling this against an installed
-  * libreadline.a
-  */
--#define READLINE_LIBRARY
-+/* #define READLINE_LIBRARY */
- 
- #ifdef HAVE_CONFIG_H
- #include <config.h>
-
---- ./lib/readline/examples/rl.c.orig	Wed Jun  3 19:38:31 1998
-+++ ./lib/readline/examples/rl.c	Thu Nov 11 20:31:41 1999
-@@ -17,9 +17,9 @@
- 
- #include <stdio.h>
- #include <sys/types.h>
--#include "posixstat.h"
--#include "readline.h"
--#include "history.h"
-+#include <sys/stat.h>
-+#include <readline/readline.h>
-+#include <readline/history.h>
- 
- extern int optind;
- extern char *optarg;
-
---- ./lib/readline/examples/rltest.c.orig	Thu Aug 21 20:04:06 1997
-+++ ./lib/readline/examples/rltest.c	Thu Nov 11 20:31:41 1999
-@@ -16,8 +16,8 @@
- 
- #include <stdio.h>
- #include <sys/types.h>
--#include "readline.h"
--#include "history.h"
-+#include <readline/readline.h>
-+#include <readline/history.h>
- 
- extern HIST_ENTRY **history_list ();
- 
 --- ./lib/readline/examples/Makefile.orig	Fri Nov 26 23:13:35 1999
 +++ ./lib/readline/examples/Makefile	Fri Nov 26 23:15:19 1999
 @@ -1,8 +1,8 @@
  # This is the Makefile for the examples subdirectory of readline. -*- text -*-
  #
  EXECUTABLES = fileman rltest rl
--CFLAGS  = -g -I../.. -I..
+-CFLAGS  = -g -I../.. -I.. -DREADLINE_LIBRARY
 -LDFLAGS = -g -L..
 +CFLAGS  = -g
 +LDFLAGS = -g
  
  .c.o:
  	$(CC) $(CFLAGS) -c $<
+--- ./lib/readline/examples/rl.c~	Mon Nov  8 22:22:03 1999
++++ ./lib/readline/examples/rl.c	Fri Dec 31 17:34:30 1999
+@@ -11,7 +11,7 @@
+ 
+ #include <stdio.h>
+ #include <sys/types.h>
+-#include "posixstat.h"
++#include <sys/stat.h>
+ 
+ #if defined (READLINE_LIBRARY)
+ #  include "readline.h"

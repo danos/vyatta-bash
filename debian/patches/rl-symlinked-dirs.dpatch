@@ -1,0 +1,86 @@
+#! /bin/sh -e
+
+if [ $# -eq 3 -a "$2" = '-d' ]; then
+    pdir="-d $3"
+elif [ $# -ne 1 ]; then
+    echo >&2 "`basename $0`: script expects -patch|-unpatch as argument"
+    exit 1
+fi
+case "$1" in
+    -patch) patch $pdir -f --no-backup-if-mismatch -p1 < $0;;
+    -unpatch) patch $pdir -f --no-backup-if-mismatch -R -p1 < $0;;
+    *)
+	echo >&2 "`basename $0`: script expects -patch|-unpatch as argument"
+	exit 1
+esac
+exit 0
+
+# DP: Taken from the current upstream sources:
+# DP:   Make the symlinked directory completion behavior introduced in
+# DP:   readline-4.2a a user-settable option. If `mark-symlinked-directories'
+# DP:   is non-zero, the symlinked directory completion behavior is disabled,
+# DP:   and symlinks that point to directories have a slash appended.
+
+--- ./lib/readline/bind.c~	Mon Oct 15 20:30:43 2001
++++ ./lib/readline/bind.c	Wed Jan  9 18:09:59 2002
+@@ -1250,6 +1250,7 @@
+   { "input-meta",		&_rl_meta_flag,			0 },
+   { "mark-directories",		&_rl_complete_mark_directories,	0 },
+   { "mark-modified-lines",	&_rl_mark_modified_lines,	0 },
++  { "mark-symlinked-directories", &_rl_complete_mark_symlink_dirs, 0 },
+   { "match-hidden-files",	&_rl_match_hidden_files,	0 },
+   { "meta-flag",		&_rl_meta_flag,			0 },
+   { "output-meta",		&_rl_output_meta_chars,		0 },
+--- ./lib/readline/rlprivate.h~	Mon Oct 29 16:24:34 2001
++++ ./lib/readline/rlprivate.h	Wed Jan  9 18:10:34 2002
+@@ -207,6 +207,7 @@
+ /* complete.c */
+ extern int _rl_complete_show_all;
+ extern int _rl_complete_mark_directories;
++extern int _rl_complete_mark_symlink_dirs;
+ extern int _rl_print_completions_horizontally;
+ extern int _rl_completion_case_fold;
+ extern int _rl_match_hidden_files;
+--- ./lib/readline/complete.c~	Mon Oct 15 20:31:41 2001
++++ ./lib/readline/complete.c	Wed Jan  9 18:13:49 2002
+@@ -132,6 +132,12 @@
+ /* If non-zero, completed directory names have a slash appended. */
+ int _rl_complete_mark_directories = 1;
+ 
++/* If non-zero, the symlinked directory completion behavior introduced in
++   readline-4.2a is disabled, and symlinks that point to directories have
++   a slash appended (subject to the value of _rl_complete_mark_directories).
++   This is user-settable via the mark-symlinked-directories variable. */
++int _rl_complete_mark_symlink_dirs = 0;
++
+ /* If non-zero, completions are printed horizontally in alphabetical order,
+    like `ls -x'. */
+ int _rl_print_completions_horizontally;
+@@ -1179,7 +1185,9 @@
+   if (rl_filename_completion_desired)
+     {
+       filename = tilde_expand (text);
+-      s = nontrivial_match ? LSTAT (filename, &finfo) : stat (filename, &finfo);
++      s = (nontrivial_match && _rl_complete_mark_symlink_dirs == 0)
++		? LSTAT (filename, &finfo)
++		: stat (filename, &finfo);
+       if (s == 0 && S_ISDIR (finfo.st_mode))
+ 	{
+ 	  if (_rl_complete_mark_directories && rl_line_buffer[rl_point] != '/')
+--- ./lib/readline/doc/rluser.texinfo~	Tue Oct  9 21:05:53 2001
++++ ./lib/readline/doc/rluser.texinfo	Wed Jan  9 18:30:53 2002
+@@ -512,6 +512,14 @@
+ asterisk (@samp{*}) at the start of history lines which have been modified.
+ This variable is @samp{off} by default.
+ 
++@item mark-symlinked-directories
++@vindex mark-symlinked-directories
++This variable, when set to @samp{on}, causes Readline to disable the
++the symlinked directory completion behavior introduced in readline-4.2a.
++Symlinks that point to directories have a slash appended on completion.
++This variable is @samp{off} by default. NOTE: This is Debian specific backport
++from the upstream readline sources.
++
+ @item match-hidden-files
+ @vindex match-hidden-files
+ This variable, when set to @samp{on}, causes Readline to match files whose

@@ -2,13 +2,15 @@ Source: bash
 Section: base
 Priority: required
 Maintainer: Matthias Klose <doko@debian.org>
-Standards-Version: 3.1.0
-Build-Depends: autoconf, patch, libncurses5-dev
+Standards-Version: 3.5.6
+Build-Depends: autoconf, patch, bison, libncurses5-dev, libreadline4-dev (>= 4.2a-4), texinfo
 
 Package: bash
 Architecture: any
 Pre-Depends: ${shlibs:Pre-Depends}
 Depends: base-files (>= 2.1.12)
+Conflicts: bash-completion
+Replaces: bash-doc (<= 2.05-1), bash-completion
 Essential: yes
 Section: base
 Priority: required
@@ -18,7 +20,7 @@ Description: The GNU Bourne Again SHell
  incorporates useful features from the Korn and C shells (ksh and csh).
  .
  Bash is ultimately intended to be a conformant implementation of the
- IEEE Posix Shell and Tools specification (IEEE Working Group 1003.2).
+ IEEE POSIX Shell and Tools specification (IEEE Working Group 1003.2).
 
 Package: bash-builtins
 Architecture: any

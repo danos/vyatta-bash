@@ -16,16 +16,20 @@
 
    You should have received a copy of the GNU General Public License along
    with Bash; see the file COPYING.  If not, write to the Free Software
-   Foundation, 675 Mass Ave, Cambridge, MA 02139, USA. */
+   Foundation, 59 Temple Place, Suite 330, Boston, MA 02111 USA. */
 
+#ifdef HAVE_CONFIG_H
 #include "config.h"
+#endif
 
 #include "bashjmp.h"
 
 #include "command.h"
+#include "syntax.h"
 #include "general.h"
 #include "error.h"
 #include "variables.h"
+#include "arrayfunc.h"
 #include "quit.h"
 #include "maxpath.h"
 #include "unwind_prot.h"
@@ -35,12 +39,12 @@
 #include "sig.h"
 #include "pathnames.h"
 #include "externs.h"
+#include "version.h"
 
 extern int EOF_Reached;
 
 #define NO_PIPE -1
 #define REDIRECT_BOTH -2
-#define IS_DESCRIPTOR -1
 
 #define NO_VARIABLE -1
 
@@ -65,26 +69,6 @@ extern int EOF_Reached;
 #define EX_BADASSIGN	260	/* variable assignment error */
 #define EX_EXPFAIL	261	/* word expansion failed */
 
-/* The list of characters that are quoted in double-quotes with a
-   backslash.  Other characters following a backslash cause nothing
-   special to happen. */
-#define slashify_in_quotes "\\`$\"\n"
-#define slashify_in_here_document "\\`$"
-
-/* Constants which specify how to handle backslashes and quoting in
-   expand_word_internal ().  Q_DOUBLE_QUOTES means to use the function
-   slashify_in_quotes () to decide whether the backslash should be
-   retained.  Q_HERE_DOCUMENT means slashify_in_here_document () to
-   decide whether to retain the backslash.  Q_KEEP_BACKSLASH means
-   to unconditionally retain the backslash. */
-#define Q_DOUBLE_QUOTES  0x1
-#define Q_HERE_DOCUMENT  0x2
-#define Q_KEEP_BACKSLASH 0x4
-#define Q_NOQUOTE	 0x8
-#define Q_QUOTED	 0x10
-#define Q_ADDEDQUOTES	 0x20
-#define Q_QUOTEDNULL	 0x40
-
 /* Flag values that control parameter pattern substitution. */
 #define MATCH_ANY	0x0
 #define MATCH_BEG	0x1
@@ -101,11 +85,12 @@ extern WORD_LIST *rest_of_args;
 
 /* Generalized global variables. */
 extern int executing, login_shell;
+extern int interactive, interactive_shell;
 
 /* Structure to pass around that holds a bitmap of file descriptors
    to close, and the size of that structure.  Used in execute_cmd.c. */
 struct fd_bitmap {
-  long size;
+  int size;
   char *bitmap;
 };
 
@@ -124,3 +109,11 @@ struct user_info {
 };
 
 extern struct user_info current_user;
+
+/* Force gcc to not clobber X on a longjmp().  Old versions of gcc mangle
+   this badly. */
+#if __GNUC__ == 2 && __GNUC_MINOR__ > 8
+#  define USE_VAR(x)	((void) &(x))
+#else
+#  define USE_VAR(x)
+#endif

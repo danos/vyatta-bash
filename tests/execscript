@@ -1,6 +1,10 @@
 export LC_ALL=C
 export LANG=C
 
+if (( $UID == 0 )); then
+        echo "execscript: the test suite should not be run as root" >&2
+fi
+
 set -- one two three
 echo before exec1.sub: "$@"
 echo calling exec1.sub
@@ -35,9 +39,12 @@ echo $?
 . /
 echo $?
 
+# try sourcing a binary file -- post-2.04 versions don't do the binary file
+# check, and will probably fail with `command not found', or status 127
 . ${THIS_SH} 2>/dev/null
 echo $?
 
+# post-bash-2.05 versions allow sourcing non-regular files
 . /dev/null
 echo $?
 
@@ -79,3 +86,11 @@ ${THIS_SH} ./exec4.sub
 
 # try exec'ing a command that cannot be found in $PATH
 ${THIS_SH} ./exec5.sub
+
+# this was a bug in bash versions before bash-2.04
+${THIS_SH} -c 'cat </dev/null | cat >/dev/null' >&-
+
+# checks for proper return values in subshell commands with inverted return
+# values
+
+${THIS_SH} ./exec6.sub

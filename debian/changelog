@@ -1,3 +1,435 @@
+bash (2.05a-11) unstable; urgency=medium
+
+  * Don't mishandle negative pid in `kill' builtin (closes: #133927, #137742).
+  * builtins(1) doesn't document `for' (closes: #118755).
+  * Add /usr/share/bash_completion directory to source package specific
+    completion files.
+  * Update to bash_completion 20020408 (v1.264).
+    Closes: #133109, #139375, #139675, #134713, #141134.
+  * Add completion to /etc/skel/.bashrc (commented out). Closes: #138921.
+
+ -- Matthias Klose <doko@debian.org>  Mon,  8 Apr 2002 20:51:41 +0200
+
+bash (2.05a-10) unstable; urgency=medium
+
+  * Init seed of random generator in subshells (patch from Miha Tomsic).
+  * Update to bash_completion 20020330 (v1.237).
+    Closes: #138673, #138707, #139110 and #139675.
+  * Strip bash(1) again (closes: #138902).
+
+ -- Matthias Klose <doko@debian.org>  Sun, 31 Mar 2002 08:08:26 +0200
+
+bash (2.05a-9) unstable; urgency=low
+
+  * Fix bug reading /etc/bash_completion.d files.
+
+ -- Matthias Klose <doko@debian.org>  Sat, 16 Mar 2002 00:54:28 +0100
+
+bash (2.05a-8) unstable; urgency=low
+
+  * A last bash_completion bug fix upload (updated to v1.195,
+    see changelog.bash_completion.gz for details).
+    All files in /etc/bash_completion.d are read before ~/.bash_completion
+    is read. Files containing a dot are ignored.
+    Included completion extensions (closes: #129661, #137725, #137732).
+
+ -- Matthias Klose <doko@debian.org>  Tue, 12 Mar 2002 23:25:21 +0100
+
+bash (2.05a-7) unstable; urgency=low
+
+  * A bash_completion bug fix upload (updated to v1.180,
+    see changelog.bash_completion.gz for details). Really closes: #133825.
+
+ -- Matthias Klose <doko@debian.org>  Thu,  7 Mar 2002 00:06:14 +0100
+
+bash (2.05a-6) unstable; urgency=medium
+
+  * Configure --without-bash-malloc. At least on hppa, this fixes an error,
+    which shows up when building gcc or kernels:
+    malloc: /build/buildd/bash-2.05a/unwind_prot.c:284: assertion botched
+    free: called with unallocated block argument
+  * A bash_completion bug fix upload (updated to v1.163,
+    see changelog.bash_completion.gz for details).
+    Closes: #133111, #133112, #133116, #133825, #134296.
+  * Updated service completion patch (Ian Macdonald).
+
+ -- Matthias Klose <doko@debian.org>  Sat,  2 Mar 2002 00:27:22 +0100
+
+bash (2.05a-5) unstable; urgency=medium
+
+  * A bash_completion bug fix upload (updated to v1.93,
+    see changelog.bash_completion.gz for details).
+    Closes: #129106, #130167, #129033, #129228, #129451, #129884, #132309,
+    #132529, #132552, #132553.
+    Ian even added completion for Quake! Horrible ...
+  * Include service completion patch.
+  * README.bash_completion: Fix reference to /etc/bash.bashrc (closes: #129816).
+
+ -- Matthias Klose <doko@debian.org>  Wed,  6 Feb 2002 22:22:09 +0100
+
+bash (2.05a-4) unstable; urgency=high
+
+  * Fix for causing a segmentation fault when some special shell variables
+    are declared as array (therefore urgency high).
+  * Apply patch for function prototypes (closes: #124004, #124362).
+  * Capitalize `POSIX' in package description (closes: #124439).
+  * Add (commented) setting of MANPATH to /etc/skel/.bash_profile
+    (closes: #123792).
+  * Update builtins(1) (closes: #125673).
+  * Taken from the current upstream sources: Make the symlinked directory
+    completion behavior introduced in readline-4.2a a user-settable option.
+    If `mark-symlinked-directories' is set to `on', the symlinked directory
+    completion behavior is disabled, and symlinks that point to directories
+    have a slash appended.
+  * Add a script for programmable bash completion (version 1.53) from
+    http://www.caliban.org/bash/index.shtml#completion. Add commented
+    code into /etc/bash.bashrc and (closes: #127645).
+  * Install the changelog _and_ the CHANGES file to the doc dir.
+  * bash(1): mention quoting when assigning to FIGNORE (closes: #115290).
+
+ -- Matthias Klose <doko@debian.org>  Sat, 12 Jan 2002 16:00:08 +0100
+
+bash (2.05a-3) unstable; urgency=low
+
+  * Include version.h in /usr/include/bash (closes: #120069).
+  * Link statically with readline and history to speed up link time
+    (and was done in bash-2.03). Closes: #107160.
+  * Add comment to set HISTCONTROL in /etc/skel/.bashrc (closes: #118132).
+
+ -- Matthias Klose <doko@debian.org>  Sat,  8 Dec 2001 12:29:28 +0100
+
+bash (2.05a-2) unstable; urgency=high
+
+  * Update config.{sub,guess} from ftp://ftp.gnu.org/pub/gnu/config/.
+
+ -- Matthias Klose <doko@debian.org>  Fri, 16 Nov 2001 19:07:06 +0100
+
+bash (2.05a-1) unstable; urgency=medium
+
+  * New upstream release.
+  * This is mainly a bugfix and code cleanup release (as you can see
+    from the version number as well). Fixes 64bit issues and index
+    overflow errors. Fixes the following Debian reports:
+    - Segmentation fault in script from report (closes: #119250).
+    - Extensions to the printf command (closes: #72320).
+    - Accept an empty list of items in a for loop (as ash does).
+      Closes: #91983.
+    - A bug that caused redirections with (...) subshells to be performed in
+      the wrong order was fixed (closes: #97551).
+    - Correctly handle errors from pipelines in andor lists (closes: #102196).
+    - Subshells of login shells no longer source ~/.bash_logout when they exit
+      (closes: #117701).
+    - Don't pass unset shell variable in the environment (closes: #117673).
+  * Upstream integrates the following Debian patches:
+    - debian/patches/mailcheck.dpatch: check for mail in the maildir format.
+    - debian/patches/gnu-source.dpatch: define GNU_SOURCE and include
+      strsignal prototype.
+    - Don't include -I/usr/include in CFLAGS.
+    - debian/patches/print-cmd.dpatch: Fixed an unassigned variable problem
+      in the redirection printing code.
+    - debian/patches/64bit.dpatch: 64-bit uncleanliness.
+  * Unable to reproduce behaviour with beta1, rc1 and final version from
+    report (closes: #110483, #110484).
+  * Point to the bash-doc package for example startup files (closes: #117642).
+  * The man page is precises: comments start with a word beginning with a `#'.
+    With '\ #', the doesn't start a word. Closes: #115118.
+
+ -- Matthias Klose <doko@debian.org>  Wed, 14 Nov 2001 22:13:21 +0100
+
+bash (2.05a-0rc1) unstable; urgency=low
+
+  * New upstream (bugfix) release (release candidate).
+  * Add README.abs-guide, a pointer to the `Advanced Bash Scripting Guide'.
+
+ -- Matthias Klose <doko@debian.org>  Fri,  2 Nov 2001 10:59:11 +0100
+
+bash (2.05a-0beta1) unstable; urgency=low
+
+  * New upstream (bugfix) release.
+  * Configured with --enable-largefile.
+  * Bugs fixed in this version. Closes: #72320, #91983, #97551, #102196,
+    #105231, #110483, #110484.
+  * Remove debian/patches/mailcheck.dpatch, included upstream.
+  * Closes: #61006. Logging history commands in the history cannot work.
+  * Not a bug (closes: #100743, #110604).
+
+ -- Matthias Klose <doko@debian.org>  Thu, 11 Oct 2001 23:05:20 +0200
+
+bash (2.05-10) unstable; urgency=medium
+
+  * Rebuild with released libreadline library (closes: #113182).
+
+ -- Matthias Klose <doko@debian.org>  Sun, 23 Sep 2001 01:16:48 +0200
+
+bash (2.05-9) unstable; urgency=medium
+
+  * Remove files left from test build (closes: #110307, #109807).
+  * Apply patches from reports (closes: #110275, #110276).
+  * Fix include of rbash man page (closes: #113111).
+
+ -- Matthias Klose <doko@debian.org>  Sat, 22 Sep 2001 11:26:44 +0200
+
+bash (2.05-8) unstable; urgency=low
+
+  * Apply patch (Eric Gillespie) to define GNU_SOURCE and include
+    strsignal prototype (closes: #109807).
+  * Fix include of builtins man page (closes: #109917).
+
+ -- Matthias Klose <doko@debian.org>  Sun, 26 Aug 2001 08:35:47 +0200
+
+bash (2.05-7) unstable; urgency=high
+
+  * Remove config.{cache,status} from source package (#107679).
+    (high urgency for hurd).
+  * /etc/skel/.bashrc: Fix dircolors invocation (closes: #107373).
+    Add commented code to set xterm's title to the prompt.
+
+ -- Matthias Klose <doko@debian.org>  Mon,  6 Aug 2001 23:33:41 +0200
+
+bash (2.05-6) unstable; urgency=low
+
+  * Apply upstream patches p5, p6.
+  * Include missing header files in builtins package (closes: #105302).
+  * Don't list names of built-in commands in NAME section of builtins(1).
+    (closes: #99532).
+  * Document deprecated syntax of arithmetic evaluation (closes: #94266,
+    #95502).
+  * README.Debian: Document unsetting of SSH_CLIENT (closes: #88032).
+
+ -- Matthias Klose <doko@debian.org>  Sat, 21 Jul 2001 18:41:10 +0200
+
+bash (2.05-5) unstable; urgency=low
+
+  * The behavior of range specificiers within bracket matching expressions
+    in the pattern matcher (e.g., [A-Z]) depends on the current locale,
+    specifically the value of the LC_COLLATE environment variable.
+    See /usr/share/doc/COMPAT.gz, 14. Closes #95285.
+  * Tagging reports as 'wontfix' and closing reports:
+    - exit status of pipes (#7047, #10494).
+    - completion behaviour on ':' (#78991).
+    - */text* completion (#21645).
+  * Documentation of command hashing is documented (#76135).
+
+ -- Matthias Klose <doko@debian.org>  Thu, 26 Apr 2001 09:03:37 +0200
+
+bash (2.05-4) unstable; urgency=low
+
+  * Apply upstream patches p1-p4 (closes #92455).
+  * Fixed in bash-2.05-alpha1: closes #47588.
+
+ -- Matthias Klose <doko@debian.org>  Wed, 25 Apr 2001 19:32:36 +0200
+
+bash (2.05-3) unstable; urgency=low
+
+  * Add 'Replaces: bash-doc (<= 2.05-1)' (closes: #93799).
+
+ -- Matthias Klose <doko@debian.org>  Fri, 13 Apr 2001 01:15:19 +0200
+
+bash (2.05-2) unstable; urgency=medium
+
+  * Tighten build dependency (fixes #93509). Only an issue for upgrades
+    from bash-2.05-0, therefore urgency=medium.
+  * Remove changelog from bash package (also in bash-doc). Reported as
+    #93446, #93454, #93455.
+  * Fixed in bash-2.04, wrong example in report (#33822).
+  * Documented behaviour (ulimit, #72898).
+  * Use of redirection for #92324.
+  * sed, awk, ... builtins should be provided by the specific package.
+    there are other ways to make system scripts faster (ash, perl,
+    python, ...) (#61648).
+  * Unable to reproduce #34977 submitted for version 2.02.1, bug submitter
+    didn't respond to inquiries. Closing ...
+  * http://metalab.unc.edu/pub/Linux/docs/HOWTO/other-formats/html_single/Text-Terminal-HOWTO.html
+    as explanation for C-s behaviour (#68387, not sure why I missed this
+    for so long).
+  * Part one of the report is Posix.2 behaviour; part 2 (cd-ing relatively
+    from a subdirectory into a specified root-level directory) already
+    fixed in bash-2.04. #65316.
+  * Closing #13645. "The `-l' option should never have been documented, and it
+    was a mistake to include it in the first place -- it screws up the grammar.
+    Old Bourne shells and test commands had it because there was no other
+    way to find the length of a variable's value.  Since bash has
+    ${#variable}, there's no need for it.  POSIX.2 says, in the rationale,
+    that implementation is irregular and that the shell supports it directly
+  * Unable to reproduce #19211 submitted for version 2.01 in current
+    versions (2.04, 2.05).
+  * Close #2301, safe creation of temp files is documented in bash(1):
+    "If the redirection operator is >, and the noclobber option to the set
+    builtin has been enabled, the redirection will fail if the file whose
+    name results from the expansion of word exists and is a regular file.
+    If the redirection operator is >|, or the redirection operator is > and
+    the noclobber option to the set builtin command is not enabled, the
+    redirection is attempted even if the file named by word exists."
+  * Fixed upstream in 2.05: #84743.
+  * #76596: Bourne-style shells have always accepted multiple directory name
+    arguments to cd.  If the user doesn't like it, have him define a shell
+    function (see README.Debian).
+  * bash already has enabled the system wide /etc/bash.bashrc (#82117).
+  * #88223: Starting bash with --posix, or -o posix, or as `sh', does make
+    the entire bash session posix-compliant (with the caveats noted in the
+    info manual).  Posix-compliant does not mean `behaves exactly like
+    historical versions of sh', nor does it mean `does only what is in
+    the standard and nothing more'.
+
+    Posix says nothing about brace expansion, so whether or not bash does
+    brace expansion in posix mode has no bearing on posix compliance.
+
+    If you don't want brace expansion, use `set +o braceexpand' or
+    `set +B' or start bash with the `+B' option.
+
+  * Lower temporarily severity of #92455, so that this version can move
+    to testing. This bug exists in 2.04 as well, so we don't make things
+    worse.
+  * Apply upstream patch 1.
+
+ -- Matthias Klose <doko@debian.org>  Mon,  9 Apr 2001 23:29:24 +0200
+
+bash (2.05-1) unstable; urgency=low
+
+  * New upstream release.
+  * /etc/skel/.bashrc: fix alias (#92440).
+
+ -- Matthias Klose <doko@debian.org>  Mon,  9 Apr 2001 18:24:10 +0200
+
+bash (2.05-0beta2) unstable; urgency=low
+
+  * New upstream release 2.05-beta2.
+  * Fixed upstream: #85234.
+
+ -- Matthias Klose <doko@debian.org>  Thu, 29 Mar 2001 23:57:12 +0200
+
+bash (2.05-0beta1) unstable; urgency=low
+
+  * New upstream release 2.05-beta1.
+  * Fixed upstream: #66891, #67519, #68931, #72898, #75104, #75315, #75957,
+    #76603, #84906.
+    Reverted behaviour: #60375, #75540.
+  * /etc/skel/.bash_logout: Removed. Submitted bug report to util-linux.
+    Fixes #63025, #72327, #83609.
+  * Depend on makeinfo (fixes #87688).
+
+ -- Matthias Klose <doko@debian.org>  Tue,  6 Feb 2001 18:46:40 +0100
+
+bash (2.05-0alpha) unstable; urgency=low
+
+  * New upstream release.
+
+ -- Matthias Klose <doko@debian.org>  Sun, 26 Nov 2000 17:32:16 +0100
+
+bash (2.04-9) unstable; urgency=low
+
+  * Fix build bug.
+
+ -- Matthias Klose <doko@debian.org>  Mon, 20 Nov 2000 23:35:03 +0100
+
+bash (2.04-8) unstable; urgency=low
+
+  * debian/control: Add bison to Build-Depends (fixes #73667).
+  * debian/rules: Add config.h to bash-builtins package (fixes #69802).
+    Strip bash binary (fixes #71252).
+
+ -- Matthias Klose <doko@debian.org>  Sat, 18 Nov 2000 14:01:54 +0100
+
+bash (2.04-7) unstable; urgency=low
+
+  * debian/skel.bash_logout: Fix to clear all ttys (fixes #67772).
+  * debian/skel.bash_profile: Fix to include expanded ~/bin in path
+    (fixes #67714).
+  * Fix builtins.1 include (fixes #67094, #70007, #71848).
+  * debian/README.Debian: Document that bash is compiled with
+    -DSYS_BASHRC (fixes #66939).
+  * Fix hsuser doc (fixes #69392).
+
+ -- Matthias Klose <doko@debian.org>  Mon,  2 Oct 2000 01:26:45 +0200
+
+bash (2.04-6) unstable; urgency=low
+
+  * debian/skel.bash_profile: Clarify where to look for for example files
+    (package bash-doc). Fixes #64311.
+  * debian/README.Debian: Explain, why bash is configured without
+    '--enable-net-redirections' (fixes #66352).
+
+ -- Matthias Klose <doko@debian.org>  Wed, 28 Jun 2000 19:47:25 +0200
+
+bash (2.04-5) unstable; urgency=low
+
+  * debian/patches/alpha-unwind.dpatch: Patch from "Mikolaj J. Habryn"
+    <fe78734e@eris.rcpt.to>. Should fix #62170, #62690, #65053.
+  * debian/rules: Configure with --disable-net-redirections (as suggested
+    in #65172). The patch submitted in the report can be found in
+    debian/patches/tcp-udp-service-names.dpatch.
+  * debian/patches/getcwd-error: Fix error message for two levels of
+    unreadable directories (#64659).
+
+ -- Matthias Klose <doko@debian.org>  Mon,  5 Jun 2000 05:59:59 +0200
+
+bash (2.04-4) unstable; urgency=low
+
+  * debian/patches/p[5-7].dpatch: Upstream patches.
+
+ -- Matthias Klose <doko@debian.org>  Wed,  3 May 2000 01:05:23 +0200
+
+bash (2.04-3) unstable; urgency=low
+
+  * debian/patches/p[1-4].dpatch: Upstream patches.
+  * debian/bash.preinst.c: s/MAX_PATH/PATH_MAX/g (fixes #62323).
+
+ -- Matthias Klose <doko@debian.org>  Wed, 26 Apr 2000 19:53:16 +0200
+
+bash (2.04-2) unstable; urgency=low
+
+  * debian/patches/pattern-operator.dpatch: Fix pattern operator bug.
+  * debian/README.Debian: Add FAQ how to get rid off beeps for ambiguous
+    completions (fixes #59550).
+
+ -- Matthias Klose <doko@debian.org>  Sat,  8 Apr 2000 22:06:34 +0200
+
+bash (2.04-1) unstable; urgency=low
+
+  * Final release.
+  * Don't strip bash (debugging #58404 ...).
+
+ -- Matthias Klose <doko@debian.org>  Mon, 20 Mar 2000 19:37:44 +0100
+
+bash (2.04-0beta5db1) unstable; urgency=low
+
+  * New upstream version, beta 5, Debian build 1.
+  * Remove six dpatch files with patches now integrated upstream.
+  * Bugs fixed with this upstream version: #5703, #15165, #21363, #21901,
+    #33900, #36652, #38804, #41916, #47179, #47990, #50353, #56209, #57544.
+  * Compiled with NON_INTERACTIVE_LOGIN_SHELLS to run the startup files when
+    not in posix mode. Fixes #11938, #14287, #25245.
+  * Still in this version: #27090.
+  * The `-l' option to test is not included by intent (fixes #13645).
+    Comment from upstream: "The `-l' option should never have been documented,
+    and it was a mistake to include it in the first place -- it screws up the
+    grammar. Old Bourne shells and test commands had it because there was no
+    other way to find the length of a variable's value.  Since bash has
+    ${#variable}, there's no need for it.  POSIX.2 says, in the rationale,
+    that implementation is irregular and that the shell supports it directly.
+  * Report #26720: perl -e 'print ":;" x 100000' > foo; . ./foo   dumps core.
+    Comment from upstream: This is not a bash bug; it is a process resource
+    problem.  The default resource limit for stack size is 8M on my version of
+    Linux. The call tree created by the parser for the script (100000 calls
+    to `:') is 99999 nodes deep, and requires that many recursive calls to the
+    command execution routines.  This overflows the stack, and bash segfaults.
+    I couldn't reproduce it anywhere but Linux, because the machines I tested
+    on all have reasonable default stack sizes.  Raising the limit to 16M is
+    sufficient to cause the script to run successfully (I didn't try anything
+    between 8M and 16M).
+  * Report #30460: redirection is different from standard: bash --posix
+    $ mkdir foo; cd foo; echo anything goes > "this file"
+    $ for f in *; do tr ay \ o < $f | cat; done
+    sh: $f: ambiguous redirect
+    This is POSIX.2 behaviour.
+  * debian/bash.preinst.c: Check if /bin/sh points to something other than
+    bash and is not diverted and point to README.Debian how to divert
+    a file (fixes #34717, #45656).
+  * debian/patches/random.dpatch: Fix bug in patch (closes #38804).
+  * debian/README.Debian: Commented behaviour from report #50853.
+
+ -- Matthias Klose <doko@debian.org>  Thu, 24 Feb 2000 19:34:10 +0100
+
 bash (2.03-6) frozen unstable; urgency=medium
 
   * debian/bash.preinst.c: Evil kludge, deal with arbitrary name lengths
@@ -38,16 +470,16 @@ bash (2.03-4) unstable; urgency=low
     Comment from upstream: "The `-l' option should never have been documented,
     and it was a mistake to include it in the first place -- it screws up the
     grammar. Old Bourne shells and test commands had it because there was no
-    other way to find the length of a variable's value.  Since bash has 
-    ${#variable}, there's no need for it.  POSIX.2 says, in the rationale, 
+    other way to find the length of a variable's value.  Since bash has
+    ${#variable}, there's no need for it.  POSIX.2 says, in the rationale,
     that implementation is irregular and that the shell supports it directly.
   * Report #26720: perl -e 'print ":;" x 100000' > foo; . ./foo   dumps core.
     Comment from upstream: This is not a bash bug; it is a process resource
     problem.  The default resource limit for stack size is 8M on my version of
     Linux. The call tree created by the parser for the script (100000 calls
-    to `:') is 99999 nodes deep, and requires that many recursive calls to the 
+    to `:') is 99999 nodes deep, and requires that many recursive calls to the
     command execution routines.  This overflows the stack, and bash segfaults.
-    I couldn't reproduce it anywhere but Linux, because the machines I tested 
+    I couldn't reproduce it anywhere but Linux, because the machines I tested
     on all have reasonable default stack sizes.  Raising the limit to 16M is
     sufficient to cause the script to run successfully (I didn't try anything
     between 8M and 16M).

@@ -16,7 +16,7 @@
 
    You should have received a copy of the GNU General Public License along
    with Bash; see the file COPYING.  If not, write to the Free Software
-   Foundation, 675 Mass Ave, Cambridge, MA 02139, USA. */
+   Foundation, 59 Temple Place, Suite 330, Boston, MA 02111 USA. */
 
 #include "config.h"
 
@@ -54,7 +54,7 @@ extern int last_command_exit_value;
 extern int return_catch_flag;
 extern int loop_level, continuing, breaking;
 extern int parse_and_execute_level, shell_initialized;
-extern int interactive, interactive_shell, login_shell, startup_state;
+extern int startup_state;
 
 /* Non-zero after SIGINT. */
 int interrupt_state;
@@ -71,7 +71,7 @@ sigset_t top_level_mask;
 /* When non-zero, we throw_to_top_level (). */
 int interrupt_immediately = 0;
 
-static void initialize_shell_signals ();
+static void initialize_shell_signals __P((void));
 
 void
 initialize_signals ()
@@ -86,7 +86,7 @@ initialize_signals ()
 void
 reinitialize_signals ()
 {
-  initialize_shell_signals (1);
+  initialize_shell_signals ();
   initialize_job_signals ();
 }
 
@@ -105,87 +105,89 @@ struct termsig {
    and so forth. */
 static struct termsig terminating_signals[] = {
 #ifdef SIGHUP
-  SIGHUP, NULL_HANDLER,
+{  SIGHUP, NULL_HANDLER },
 #endif
 
 #ifdef SIGINT
-  SIGINT, NULL_HANDLER,
+{  SIGINT, NULL_HANDLER },
 #endif
 
 #ifdef SIGILL
-  SIGILL, NULL_HANDLER,
+{  SIGILL, NULL_HANDLER },
 #endif
 
 #ifdef SIGTRAP
-  SIGTRAP, NULL_HANDLER,
+{  SIGTRAP, NULL_HANDLER },
 #endif
 
 #ifdef SIGIOT
-  SIGIOT, NULL_HANDLER,
+{  SIGIOT, NULL_HANDLER },
 #endif
 
 #ifdef SIGDANGER
-  SIGDANGER, NULL_HANDLER,
+{  SIGDANGER, NULL_HANDLER },
 #endif
 
 #ifdef SIGEMT
-  SIGEMT, NULL_HANDLER,
+{  SIGEMT, NULL_HANDLER },
 #endif
 
 #ifdef SIGFPE
-  SIGFPE, NULL_HANDLER,
+{  SIGFPE, NULL_HANDLER },
 #endif
 
 #ifdef SIGBUS
-  SIGBUS, NULL_HANDLER,
+{  SIGBUS, NULL_HANDLER },
 #endif
 
 #ifdef SIGSEGV
-  SIGSEGV, NULL_HANDLER,
+{  SIGSEGV, NULL_HANDLER },
 #endif
 
 #ifdef SIGSYS
-  SIGSYS, NULL_HANDLER,
+{  SIGSYS, NULL_HANDLER },
 #endif
 
 #ifdef SIGPIPE
-  SIGPIPE, NULL_HANDLER,
+{  SIGPIPE, NULL_HANDLER },
 #endif
 
 #ifdef SIGALRM
-  SIGALRM, NULL_HANDLER,
+{  SIGALRM, NULL_HANDLER },
 #endif
 
 #ifdef SIGTERM
-  SIGTERM, NULL_HANDLER,
+{  SIGTERM, NULL_HANDLER },
 #endif
 
 #ifdef SIGXCPU
-  SIGXCPU, NULL_HANDLER,
+{  SIGXCPU, NULL_HANDLER },
 #endif
 
 #ifdef SIGXFSZ
-  SIGXFSZ, NULL_HANDLER,
+{  SIGXFSZ, NULL_HANDLER },
 #endif
 
 #ifdef SIGVTALRM
-  SIGVTALRM, NULL_HANDLER,
+{  SIGVTALRM, NULL_HANDLER },
 #endif
 
+#if 0
 #ifdef SIGPROF
-  SIGPROF, NULL_HANDLER,
+{  SIGPROF, NULL_HANDLER },
+#endif
 #endif
 
 #ifdef SIGLOST
-  SIGLOST, NULL_HANDLER,
+{  SIGLOST, NULL_HANDLER },
 #endif
 
 #ifdef SIGUSR1
-  SIGUSR1, NULL_HANDLER,
+{  SIGUSR1, NULL_HANDLER },
 #endif
 
 #ifdef SIGUSR2
-  SIGUSR2, NULL_HANDLER,
+{  SIGUSR2, NULL_HANDLER },
 #endif
 };
 
@@ -228,13 +230,13 @@ initialize_terminating_signals ()
       /* Don't do anything with signals that are ignored at shell entry
 	 if the shell is not interactive. */
       if (!interactive_shell && XHANDLER (i) == SIG_IGN)
-        {
+	{
 	  sigaction (XSIG (i), &oact, &act);
 	  set_signal_ignored (XSIG (i));
-        }
+	}
 #if defined (SIGPROF) && !defined (_MINIX)
       if (XSIG (i) == SIGPROF && XHANDLER (i) != SIG_DFL && XHANDLER (i) != SIG_IGN)
-        sigaction (XSIG (i), &oact, (struct sigaction *)NULL);
+	sigaction (XSIG (i), &oact, (struct sigaction *)NULL);
 #endif /* SIGPROF && !_MINIX */
     }
 
@@ -247,12 +249,12 @@ initialize_terminating_signals ()
 	 if the shell is not interactive. */
       if (!interactive_shell && XHANDLER (i) == SIG_IGN)
 	{
-          signal (XSIG (i), SIG_IGN);
-          set_signal_ignored (XSIG (i));
+	  signal (XSIG (i), SIG_IGN);
+	  set_signal_ignored (XSIG (i));
 	}
 #ifdef SIGPROF
       if (XSIG (i) == SIGPROF && XHANDLER (i) != SIG_DFL && XHANDLER (i) != SIG_IGN)
-        signal (XSIG (i), XHANDLER (i));
+	signal (XSIG (i), XHANDLER (i));
 #endif
     }
 
@@ -272,7 +274,9 @@ initialize_shell_signals ()
      to child processes.  Children will never block SIGCHLD, though. */
   sigemptyset (&top_level_mask);
   sigprocmask (SIG_BLOCK, (sigset_t *)NULL, &top_level_mask);
+#  if defined (SIGCHLD)
   sigdelset (&top_level_mask, SIGCHLD);
+#  endif
 #endif /* JOB_CONTROL || HAVE_POSIX_SIGNALS */
 
   /* And, some signals that are specifically ignored by the shell. */
@@ -347,7 +351,7 @@ throw_to_top_level ()
     parse_and_execute_cleanup ();
 
 #if defined (JOB_CONTROL)
-  give_terminal_to (shell_pgrp);
+  give_terminal_to (shell_pgrp, 0);
 #endif /* JOB_CONTROL */
 
 #if defined (JOB_CONTROL) || defined (HAVE_POSIX_SIGNALS)

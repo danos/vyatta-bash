@@ -18,7 +18,7 @@
 
    You should have received a copy of the GNU General Public License along
    with Bash; see the file COPYING.  If not, write to the Free Software
-   Foundation, 675 Mass Ave, Cambridge, MA 02139, USA. */
+   Foundation, 59 Temple Place, Suite 330, Boston, MA 02111 USA. */
 
 /* Define PATTERN_MATCHING to get the csh-like =~ and !~ pattern-matching
    binary operators. */
@@ -32,9 +32,7 @@
 
 #include "bashtypes.h"
 
-#if defined (HAVE_LIMITS_H)
-#  include <limits.h>
-#else
+#if !defined (HAVE_LIMITS_H)
 #  include <sys/param.h>
 #endif
 
@@ -58,7 +56,7 @@ extern int errno;
 #include "test.h"
 #include "builtins/common.h"
 
-#include <glob/fnmatch.h>
+#include <glob/strmatch.h>
 
 #if !defined (STRLEN)
 #  define STRLEN(s) ((s)[0] ? ((s)[1] ? ((s)[2] ? strlen(s) : 2) : 1) : 0)
@@ -67,10 +65,6 @@ extern int errno;
 #if !defined (STREQ)
 #  define STREQ(a, b) ((a)[0] == (b)[0] && strcmp (a, b) == 0)
 #endif /* !STREQ */
-
-#if !defined (member)
-#  define member(c, s) (int)((c) ? (char *)strchr ((s), (c)) : 0)
-#endif /* !member */
 
 #if !defined (R_OK)
 #define R_OK 4
@@ -119,25 +113,31 @@ static int argc;	/* The number of arguments present in ARGV. */
 static char **argv;	/* The argument list. */
 static int noeval;
 
-static int unary_operator ();
-static int binary_operator ();
-static int two_arguments ();
-static int three_arguments ();
-static int posixtest ();
+static void test_syntax_error __P((char *, char *)) __attribute__((__noreturn__));
+static void beyond __P((void)) __attribute__((__noreturn__));
+static void integer_expected_error __P((char *)) __attribute__((__noreturn__));
 
-static int expr ();
-static int term ();
-static int and ();
-static int or ();
+static int test_stat __P((char *, struct stat *));
 
-static void beyond ();
+static int unary_operator __P((void));
+static int binary_operator __P((void));
+static int two_arguments __P((void));
+static int three_arguments __P((void));
+static int posixtest __P((void));
+
+static int expr __P((void));
+static int term __P((void));
+static int and __P((void));
+static int or __P((void));
+
+static int filecomp __P((char *, char *, int));
+static int arithcomp __P((char *, char *, int, int));
+static int patcomp __P((char *, char *, int));
 
 static void
 test_syntax_error (format, arg)
      char *format, *arg;
 {
-  extern int interactive_shell;
-  extern char *get_name_for_error ();
   if (interactive_shell == 0)
     fprintf (stderr, "%s: ", get_name_for_error ());
   fprintf (stderr, "%s: ", argv[0]);
@@ -182,13 +182,16 @@ test_stat (path, finfo)
     {
 #if !defined (HAVE_DEV_FD)
       long fd;
-      if (legal_number (path + 8, &fd))
-	return (fstat ((int)fd, finfo));
-      else
-	{
-	  errno = EBADF;
-	  return (-1);
-	}
+      int r;
+
+      if (legal_number (path + 8, &fd) && fd == (int)fd)
+        {
+          r = fstat ((int)fd, finfo);
+          if (r == 0 || errno != EBADF)
+            return (r);
+        }
+      errno = ENOENT;
+      return (-1);
 #else
   /* If HAVE_DEV_FD is defined, DEV_FD_PREFIX is defined also, and has a
      trailing slash.  Make sure /dev/fd/xx really uses DEV_FD_PREFIX/xx.
@@ -200,6 +203,19 @@ test_stat (path, finfo)
       return (stat (pbuf, finfo));
 #endif /* !HAVE_DEV_FD */
     }
+#if !defined (HAVE_DEV_STDIN)
+  else if (STREQN (path, "/dev/std", 8))
+    {
+      if (STREQ (path+8, "in"))
+	return (fstat (0, finfo));
+      else if (STREQ (path+8, "out"))
+	return (fstat (1, finfo));
+      else if (STREQ (path+8, "err"))
+	return (fstat (2, finfo));
+      else
+	return (stat (path, finfo));
+    }
+#endif /* !HAVE_DEV_STDIN */
   return (stat (path, finfo));
 }
 
@@ -228,7 +244,7 @@ test_eaccess (path, mode)
 	return (0);
     }
 
-  if (st.st_uid == current_user.euid)        /* owner */
+  if (st.st_uid == current_user.euid)	/* owner */
     mode <<= 6;
   else if (group_member (st.st_gid))
     mode <<= 3;
@@ -270,7 +286,7 @@ or ()
   int value, v2;
 
   value = and ();
-  while (pos < argc && argv[pos][0] == '-' && argv[pos][1] == 'o' && !argv[pos][2])
+  if (pos < argc && argv[pos][0] == '-' && argv[pos][1] == 'o' && !argv[pos][2])
     {
       advance (0);
       v2 = or ();
@@ -291,7 +307,7 @@ and ()
   int value, v2;
 
   value = term ();
-  while (pos < argc && argv[pos][0] == '-' && argv[pos][1] == 'a' && !argv[pos][2])
+  if (pos < argc && argv[pos][0] == '-' && argv[pos][1] == 'a' && !argv[pos][2])
     {
       advance (0);
       v2 = and ();
@@ -345,7 +361,7 @@ term ()
       advance (1);
       value = expr ();
       if (argv[pos] == 0)
-        test_syntax_error ("`)' expected", (char *)NULL);
+	test_syntax_error ("`)' expected", (char *)NULL);
       else if (argv[pos][0] != ')' || argv[pos][1])
 	test_syntax_error ("`)' expected, found %s", argv[pos]);
       advance (0);
@@ -380,8 +396,19 @@ filecomp (s, t, op)
 {
   struct stat st1, st2;
 
-  if (test_stat (s, &st1) < 0 || test_stat (t, &st2) < 0)
-    return (FALSE);
+  if (test_stat (s, &st1) < 0)
+    {
+      st1.st_mtime = 0;
+      if (op == EF)
+	return (FALSE);
+    }
+  if (test_stat (t, &st2) < 0)
+    {
+      st2.st_mtime = 0;
+      if (op == EF)
+	return (FALSE);
+    }
+  
   switch (op)
     {
     case OT: return (st1.st_mtime < st2.st_mtime);
@@ -436,7 +463,7 @@ patcomp (string, pat, op)
 {
   int m;
 
-  m = fnmatch (pat, string, FNMATCH_EXTFLAG);
+  m = strmatch (pat, string, FNMATCH_EXTFLAG);
   return ((op == EQ) ? (m == 0) : (m != 0));
 }
 
@@ -462,8 +489,8 @@ binary_test (op, arg1, arg2, flags)
     {
       switch (op[1])
 	{
-        case 'n': return (filecomp (arg1, arg2, NT));		/* -nt */
-        case 'o': return (filecomp (arg1, arg2, OT));		/* -ot */
+	case 'n': return (filecomp (arg1, arg2, NT));		/* -nt */
+	case 'o': return (filecomp (arg1, arg2, OT));		/* -ot */
 	case 'l': return (arithcomp (arg1, arg2, LT, flags));	/* -lt */
 	case 'g': return (arithcomp (arg1, arg2, GT, flags));	/* -gt */
 	}
@@ -530,7 +557,7 @@ binary_operator ()
 static int
 unary_operator ()
 {
-  char *op, *arg;
+  char *op;
   long r;
 
   op = argv[pos];
@@ -541,10 +568,15 @@ unary_operator ()
   if (op[1] == 't')
     {
       advance (0);
-      if (pos < argc && legal_number (argv[pos], &r))
+      if (pos < argc)
 	{
-	  advance (0);
-	  return (unary_test (op, argv[pos - 1]));
+	  if (legal_number (argv[pos], &r))
+	    {
+	      advance (0);
+	      return (unary_test (op, argv[pos - 1]));
+	    }
+	  else
+	    return (FALSE);
 	}
       else
 	return (unary_test (op, "1"));
@@ -655,7 +687,7 @@ unary_test (op, arg)
     case 't':	/* File fd is a terminal? */
       if (legal_number (arg, &r) == 0)
 	return (FALSE);
-      return (isatty ((int)r));
+      return ((r == (int)r) && isatty ((int)r));
 
     case 'n':			/* True if arg has some length. */
       return (arg[0] != '\0');
@@ -666,6 +698,9 @@ unary_test (op, arg)
     case 'o':			/* True if option `arg' is set. */
       return (minus_o_option_value (arg) == 1);
     }
+
+  /* We can't actually get here, but this shuts up gcc. */
+  return (FALSE);
 }
 
 /* Return TRUE if OP is one of the test command's binary operators. */
@@ -718,7 +753,7 @@ test_binop (op)
 	    return (0);
 	  }
       else
-        return (0);
+	return (0);
     }
 }
 
@@ -763,6 +798,8 @@ two_arguments ()
 
 #define ANDOR(s)  (s[0] == '-' && !s[2] && (s[1] == 'a' || s[1] == 'o'))
 
+/* This could be augmented to handle `-t' as equivalent to `-t 1', but
+   POSIX requires that `-t' be given an argument. */
 #define ONE_ARG_TEST(s)		((s)[0] != '\0')
 
 static int
@@ -778,9 +815,9 @@ three_arguments ()
   else if (ANDOR (argv[pos+1]))
     {
       if (argv[pos+1][1] == 'a')
-        value = ONE_ARG_TEST(argv[pos]) && ONE_ARG_TEST(argv[pos+2]);
+	value = ONE_ARG_TEST(argv[pos]) && ONE_ARG_TEST(argv[pos+2]);
       else
-        value = ONE_ARG_TEST(argv[pos]) || ONE_ARG_TEST(argv[pos+2]);
+	value = ONE_ARG_TEST(argv[pos]) || ONE_ARG_TEST(argv[pos+2]);
       pos = argc;
     }
   else if (argv[pos][0] == '!' && argv[pos][1] == '\0')
@@ -853,8 +890,9 @@ test_command (margc, margv)
      char **margv;
 {
   int value;
-
   int code;
+
+  USE_VAR(margc);
 
   code = setjmp (test_exit_buf);
 
@@ -867,11 +905,11 @@ test_command (margc, margv)
     {
       --margc;
 
-      if (margc < 2)
-	test_exit (SHELL_BOOLEAN (FALSE));
-
       if (margv[margc] && (margv[margc][0] != ']' || margv[margc][1]))
 	test_syntax_error ("missing `]'", (char *)NULL);
+
+      if (margc < 2)
+	test_exit (SHELL_BOOLEAN (FALSE));
     }
 
   argc = margc;

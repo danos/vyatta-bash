@@ -2,13 +2,12 @@
 # -*- makefile -*-
 
 # architecture dependent variables
-ARCH			:= $(shell dpkg --print-gnu-build-architecture)
+	ARCH			:= $(shell dpkg --print-gnu-build-architecture)
 DEB_HOST_ARCH		:= $(shell dpkg-architecture -qDEB_HOST_ARCH)
 DEB_HOST_GNU_CPU	:= $(shell dpkg-architecture -qDEB_HOST_GNU_CPU)
 DEB_HOST_GNU_SYSTEM	:= $(shell dpkg-architecture -qDEB_HOST_GNU_SYSTEM)
 DEB_HOST_GNU_TYPE	:= $(shell dpkg-architecture -qDEB_HOST_GNU_TYPE)
 
-CCLIBC1	= $(ARCH)-linuxlibc1-gcc
 STRIP	= strip
 SHELL	= bash
 IX	= install -o 0 -g 0
@@ -17,34 +16,14 @@ ID	= install -o 0 -g 0 -m 644
 # build a statically linked bash?
 with_static = yes
 
-# built with installed libreadline4 and do not build readline packages?
-#with_installed_rl = yes
+# built with installed libreadline4?
 with_installed_rl = no
-
-#ifneq ($(with_installed_rl),yes)
-#  BINARY_ARCH_TARGETS	+= binary-rl binary-rld binary-rlg
-#  BUILD_TARGETS		+= build-rl-stamp
-#endif
-
-#ifeq ($(filter $(ARCH),i486 m68k),$(ARCH))
-#  BINARY_ARCH_TARGETS += binary-rl-libc5 binary-rld-libc5
-#  BINARY_BUILD_TARGETS = build-libc5
-#endif
 
 debflags =
 #ifeq ($(with_installed_rl),yes)
 #  debflags = \
 #	READLINE_LDFLAGS= \
 #	HISTORY_LDFLAGS=
-#endif
-#ifeq ($(with_static),yes)
-#  debflags = \
-#	READLINE_LIBRARY=$(builddir)/lib/readline/static/libreadline.a \
-#	READLINE_LDFLAGS="-L$(builddir)/lib/readline/static" \
-#	READLINE_LIB="-Wl,-Bstatic -lreadline -Wl,-Bdynamic" \
-#	HISTORY_LIBRARY=$(builddir)/lib/readline/static/libhistory.a \
-#	HISTORY_LDFLAGS="-L$(builddir)/lib/readline/static" \
-#	HISTORY_LIB="-Wl,-Bstatic -lhistory -Wl,-Bdynamic"
 #endif
 ifeq ($(with_static),yes)
   debflags = \
@@ -71,47 +50,48 @@ builddir	= $(PWD)/build
 
 default: build
 
+conf_args = --host=$(DEB_HOST_GNU_TYPE) \
+	--with-curses \
+	--disable-net-redirections \
+	--enable-largefile \
+	--prefix=/usr
+ifeq ($(with_installed_rl),yes)
+    conf_args += --with-installed-readline
+endif
+conf_args += --without-bash-malloc
+
 configure: configure-stamp
 configure-stamp: patch-stamp
 	$(checkdir)
 	rm -rf $(builddir)
 	mkdir $(builddir)
-ifeq ($(with_installed_rl),yes)
-	cd $(builddir) && $(srcdir)/configure --host=$(DEB_HOST_GNU_TYPE) \
-		--with-curses --with-installed-readline --prefix=/usr
-else
-	cd $(builddir) && $(srcdir)/configure --host=$(DEB_HOST_GNU_TYPE) \
-		--with-curses --prefix=/usr
-endif
+	cd $(builddir) && $(srcdir)/configure $(conf_args)
 	touch configure-stamp
 
 build: build-stamp
 build-stamp: configure-stamp
 	$(checkdir)
-	$(MAKE) -C $(builddir) SOVERSION=$(soversion) \
-		CFLAGS='-g -O2' \
-		deb_builddir=$(builddir)/ $(debflags)
+	$(MAKE) -C $(builddir) CFLAGS='-g -O2' deb_builddir=$(builddir)/ \
+		$(debflags)
 	cd debian; $(CC) -O2 -s -o bash.preinst bash.preinst.c
 	touch build-stamp
 
 clean:
 	$(checkdir)
 	rm -f configure*-stamp build*-stamp
-	rm -rf $(builddir) $(builddir_libc5)
-	rm -rf $(d) $(d_doc) $(d_bins) \
-		$(d_rl) $(d_rld) $(d_rlg) $(d_rl5) $(d_rl5d)
-	rm -f debian/{bash.preinst,rl.postinst}
+	rm -rf $(builddir)
+	rm -rf $(d) $(d_doc) $(d_bins)
+	rm -f debian/bash.preinst
 	$(MAKE) -f debian/rules unpatch
-	rm -rf debian/{files*,substvars,rl-libc[56].postinst}
+	rm -rf debian/{files*,substvars}
 	find . \( -name '*~' -o -name '*.rej' -o -name '*.orig' \) \
 		-print0 | xargs -0 rm -f
+	rm -f config.cache config.status
 
 install: checkroot install-stamp
 install-stamp: build-stamp
 	$(checkdir)
-	rm -rf $(d)
-	rm -rf $(d) $(d_doc) $(d_bins) \
-		$(d_rl) $(d_rld) $(d_rlg) $(d_rl5) $(d_rl5d)
+	rm -rf $(d) $(d_doc) $(d_bins)
 	mkdir -p $(d)/{bin,usr}
 	$(MAKE) -C $(builddir) install \
 		prefix=$(PWD)/$(d)/usr \
@@ -119,14 +99,15 @@ install-stamp: build-stamp
 		infodir=$(PWD)/$(d)/usr/share/info \
 		$(debflags)
 	mv $(d)/usr/bin/bash $(d)/bin/.
+	chmod 755 $(d)/usr/bin/bashbug
 	mkdir -p $(d_doc)/usr/share/info
 	mv $(d)/usr/share/info/bash.info $(d_doc)/usr/share/info/.
+	-find $(d) $(d_bins) $(d_doc) -type d ! -perm 755 | xargs chmod 755
 	touch install-stamp
 
 binary-indep: checkroot build install
 	$(IX) -d $(d_doc)/DEBIAN \
 		$(d_doc)/usr/share/doc/{$(p_doc),$(p)/examples/loadables}
-	$(ID) CWRU/changelog $(d_doc)/usr/share/doc/$(p)
 	find examples -type d \
 		| xargs -i $(IX) -d '$(d_doc)/usr/share/doc/$(p)/{}'
 	find examples -type f \
@@ -134,10 +115,9 @@ binary-indep: checkroot build install
 	rm -rf $(d_doc)/usr/share/doc/$(p)/examples/loadables
 	ln -sf ../$(p)/examples $(d_doc)/usr/share/doc/$(p_doc)/examples
 	$(ID) debian/changelog $(d_doc)/usr/share/doc/$(p_doc)/changelog.Debian
+#	$(ID) CHANGES $(d_doc)/usr/share/doc/bash/changelog
 	find $(d_doc)/usr/share/{info,doc} ! -name '*.gz' -type f \
-		| xargs gzip -9f
-	ln -sf ../$(p)/changelog.gz \
-		$(d_doc)/usr/share/doc/$(p_doc)/changelog.gz
+		| xargs gzip --best --verbose --force
 	$(ID) debian/bash.copyright $(d_doc)/usr/share/doc/$(p_doc)/copyright
 	$(IX) debian/bash-doc.postinst $(d_doc)/DEBIAN/postinst
 	$(IX) debian/bash-doc.prerm $(d_doc)/DEBIAN/prerm
@@ -149,28 +129,43 @@ binary-arch: binary-bash binary-b
 binary-bash: checkroot build install
 	$(checkdir)
 #	rm -rf $(d)
-	$(IX) -d $(d)/DEBIAN $(d)/{etc/skel,usr/share/doc/$(p)}
+	$(IX) -d $(d)/DEBIAN
+	$(IX) -d $(d)/{etc/skel,etc/bash_completion.d,usr/share/doc/$(p)}
+	$(IX) -d $(d)/usr/share/bash_completion
 	ln -sf bash $(d)/bin/rbash
-	$(STRIP) --strip-unneeded $(d)/bin/bash
+	$(STRIP) --strip-unneeded -R .note -R .comment $(d)/bin/bash
 	ln -sf bash $(d)/bin/sh
 	ln -sf bash.1.gz $(d)/usr/share/man/man1/sh.1.gz
-#	$(ID) debian/etc.profile $(d)/etc/profile
 	$(ID) debian/etc.bash.bashrc $(d)/etc/bash.bashrc
 	$(ID) debian/skel.bashrc $(d)/etc/skel/.bashrc
 	$(ID) debian/skel.bash_profile $(d)/etc/skel/.bash_profile
-	$(ID) debian/skel.bash_logout $(d)/etc/skel/.bash_logout
-	$(ID) NEWS COMPAT CHANGES doc/{FAQ,INTRO} CWRU/POSIX.NOTES \
+#	$(ID) debian/skel.bash_logout $(d)/etc/skel/.bash_logout
+	$(ID) NEWS COMPAT doc/{FAQ,INTRO} CWRU/POSIX.NOTES \
 		$(d)/usr/share/doc/$(p)
-	$(ID) debian/README.Debian $(d)/usr/share/doc/bash/.
-	$(ID) doc/{builtins.1,rbash.1} $(d)/usr/share/man/man1
+	$(ID) CWRU/changelog $(d)/usr/share/doc/bash/
+	$(ID) CHANGES $(d)/usr/share/doc/bash/
+	$(ID) debian/README.Debian debian/README.abs-guide \
+		$(d)/usr/share/doc/bash/.
+	$(ID) debian/inputrc.arrows $(d)/usr/share/doc/bash/.
+	$(ID) debian/bash_completion/bash_completion $(d)/etc/.
+	$(ID) debian/bash_completion/Changelog \
+		$(d)/usr/share/doc/bash/changelog.bash_completion
+	$(ID) debian/README.bash_completion $(d)/usr/share/doc/bash/
+	cat debian/bash_completion/README \
+		>> $(d)/usr/share/doc/bash/README.bash_completion
+	$(ID) doc/rbash.1 $(d)/usr/share/man/man1
+	$(ID) debian/builtins.1 $(d)/usr/share/man/man1
 	$(ID) debian/changelog $(d)/usr/share/doc/$(p)/changelog.Debian
 	find $(d)/usr/share/{doc,man} ! -name '*.gz' -type f | xargs gzip -9f
 	$(ID) debian/bash.copyright $(d)/usr/share/doc/$(p)/copyright
 	$(IX) debian/bash.preinst $(d)/DEBIAN/preinst
 	$(IX) debian/bash.postinst $(d)/DEBIAN/postinst
 	$(IX) debian/bash.prerm $(d)/DEBIAN/prerm
+	$(IX) debian/bash.postrm $(d)/DEBIAN/postrm
 	$(ID) debian/bash.conffiles $(d)/DEBIAN/conffiles
 	dpkg-shlibdeps -dPre-Depends $(d)/bin/bash debian/bash.preinst
+	sed 's/>= 4.2/>= 4.2a/' debian/substvars > debian/substvars.new \
+		&& mv -f debian/substvars.new debian/substvars
 	dpkg-gencontrol -isp -p$(p)
 	dpkg --build $(d) ..
 
@@ -182,7 +177,9 @@ binary-b: checkroot build install
 	rm -rf $(d_bins)
 	$(IX) -d $(d_bins)/{DEBIAN,usr/share/doc/$(p)/examples/loadables} \
 		$(d_bins)/{usr/{include/bash/{builtins,lib/{glob,tilde}}}}
-	$(ID) *.h config-top.h config-bot.h $(d_bins)/usr/include/bash/
+	$(ID) include/*.h *.h config-top.h config-bot.h \
+		$(builddir)/config.h $(builddir)/version.h \
+		$(d_bins)/usr/include/bash/
 	$(ID) builtins/*.h $(d_bins)/usr/include/bash/builtins/
 	$(ID) lib/glob/*.h $(d_bins)/usr/include/bash/lib/glob/
 	$(ID) lib/tilde/*.h $(d_bins)/usr/include/bash/lib/tilde/
@@ -196,7 +193,6 @@ binary-b: checkroot build install
 	$(IX) debian/bins.prerm $(d_bins)/DEBIAN/prerm
 	dpkg-gencontrol -isp -p$(p_bins) -P$(d_bins)
 	dpkg --build $(d_bins) ..
-
 
 define checkdir
 	test -f bashline.c -a -f debian/rules
@@ -223,36 +219,23 @@ patchdir	= debian/patches
 
 # which patches should be applied?
 debian_patches = \
-	builtin-echo \
+	arrayfunc \
 	bashbug-editor \
-	conf-update \
-	deb-build \
-	deb-defpath \
-	dont-report-sigpipe \
-	examples \
-	jobs-segfault \
-	mailcheck \
-	manpages \
+	deb-bash-config \
+	deb-examples \
 	man-vx-opts \
+	man-arithmetic \
+	man-fignore \
 	privmode \
 	random \
-	system-bashrc \
-	tempnam \
 	various \
-	rl-inputrc \
-	rl-ctrl-char \
-	rl-deb-build \
+	headers \
+	kill-group \
+	service_completion \
 	rl-examples \
-	rl-del-backspace-policy \
-	rl-paren-matching \
-	rl-shell-unknown-bug \
-	secure-build \
-	job-control-segfault
-
-#	privmode # see comment from upstream author in patch
-# 	applied-upstream
-#	rl-todo
-#	todo
+	rl-symlinked-dirs \
+	rl-inputrc \
+	rl-del-backspace-policy
 
 patch: patch-stamp
 apply-patches: patch-stamp

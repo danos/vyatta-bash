@@ -16,7 +16,7 @@
 
    You should have received a copy of the GNU General Public License along
    with Bash; see the file COPYING.  If not, write to the Free Software
-   Foundation, 675 Mass Ave, Cambridge, MA 02139, USA. */
+   Foundation, 59 Temple Place, Suite 330, Boston, MA 02111 USA. */
 
 #include "config.h"
 
@@ -33,10 +33,11 @@
 #include "pathexp.h"
 #include "flags.h"
 
-#include <glob/fnmatch.h>
+#include <glob/strmatch.h>
 
 #if defined (USE_POSIX_GLOB_LIBRARY)
 #  include <glob.h>
+typedef int posix_glob_errfunc_t __P((const char *, int));
 #else
 #  include <glob/glob.h>
 #endif
@@ -101,13 +102,13 @@ unquoted_glob_pattern_p (string)
    to match a filename should be performed. */
 char *
 quote_string_for_globbing (pathname, qflags)
-     char *pathname;
+     const char *pathname;
      int qflags;
 {
   char *temp;
   register int i, j;
 
-  temp = xmalloc (strlen (pathname) + 1);
+  temp = (char *)xmalloc (strlen (pathname) + 1);
 
   if ((qflags & QGLOB_CVTNULL) && QUOTED_NULL (pathname))
     {
@@ -118,13 +119,13 @@ quote_string_for_globbing (pathname, qflags)
   for (i = j = 0; pathname[i]; i++)
     {
       if (pathname[i] == CTLESC)
-        {
-          if ((qflags & QGLOB_FILENAME) && pathname[i+1] == '/')
-            continue;
+	{
+	  if ((qflags & QGLOB_FILENAME) && pathname[i+1] == '/')
+	    continue;
 	  temp[j++] = '\\';
-        }
+	}
       else
-        temp[j++] = pathname[i];
+	temp[j++] = pathname[i];
     }
   temp[j] = '\0';
 
@@ -137,25 +138,25 @@ quote_globbing_chars (string)
 {
   char *temp, *s, *t;
 
-  temp = xmalloc (strlen (string) * 2 + 1);
+  temp = (char *)xmalloc (strlen (string) * 2 + 1);
   for (t = temp, s = string; *s; )
     {
       switch (*s)
-        {
-        case '*':
-        case '[':
-        case ']':
-        case '?':
-        case '\\':
-          *t++ = '\\';
-          break;
-        case '+':
-        case '@':
-        case '!':
+	{
+	case '*':
+	case '[':
+	case ']':
+	case '?':
+	case '\\':
+	  *t++ = '\\';
+	  break;
+	case '+':
+	case '@':
+	case '!':
 	  if (s[1] == '(')	/*(*/
 	    *t++ = '\\';
 	  break;
-        }
+	}
       *t++ = *s++;
     }
   *t = '\0';
@@ -165,11 +166,11 @@ quote_globbing_chars (string)
 /* Call the glob library to do globbing on PATHNAME. */
 char **
 shell_glob_filename (pathname)
-     char *pathname;
+     const char *pathname;
 {
 #if defined (USE_POSIX_GLOB_LIBRARY)
   register int i;
-  char *temp, **return_value;
+  char *temp, **results;
   glob_t filenames;
   int glob_flags;
 
@@ -185,18 +186,33 @@ shell_glob_filename (pathname)
 
   glob_flags |= (GLOB_ERR | GLOB_DOOFFS);
 
-  i = glob (temp, glob_flags, (Function *)NULL, &filenames);
+  i = glob (temp, glob_flags, (posix_glob_errfunc_t *)NULL, &filenames);
 
   free (temp);
 
-  if (i == GLOB_NOSPACE || i == GLOB_ABEND)
+  if (i == GLOB_NOSPACE || i == GLOB_ABORTED)
     return ((char **)NULL);
   else if (i == GLOB_NOMATCH)
     filenames.gl_pathv = (char **)NULL;
   else if (i != 0)		/* other error codes not in POSIX.2 */
     filenames.gl_pathv = (char **)NULL;
 
-  return (filenames.gl_pathv);
+  results = filenames.gl_pathv;
+
+  if (results && ((GLOB_FAILED (results)) == 0))
+    {
+      if (should_ignore_glob_matches ())
+	ignore_glob_matches (results);
+      if (results && results[0])
+	sort_char_array (results);
+      else
+	{
+	  FREE (results);
+	  results = (char **)NULL;
+	}
+    }
+
+  return (results);
 
 #else /* !USE_POSIX_GLOB_LIBRARY */
 
@@ -234,7 +250,7 @@ static struct ignorevar globignore =
   (struct ign *)0,
   0,
   (char *)0,
-  (Function *)0,
+  (sh_iv_item_func_t *)0,
 };
 
 /* Set up to ignore some glob matches because the value of GLOBIGNORE
@@ -264,7 +280,7 @@ should_ignore_glob_matches ()
 /* Return 0 if NAME matches a pattern in the globignore.ignores list. */
 static int
 glob_name_is_acceptable (name)
-     char *name;
+     const char *name;
 {
   struct ign *p;
   int flags;
@@ -276,8 +292,8 @@ glob_name_is_acceptable (name)
   flags = FNM_PATHNAME | FNMATCH_EXTFLAG;
   for (p = globignore.ignores; p->val; p++)
     {
-      if (fnmatch (p->val, name, flags) != FNM_NOMATCH)
-        return (0);
+      if (strmatch (p->val, (char *)name, flags) != FNM_NOMATCH)
+	return (0);
     }
   return (1);
 }
@@ -291,19 +307,19 @@ glob_name_is_acceptable (name)
 static void
 ignore_globbed_names (names, name_func)
      char **names;
-     Function *name_func;
+     sh_ignore_func_t *name_func;
 {
   char **newnames;
   int n, i;
 
   for (i = 0; names[i]; i++)
     ;
-  newnames = (char **)xmalloc ((i + 1) * sizeof (char *));
+  newnames = alloc_array (i + 1);
 
   for (n = i = 0; names[i]; i++)
     {
       if ((*name_func) (names[i]))
-        newnames[n++] = names[i];
+	newnames[n++] = names[i];
       else
 	free (names[i]);
     }
@@ -385,7 +401,7 @@ setup_ignore_patterns (ivp)
       ivp->ignores[numitems].len = strlen (colon_bit);
       ivp->ignores[numitems].flags = 0;
       if (ivp->item_func)
-        (*ivp->item_func) (&ivp->ignores[numitems]);
+	(*ivp->item_func) (&ivp->ignores[numitems]);
       numitems++;
     }
   ivp->ignores[numitems].val = (char *)NULL;

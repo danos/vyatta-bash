@@ -1,0 +1,147 @@
+$Id: README,v 1.10 2002/04/03 19:33:20 ianmacd Exp $
+
+
+INSTALLATION
+------------
+
+If you are installing the source file manually as opposed to using a packaging
+system such as dpkg or rpm, put it somewhere on your system and source it from
+either /etc/bashrc or ~/.bashrc.
+
+Here's one possible way of doing that from /etc/bashrc:
+
+bash=${BASH_VERSION%.*}; bmajor=${bash%.*}; bminor=${bash#*.}
+if [ "$PS1" ] && [ $bmajor -eq 2 ] && [ $bminor '>' 04 ] \
+   && [ -f /etc/bash_completion ]; then # interactive shell
+        # Source completion code
+        . /etc/bash_completion
+fi
+unset bash bmajor bminor
+
+This code checks that the version of bash that is parsing the code is later
+than 2.04 and, if so, sources the bash completion code.
+
+While this code may, at first, seem overly complex, the advantage of using it
+is that it will also parse correctly when interpreted by bash 1.x. If you have
+bash 1.x and bash 2.x users on your system, you must avoid using constructs
+that were not valid under 1.x syntax.
+
+If you are putting the bash completion source file somewhere other than
+/etc/bash_completion, you will need to edit the top of the file to make
+$BASH_COMPLETION point to the correct location.
+
+The line you need to adjust is this one:
+
+[ -z "$BASH_COMPLETION" ] && declare -r BASH_COMPLETION=/etc/bash_completion
+
+
+TROUBLESHOOTING
+---------------
+
+If you get errors about 'complete' or 'compgen' not accepting the -g flag,
+you are probably running bash 2.05 and should either apply the group completion
+patch, download a prepatched bash binary of 2.05, or upgrade to 2.05a or later.
+
+If you find that some commands, such as 'cd /usr<Tab>', end with a trailing
+space instead of appending a /, you are probably running the base version of
+bash 2.05, which suffers from a bug that causes the '-o filenames' option to
+the complete built-in to be ignored. You can fix this by applying the following
+the following official patch from the bash maintainer:
+
+	ftp://ftp.cwru.edu/pub/bash/bash-2.05-patches/bash205-006
+
+If you get errors about 'complete' not accepting the -o flag, you are probably
+running bash 2.04. In this case, you should upgrade to bash 2.05a or later.
+However, I have endeavoured to make the code detect this version of bash and
+work around this issue, so please inform me if you still encounter this error.
+
+Copies of the patches and prepatched versions of bash are available from:
+
+			http://www.caliban.org/bash/
+
+If you find that a given function is producing errors under certain
+circumstances when you attempt completion, try running 'set -v' or 'set -x'
+prior to attempting the completion again. This will produce useful debugging
+output that will aid me in fixing the problem if you are unable to do so
+yourself. Turn off the trace output by running either 'set +v' or 'set +x'.
+
+KNOWN PROBLEMS
+--------------
+
+I.
+
+There seems to be some issue with using the bash built-in cd within Makefiles.
+When invoked as /bin/sh within Makefiles, bash seems to have a problem changing
+directory via the cd command. A work-around for this is to define
+SHELL=/bin/bash within your Makefile. This is believed to be a bug in bash.
+
+II.
+
+The have() function is used to conserve memory by only installing completion
+functions for those programs that are actually present on your system. The
+current method of determining whether or not a given binary is present is
+whether or not it is in your $PATH.
+
+This approach has the disadvantage that sudo completion will not be able to
+perform sub-completion on, say, service, if /sbin is not in your path, which,
+as an unprivileged user, it typically isn't.
+
+The work-around for this is to put all directories of binaries for which you
+require completion into your $PATH variable prior to sourcing bash_completion.
+
+III.
+
+Many of the completion functions assume GNU versions of the various text
+utilities that they call (e.g. grep, sed and awk). Your mileage may vary.
+
+FAQ
+---
+
+Q. How can I insert my own local completions without having to reinsert them
+   every time you issue a new release?
+
+A. Put them in ~/.bash_completion, which is parsed at the end of the main
+   completion script.
+
+Q. I author/maintain package X and would like to maintain my own completion
+   code for this package. Where should I put it to be sure that interactive
+   bash shells will find it and source it?
+
+   Put it in the directory pointed to by $BASH_COMPLETION_DIR, which is defined
+   at the beginning of the main completion script. Any scripts placed in this
+   directory will be sourced by interactive bash shells.
+
+Q. I use CVS in combination with passwordless ssh access to my remote
+   repository. How can I have the cvs command complete on remotely checked-out
+   files where relevant?
+
+A. Define $COMP_CVS_REMOTE. Setting this to anything will result in the
+   behaviour you would like.
+
+Q. When I'm running a ./configure script and completion returns a list of
+   long options to me, some of these take a parameter,
+   e.g. --this-option=DESCRIPTION.
+
+   Running ./configure --help lists these descriptions, but everything after
+   the '=' is stripped when returning completions, so I don't know what kind
+   of data is expected as a given option's parameter.
+
+   Is there a way of getting ./configure completion to return the entire
+   option string, so that I can see what kind of data is required and then
+   simply delete the descriptive text and add my own data?
+
+A. Define $COMP_CONFIGURE_HINTS. Setting this to anything will result in the
+   behaviour you would like.
+
+Q. This code is rubbish/not bad/pretty good/the best thing since sliced bread.
+   How can I show my appreciation?
+
+A. If you're a registered Freshmeat user take a moment to rate the project at:
+
+	http://freshmeat.net/rate/19041/
+
+   Of course, writing to me and letting me know how you feel also works.
+   Patches and new completion routines are most welcome, too.
+
+-- 
+Ian Macdonald <ian@caliban.org>

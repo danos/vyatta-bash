@@ -1,0 +1,6 @@
+#! /bin/sh -e
+
+if [ "$1" = "purge" ]; then
+  rm -f /etc/bash_completion
+  rmdir --ignore-fail-on-non-empty /etc/bash_completion.d
+fi

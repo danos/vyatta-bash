@@ -17,47 +17,48 @@ exit 0
 
 # DP: Patches to handle Debian Backspace/Delete keyboard policy ???
 
---- ./lib/readline/terminal.c~
-+++ ./lib/readline/terminal.c
+diff -r -u readline4-4.2.orig/terminal.c readline4-4.2/terminal.c
+--- readline4-4.2.orig/lib/readline/terminal.c	Mon Feb  5 16:01:38 2001
++++ readline4-4.2/lib/readline/terminal.c	Tue Feb  6 18:27:49 2001
 @@ -138,7 +138,10 @@
- static char *term_ks, *term_ke;
  
  /* The key sequences sent by the Home and End keys, if any. */
--static char *term_kh, *term_kH;
-+static char *term_kh, *term_kend;
+ static char *_rl_term_kh;
+-static char *_rl_term_kH;
++static char *_rl_term_kend;
 +
 +/* The key sequence sent by the Delete key, if any. */
-+static char *term_kD;
++static char *_rl_term_kD;
  
  /* Variables that hold the screen dimensions, used by the display code. */
- int screenwidth, screenheight, screenchars;
-@@ -252,7 +255,8 @@
-   "im", &term_im,
-   "kd", &term_kd,
-   "kh", &term_kh,	/* home */
--  "kH", &term_kH,	/* end */
-+  "@7", &term_kend,	/* end */
-+  "kD", &term_kD,	/* delete */
-   "kl", &term_kl,
-   "kr", &term_kr,
-   "ku", &term_ku,
-@@ -388,7 +392,8 @@
-   _rl_bind_if_unbound (term_kl, rl_backward);
+ int _rl_screenwidth, _rl_screenheight, _rl_screenchars;
+@@ -284,7 +287,8 @@
+   { "im", &_rl_term_im },
+   { "kd", &_rl_term_kd },
+   { "kh", &_rl_term_kh },	/* home */
+-  { "kH", &_rl_term_kH },	/* end */
++  { "@7", &_rl_term_kend },	/* end */
++  { "kD", &_rl_term_kD },	/* delete */
+   { "kl", &_rl_term_kl },
+   { "kr", &_rl_term_kr },
+   { "ku", &_rl_term_ku },
+@@ -440,7 +444,8 @@
+   _rl_bind_if_unbound (_rl_term_kl, rl_backward);
  
-   _rl_bind_if_unbound (term_kh, rl_beg_of_line);	/* Home */
--  _rl_bind_if_unbound (term_kH, rl_end_of_line);	/* End */
-+  _rl_bind_if_unbound (term_kend, rl_end_of_line);	/* End */
-+  _rl_bind_if_unbound (term_kD, rl_delete);	        /* Delete */
+   _rl_bind_if_unbound (_rl_term_kh, rl_beg_of_line);	/* Home */
+-  _rl_bind_if_unbound (_rl_term_kH, rl_end_of_line);	/* End */
++  _rl_bind_if_unbound (_rl_term_kend, rl_end_of_line);	/* End */
++  _rl_bind_if_unbound (_rl_term_kD, rl_delete);	        /* Delete */
  
  #if defined (VI_MODE)
    _rl_keymap = vi_movement_keymap;
-@@ -398,7 +403,8 @@
-   _rl_bind_if_unbound (term_kl, rl_backward);
+@@ -450,7 +455,8 @@
+   _rl_bind_if_unbound (_rl_term_kl, rl_backward);
  
-   _rl_bind_if_unbound (term_kh, rl_beg_of_line);	/* Home */
--  _rl_bind_if_unbound (term_kH, rl_end_of_line);	/* End */
-+  _rl_bind_if_unbound (term_kend, rl_end_of_line);	/* End */
-+  _rl_bind_if_unbound (term_kD, rl_delete);	        /* Delete */
+   _rl_bind_if_unbound (_rl_term_kh, rl_beg_of_line);	/* Home */
+-  _rl_bind_if_unbound (_rl_term_kH, rl_end_of_line);	/* End */
++  _rl_bind_if_unbound (_rl_term_kend, rl_end_of_line);	/* End */
++  _rl_bind_if_unbound (_rl_term_kD, rl_delete);	        /* Delete */
  #endif /* VI_MODE */
  
    _rl_keymap = xkeymap;

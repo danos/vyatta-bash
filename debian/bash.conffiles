@@ -1,4 +1,4 @@
 /etc/bash.bashrc
+/etc/bash_completion
 /etc/skel/.bash_profile
 /etc/skel/.bashrc
-/etc/skel/.bash_logout

@@ -15,8 +15,8 @@
 
    You should have received a copy of the GNU Library General Public
    License along with the GNU C Library; see the file COPYING.LIB.  If
-   not, write to the Free Software Foundation, Inc., 675 Mass Ave,
-   Cambridge, MA 02139, USA.  */
+   not, write to the Free Software Foundation, Inc.,
+   59 Temple Place, Suite 330, Boston, MA 02111 USA.  */
 
 #include <config.h>
 
@@ -40,28 +40,18 @@
 
 #include <bashansi.h>
 
+#include <xmalloc.h>
+
 #if !defined (errno)
 extern int errno;
 #endif /* !errno */
 
-#if defined (__STDC__)
-#  define CONST const
-#  define PTR void *
-#else /* !__STDC__ */
-#  define CONST
-#  define PTR char *
-#endif /* !__STDC__ */
-
-#if !defined (PATH_MAX)
-#  if defined (MAXPATHLEN)
-#    define PATH_MAX MAXPATHLEN
-#  else /* !MAXPATHLEN */
-#    define PATH_MAX 1024
-#  endif /* !MAXPATHLEN */
-#endif /* !PATH_MAX */
-
 #if !defined (HAVE_LSTAT)
 #  define lstat stat
+#endif
+
+#if !defined (NULL)
+#  define NULL 0
 #endif
 
 /* Get the pathname of the current working directory,
@@ -81,11 +71,11 @@ getcwd (buf, size)
      size_t size;
 #endif /* !__STDC__ */
 {
-  static CONST char dots[]
+  static const char dots[]
     = "../../../../../../../../../../../../../../../../../../../../../../../\
 ../../../../../../../../../../../../../../../../../../../../../../../../../../\
 ../../../../../../../../../../../../../../../../../../../../../../../../../..";
-  CONST char *dotp, *dotlist;
+  const char *dotp, *dotlist;
   size_t dotsize;
   dev_t rootdev, thisdev;
   ino_t rootino, thisino;
@@ -138,14 +128,14 @@ getcwd (buf, size)
 	  char *new;
 	  if (dotlist == dots)
 	    {
-	      new = malloc (dotsize * 2 + 1);
+	      new = (char *)malloc (dotsize * 2 + 1);
 	      if (new == NULL)
 		goto lose;
 	      memcpy (new, dots, dotsize);
 	    }
 	  else
 	    {
-	      new = realloc ((PTR) dotlist, dotsize * 2 + 1);
+	      new = (char *)realloc ((PTR_T) dotlist, dotsize * 2 + 1);
 	      if (new == NULL)
 		goto lose;
 	    }
@@ -222,13 +212,13 @@ getcwd (buf, size)
 
 	      if (pathbuf == path)
 		{
-		  new = malloc (pathsize * 2);
+		  new = (char *)malloc (pathsize * 2);
 		  if (!new)
 		    goto lose;
 		}
 	      else
 		{
-		  new = realloc ((PTR) pathbuf, (pathsize * 2));
+		  new = (char *)realloc ((PTR_T) pathbuf, (pathsize * 2));
 		  if (!new)
 		    goto lose;
 		  pathp = new + space;
@@ -253,7 +243,7 @@ getcwd (buf, size)
     *--pathp = '/';
 
   if (dotlist != dots)
-    free ((PTR) dotlist);
+    free ((PTR_T) dotlist);
 
   {
     size_t len = pathbuf + pathsize - pathp;
@@ -270,7 +260,7 @@ getcwd (buf, size)
 	errno = ERANGE;
 	goto lose2;
       }
-    (void) memcpy((PTR) buf, (PTR) pathp, len);
+    (void) memcpy((PTR_T) buf, (PTR_T) pathp, len);
   }
 
   if (pathbuf != path)
@@ -282,7 +272,7 @@ getcwd (buf, size)
   if ((dotlist != dots) && dotlist)
     {
       int e = errno;
-      free ((PTR) dotlist);
+      free ((PTR_T) dotlist);
       errno = e;
     }
 
@@ -290,7 +280,7 @@ getcwd (buf, size)
   if ((pathbuf != path) && pathbuf)
     {
       int e = errno;
-      free ((PTR) pathbuf);
+      free ((PTR_T) pathbuf);
       errno = e;
     }
   return ((char *)NULL);

@@ -7,7 +7,7 @@ This file is part of GNU Bash, the Bourne Again SHell.
 
 Bash is free software; you can redistribute it and/or modify it under
 the terms of the GNU General Public License as published by the Free
-Software Foundation; either version 1, or (at your option) any later
+Software Foundation; either version 2, or (at your option) any later
 version.
 
 Bash is distributed in the hope that it will be useful, but WITHOUT ANY
@@ -17,7 +17,7 @@ for more details.
 
 You should have received a copy of the GNU General Public License along
 with Bash; see the file COPYING.  If not, write to the Free Software
-Foundation, 675 Mass Ave, Cambridge, MA 02139, USA. */
+Foundation, 59 Temple Place, Suite 330, Boston, MA 02111 USA. */
 
 #include "config.h"
 
@@ -32,6 +32,7 @@ Foundation, 675 Mass Ave, Cambridge, MA 02139, USA. */
 #  include <unistd.h>
 #endif
 
+#include "syntax.h"
 #include "command.h"
 #include "general.h"
 #include "error.h"
@@ -47,11 +48,17 @@ Foundation, 675 Mass Ave, Cambridge, MA 02139, USA. */
 #endif
 
 extern int line_number, current_command_line_count;
-extern int disallow_filename_globbing;
+extern int last_command_exit_value;
+
+static COMMAND *make_for_or_select __P((enum command_type, WORD_DESC *, WORD_LIST *, COMMAND *));
+#if defined (ARITH_FOR_COMMAND)
+static WORD_LIST *make_arith_for_expr __P((char *));
+#endif
+static COMMAND *make_until_or_while __P((enum command_type, COMMAND *, COMMAND *));
 
 WORD_DESC *
 make_bare_word (string)
-     char *string;
+     const char *string;
 {
   WORD_DESC *temp;
 
@@ -60,7 +67,7 @@ make_bare_word (string)
     temp->word = savestring (string);
   else
     {
-      temp->word = xmalloc (1);
+      temp->word = (char *)xmalloc (1);
       temp->word[0] = '\0';
     }
 
@@ -71,9 +78,9 @@ make_bare_word (string)
 WORD_DESC *
 make_word_flags (w, string)
      WORD_DESC *w;
-     char *string;
+     const char *string;
 {
-  register char *s;
+  register const char *s;
 
   for (s = string; *s; s++)
     switch (*s)
@@ -94,7 +101,7 @@ make_word_flags (w, string)
 
 WORD_DESC *
 make_word (string)
-     char *string;
+     const char *string;
 {
   WORD_DESC *temp;
 
@@ -115,15 +122,15 @@ make_word_from_token (token)
 }
 
 WORD_LIST *
-make_word_list (word, link)
+make_word_list (word, wlink)
      WORD_DESC *word;
-     WORD_LIST *link;
+     WORD_LIST *wlink;
 {
   WORD_LIST *temp;
 
   temp = (WORD_LIST *)xmalloc (sizeof (WORD_LIST));
   temp->word = word;
-  temp->next = link;
+  temp->next = wlink;
   return (temp);
 }
 
@@ -203,7 +210,99 @@ make_select_command (name, map_list, action)
 {
 #if defined (SELECT_COMMAND)
   return (make_for_or_select (cm_select, name, map_list, action));
+#else
+  last_command_exit_value = 2;
+  return ((COMMAND *)NULL);
 #endif
+}
+
+#if defined (ARITH_FOR_COMMAND)
+static WORD_LIST *
+make_arith_for_expr (s)
+     char *s;
+{
+  WORD_LIST *result;
+  WORD_DESC *w;
+
+  if (s == 0 || *s == '\0')
+    return ((WORD_LIST *)NULL);
+  w = make_word (s);
+  result = make_word_list (w, (WORD_LIST *)NULL);
+  return result;
+}
+#endif
+
+COMMAND *
+make_arith_for_command (exprs, action, lineno)
+     WORD_LIST *exprs;
+     COMMAND *action;
+     int lineno;
+{
+#if defined (ARITH_FOR_COMMAND)
+  ARITH_FOR_COM *temp;
+  WORD_LIST *init, *test, *step;
+  char *s, *t, *start;
+  int nsemi;
+
+  init = test = step = (WORD_LIST *)NULL;
+  /* Parse the string into the three component sub-expressions. */
+  start = t = s = exprs->word->word;
+  for (nsemi = 0; ;)
+    {
+      /* skip whitespace at the start of each sub-expression. */
+      while (whitespace (*s))
+	s++;
+      start = s;
+      /* skip to the semicolon or EOS */
+      while (*s && *s != ';')
+	s++;
+
+      t = (s > start) ? substring (start, 0, s - start) : (char *)NULL;
+
+      nsemi++;
+      switch (nsemi)
+	{
+	case 1:
+	  init = make_arith_for_expr (t);
+	  break;
+	case 2:
+	  test = make_arith_for_expr (t);
+	  break;
+	case 3:
+	  step = make_arith_for_expr (t);
+	  break;
+	}
+
+      FREE (t);
+      if (*s == '\0')
+	break;
+      s++;	/* skip over semicolon */
+    }
+
+  if (nsemi != 3)
+    {
+      if (nsemi < 3)
+	parser_error (lineno, "syntax error: arithmetic expression required");
+      else
+	parser_error (lineno, "syntax error: `;' unexpected");
+      parser_error (lineno, "syntax error: `((%s))'", exprs->word->word);
+      last_command_exit_value = 2;
+      return ((COMMAND *)NULL);
+    }
+
+  temp = (ARITH_FOR_COM *)xmalloc (sizeof (ARITH_FOR_COM));
+  temp->flags = 0;
+  temp->line = lineno;
+  temp->init = init ? init : make_arith_for_expr ("1");
+  temp->test = test ? test : make_arith_for_expr ("1");
+  temp->step = step ? step : make_arith_for_expr ("1");
+  temp->action = action;
+
+  return (make_command (cm_arith_for, (SIMPLE_COM *)temp));
+#else
+  last_command_exit_value = 2;
+  return ((COMMAND *)NULL);
+#endif /* ARITH_FOR_COMMAND */
 }
 
 COMMAND *
@@ -308,6 +407,7 @@ make_arith_command (exp)
 
   return (command);
 #else
+  last_command_exit_value = 2;
   return ((COMMAND *)NULL);
 #endif
 }
@@ -350,6 +450,7 @@ make_cond_command (cond_node)
 
   return (command);
 #else
+  last_command_exit_value = 2;
   return ((COMMAND *)NULL);
 #endif
 }
@@ -445,7 +546,7 @@ make_here_document (temp)
     redir_len = strlen (redir_word);
   else
     {
-      temp->here_doc_eof = xmalloc (1);
+      temp->here_doc_eof = (char *)xmalloc (1);
       temp->here_doc_eof[0] = '\0';
       goto document_done;
     }
@@ -473,7 +574,7 @@ make_here_document (temp)
       line_number++;
 
       if (kill_leading && *line)
-        {
+	{
 	  /* Hack:  To be compatible with some Bourne shells, we
 	     check the word before stripping the whitespace.  This
 	     is a hack, though. */
@@ -485,7 +586,7 @@ make_here_document (temp)
 	}
 
       if (*line == 0)
-        continue;
+	continue;
 
       if (STREQN (line, redir_word, redir_len) && line[redir_len] == '\n')
 	goto document_done;
@@ -494,7 +595,7 @@ make_here_document (temp)
       if (len + document_index >= document_size)
 	{
 	  document_size = document_size ? 2 * (document_size + len) : len + 2;
-	  document = xrealloc (document, document_size);
+	  document = (char *)xrealloc (document, document_size);
 	}
 
       /* len is guaranteed to be > 0 because of the check for line
@@ -508,7 +609,7 @@ document_done:
     document[document_index] = '\0';
   else
     {
-      document = xmalloc (1);
+      document = (char *)xmalloc (1);
       document[0] = '\0';
     }
   temp->redirectee.filename->word = document;
@@ -586,6 +687,18 @@ make_function_def (name, command, lineno, lstart)
   temp->flags = 0;
   command->line = lstart;
   return (make_command (cm_function_def, (SIMPLE_COM *)temp));
+}
+
+COMMAND *
+make_subshell_command (command)
+     COMMAND *command;
+{
+  SUBSHELL_COM *temp;
+
+  temp = (SUBSHELL_COM *)xmalloc (sizeof (SUBSHELL_COM));
+  temp->command = command;
+  temp->flags = CMD_WANT_SUBSHELL;
+  return (make_command (cm_subshell, (SIMPLE_COM *)temp));
 }
 
 /* Reverse the word list and redirection list in the simple command

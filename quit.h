@@ -16,15 +16,13 @@
 
    You should have received a copy of the GNU General Public License along
    with Bash; see the file COPYING.  If not, write to the Free Software
-   Foundation, 675 Mass Ave, Cambridge, MA 02139, USA. */
+   Foundation, 59 Temple Place, Suite 330, Boston, MA 02111 USA. */
 
 #if !defined (_QUIT_H_)
 #define _QUIT_H_
 
 /* Non-zero means SIGINT has already ocurred. */
 extern int interrupt_state;
-
-extern void throw_to_top_level ();
 
 /* Macro to call a great deal.  SIGINT just sets above variable.  When
    it is safe, put QUIT in the code, and the "interrupt" will take place. */

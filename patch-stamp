@@ -1,45 +1,46 @@
 
 Patches applied in this version:
 
-builtin-echo:
-  XXX patch for builtin echo
+arrayfunc:
+  Fix for causing a segmentation fault when some special shell variables
+  are declared as array.
 
 bashbug-editor:
-  use EDITOR environment variable or else the editor command.
+  send bug reports to Debian bash maintainer too.
 
-conf-update:
-  Updated config.{guess,sub} from /usr/share/automake.
-
-deb-build:
-  Debian specific patches that allow libreadline to be built
-  as a static _and_ a shared library.
-
-deb-defpath:
-  Set the default path to comply with Debian policy
-
-dont-report-sigpipe:
-  Define DONT_REPORT_SIGPIPE: We don't want to see `Broken pipe' messages
-  when a job like `cat jobs.c | exit 1' is executed. Fixes part of #7047,
-  #10259, #10433 and #10494. Comment from the upstream author: "The default
-  bash behavior with respect to the exit status of a pipeline will not
-  change.  Changing it as suggested in the discussion of #10494 would render
-  bash incompatible with every other shell out there.".
-
-examples:
-  document readline header location on Debian systems
-
-jobs-segfault:
+deb-bash-config:
+  Changed compile time configuration options:
   
+  - Set the default path to comply with Debian policy
+  
+  - Define DONT_REPORT_SIGPIPE: We don't want to see `Broken pipe' messages
+  when a job like `cat jobs.c | exit 1' is executed. Fixes part of #7047,
+  #10259, #10433 and #10494. Comment from the upstream author: "The
+  default bash behavior with respect to the exit status of a pipeline
+  will not change.  Changing it as suggested in the discussion of #10494
+  would render bash incompatible with every other shell out there.".
+  
+  - Enable System-wide .bashrc file for interactive shells.
+  
+  - Enable System-wide .bash_logout  file for interactive shells.
+  
+  - make non-interactive shells begun with argv[0][0] == '-'
+  run the startup files when not in posix mode.
+  
+  - try to check whether bash is being run by sshd and source
+  the .bashrc if so (like the rshd behavior).
 
-mailcheck:
-  From: Miquel van Smoorenburg <miquels@cistron.nl>
-  A patch that adds support for Maildir type mailboxes.
-
-manpages:
-  manpage tweaks for rbash(1) and builtins(1)
+deb-examples:
+  document readline header location on Debian systems
 
 man-vx-opts:
   document -v / -x options
+
+man-arithmetic:
+  document deprecated syntax for arithmetic evaluation.
+
+man-fignore:
+  bash(1): mention quoting when assigning to FIGNORE
 
 privmode:
   XXX missing description
@@ -52,50 +53,31 @@ privmode:
 random:
   use the system random functions
 
-system-bashrc:
-  Enable System-wide .bashrc file for interactive shells.
-  Enable System-wide .bash_logout  file for interactive shells.
-
-tempnam:
-  use tempnam function to generate names for temporary file.
-  
-  From: Topi Miettinen <Topi.Miettinen@medialab.sonera.fi>
-  Subject: bash doesn't use $TMPDIR [PATCH]
-  Date: Tue, 13 Apr 1999 00:10:16 +0300
-  
-  $ ls -ld /tmp
-  ls: /tmp: No such file or directory
-  $ bash -c 'echo  <<EOF'
-  bash: cannot create temp file for here document: No such file or directory
-  $ ./bash -c 'echo  <<EOF'
-  
-  Also avoid the race mentioned in comments by postponing file close.
-
 various:
   a header include change
 
-rl-inputrc:
-  Support for /etc/inputrc in addition to ~/inputrc
+headers:
+  include headers for including function prototypes
 
-rl-ctrl-char:
-  CTRL_CHAR macro: Don't assume character is signed by default
+kill-group:
+  Don't mishandle negative pod in `kill' builtin
 
-rl-deb-build:
-  Debian specific patches that allow libreadline to be built
-  as a static _and_ a shared library.
+service_completion:
+  Patch to bash 2.05a to add service completion.
+  http://www.caliban.org/bash/index.shtml#completion
 
 rl-examples:
   Modified readline examples to properly build with Debian setup.
 
+rl-symlinked-dirs:
+  Taken from the current upstream sources:
+  Make the symlinked directory completion behavior introduced in
+  readline-4.2a a user-settable option. If `mark-symlinked-directories'
+  is non-zero, the symlinked directory completion behavior is disabled,
+  and symlinks that point to directories have a slash appended.
+
+rl-inputrc:
+  Support for /etc/inputrc in addition to ~/inputrc
+
 rl-del-backspace-policy:
   Patches to handle Debian Backspace/Delete keyboard policy ???
-
-rl-paren-matching:
-  Turn on parens matching
-
-rl-shell-unknown-bug:
-  Fix what ???
-
-secure-build:
-  From: Topi Miettinen <Topi.Miettinen@nic.fi>
-  build bash without using guessable file names in /tmp.

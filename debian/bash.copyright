@@ -1,8 +1,10 @@
-This is Debian/GNU Linux's prepackaged version of the FSF's GNU Bash,
+This is Debian GNU/Linux's prepackaged version of the FSF's GNU Bash,
 the Bourne Again SHell.
 
-This package was put together by me, Guy Maor <maor@debian.org>, from
-the GNU sources at ftp.gnu.org:/pub/gnu/bash/bash-2.03.tar.gz
+This package was put together by Matthias Klose <doko@debian.org>, from
+the GNU sources at ftp.gnu.org:/pub/gnu/bash/bash-2.05a.tar.gz
+
+bash_completion sources: http://freshmeat.net/projects/bashcompletion/
 
 Bash is free software; you can redistribute it and/or modify it under
 the terms of the GNU General Public License as published by the Free
@@ -27,3 +29,8 @@ interactively in the usual way.  We made this exception because users
 and standards expect shells not to print such messages.  This
 exception applies to any program that serves as a shell and that is
 based primarily on Bash as opposed to other GNU software.
+
+
+bash_completion is free software; you can redistribute it and/or modify it
+under the terms of the GNU General Public License as published by the Free
+Software Foundation; either version 2, or (at your option) any later version.

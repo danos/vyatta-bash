@@ -8,6 +8,7 @@
 
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 #include <unistd.h>
 #include <fcntl.h>
 #include <limits.h>
@@ -15,8 +16,8 @@
 #include <sys/wait.h>
 
 /* XXX: evil kludge, deal with arbitrary name lengths */
-#ifndef MAX_PATH
-#define MAX_PATH 4096
+#ifndef PATH_MAX
+#define PATH_MAX 4096
 #endif
 
 int check_predepends(void)

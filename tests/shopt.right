@@ -17,13 +17,17 @@ shopt -s hostcomplete
 shopt -u huponexit
 shopt -s interactive_comments
 shopt -u lithist
+shopt -u login_shell
 shopt -u mailwarn
+shopt -u no_empty_cmd_completion
 shopt -u nocaseglob
 shopt -u nullglob
+shopt -s progcomp
 shopt -s promptvars
 shopt -u restricted_shell
 shopt -u shift_verbose
 shopt -s sourcepath
+shopt -u xpg_echo
 --
 shopt -u huponexit
 shopt -u checkwinsize
@@ -34,6 +38,7 @@ shopt -s cmdhist
 shopt -s expand_aliases
 shopt -s hostcomplete
 shopt -s interactive_comments
+shopt -s progcomp
 shopt -s promptvars
 shopt -s sourcepath
 --
@@ -48,11 +53,14 @@ shopt -u histappend
 shopt -u histverify
 shopt -u huponexit
 shopt -u lithist
+shopt -u login_shell
 shopt -u mailwarn
+shopt -u no_empty_cmd_completion
 shopt -u nocaseglob
 shopt -u nullglob
 shopt -u restricted_shell
 shopt -u shift_verbose
+shopt -u xpg_echo
 --
 cdable_vars    	off
 checkhash      	off
@@ -65,11 +73,14 @@ histappend     	off
 histverify     	off
 huponexit      	off
 lithist        	off
+login_shell    	off
 mailwarn       	off
+no_empty_cmd_completion	off
 nocaseglob     	off
 nullglob       	off
 restricted_shell	off
 shift_verbose  	off
+xpg_echo       	off
 --
 set +o allexport
 set -o braceexpand
@@ -90,7 +101,8 @@ set +o verbose
 set +o xtrace
 set -o history
 set +o ignoreeof
-set +o interactive-comments
+set -o interactive-comments
+set +o nolog
 set +o posix
 set -o emacs
 set +o vi
@@ -114,7 +126,8 @@ verbose        	off
 xtrace         	off
 history        	on
 ignoreeof      	off
-interactive-comments	off
+interactive-comments	on
+nolog          	off
 posix          	off
 emacs          	on
 vi             	off
@@ -138,7 +151,8 @@ set +o verbose
 set +o xtrace
 set -o history
 set +o ignoreeof
-set +o interactive-comments
+set -o interactive-comments
+set +o nolog
 set +o posix
 set -o emacs
 set +o vi
@@ -152,6 +166,7 @@ set -o histexpand
 set -o monitor
 set -o privileged
 set -o history
+set -o interactive-comments
 set -o emacs
 --
 set +o allexport
@@ -167,7 +182,7 @@ set +o physical
 set +o verbose
 set +o xtrace
 set +o ignoreeof
-set +o interactive-comments
+set +o nolog
 set +o posix
 set +o vi
 --
@@ -184,7 +199,7 @@ physical       	off
 verbose        	off
 xtrace         	off
 ignoreeof      	off
-interactive-comments	off
+nolog          	off
 posix          	off
 vi             	off
 --

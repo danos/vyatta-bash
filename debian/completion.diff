@@ -1,0 +1,25 @@
+--- bash_completion.orig	Thu Apr  4 18:49:40 2002
++++ bash_completion	Sat Apr  6 22:05:54 2002
+@@ -2686,11 +2686,21 @@
+ fi
+ unset list[@]
+ 
++# source Debian specific completion directory
++for i in /usr/share/bash_completion/*; do
++    [ -r $i ] && . $i
++done
++
+ # source completion directory definitions
+ if [ -d $BASH_COMPLETION_DIR -a -r $BASH_COMPLETION_DIR -a \
+      -x $BASH_COMPLETION_DIR ]; then
+ 	for i in $BASH_COMPLETION_DIR/*; do
+-		[ -r $i ] && . $i
++		# On Debian, don't include any filenames containing
++		# `.dpkg', omitting foo.dpkg-old, foo.dpkg-new, etc.
++		case "$(basename $i)" in
++			*.dpkg*) ;;
++			*) [ -r $i ] && . $i
++		esac
+ 	done
+ fi
+ unset i

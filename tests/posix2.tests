@@ -140,11 +140,13 @@ if [ "$OPTIND" != 3 ] || [ "$store" != a ] || [ "$OPTARG" != aoptval ]; then
     testfail "getopts"
 fi
 
+# if I change the default quoting style for variable values, these
+# next four must change
+
 newtest
 SQUOTE="'"
 val1=$(set | sed -n 's:^SQUOTE=::p')
-# if I change the default quoting style for variable values, this must change
-if [ "$val1" != "''\'''" ]; then
+if [ "$val1" != "''\\'''" ]; then
         testfail "variable quoting 1"
 fi
 
