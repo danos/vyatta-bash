@@ -4,6 +4,16 @@
 /*								    */
 /* **************************************************************** */
 
+/*
+ * Remove the next line if you're compiling this against an installed
+ * libreadline.a
+ */
+#define READLINE_LIBRARY
+
+#if defined (HAVE_CONFIG_H)
+#include <config.h>
+#endif
+
 #include <stdio.h>
 #include <sys/types.h>
 #include <readline/readline.h>

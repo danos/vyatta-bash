@@ -59,9 +59,7 @@ static char *history_find_word ();
 
 extern int history_offset;
 
-extern int history_shell;
-
-static char *history_single_quote ();
+extern char *single_quote ();
 static char *quote_breaks ();
 
 extern char *xmalloc (), *xrealloc ();
@@ -88,6 +86,10 @@ char *history_no_expand_chars = " \t\n\r=";
 /* If set to a non-zero value, single quotes inhibit history expansion.
    The default is 0. */
 int history_quotes_inhibit_expansion = 0;
+
+/* If set, this points to a function that is called to verify that a
+   particular history expansion should be performed. */
+Function *history_inhibit_expansion_function;
 
 /* **************************************************************** */
 /*								    */
@@ -285,36 +287,6 @@ hist_string_extract_single_quoted (string, sindex)
     ;
 
   *sindex = i;
-}
-
-/* Does shell-like quoting using single quotes. */
-static char *
-history_single_quote (string)
-     char *string;
-{
-  register int c;
-  char *result, *r, *s;
-
-  result = (char *)xmalloc (3 + (3 * strlen (string)));
-  r = result;
-  *r++ = '\'';
-
-  for (s = string; s && (c = *s); s++)
-    {
-      *r++ = c;
-
-      if (c == '\'')
-	{
-	  *r++ = '\\';	/* insert escaped single quote */
-	  *r++ = '\'';
-	  *r++ = '\'';	/* start new quoted string */
-	}
-    }
-
-  *r++ = '\'';
-  *r = '\0';
-
-  return (result);
 }
 
 static char *
@@ -761,7 +733,7 @@ history_expand_internal (string, start, end_index_ptr, ret_string, current_line)
       char *x;
 
       if (want_quotes == 'q')
-	x = history_single_quote (temp);
+	x = single_quote (temp);
       else if (want_quotes == 'x')
 	x = quote_breaks (temp);
       else
@@ -884,17 +856,13 @@ history_expand (hstring, output)
 	    {
 	      if (!cc || member (cc, history_no_expand_chars))
 		continue;
-	      /* The shell uses ! as a pattern negation character
-		 in globbing [...] expressions, so let those pass
-		 without expansion. */
-	      else if (history_shell && i > 0 && (string[i - 1] == '[') &&
-		       member (']', string + i + 1))
-		continue;
-	      /* The shell uses ! as the indirect expansion character, so
-		 let those expansions pass as well. */
-	      else if (history_shell &&
-		       i > 1 && string[i - 1] == '{' && string[i - 2] == '$' &&
-		       member ('}', string + i + 1))
+	      /* If the calling application has set
+		 history_inhibit_expansion_function to a function that checks
+		 for special cases that should not be history expanded,
+		 call the function and skip the expansion if it returns a
+		 non-zero value. */
+	      else if (history_inhibit_expansion_function &&
+			(*history_inhibit_expansion_function) (string, i))
 		continue;
 	      else
 		break;

@@ -56,6 +56,11 @@ extern void bash_brace_completion ();
 static void shell_expand_line ();
 static void display_shell_version (), operate_and_get_next ();
 static void history_expand_line (), bash_ignore_filenames ();
+#ifdef ALIAS
+static void alias_expand_line ();
+#endif
+static void history_and_alias_expand_line ();
+static void cleanup_expansion_error (), set_up_new_line ();
 
 /* Helper functions for Readline. */
 static int bash_directory_completion_hook ();
@@ -145,7 +150,8 @@ static int completion_quoting_style = COMPLETE_BSQUOTE;
 extern int rl_shell;
 extern int history_shell;
 extern void (*set_lines_and_columns_hook)();
-
+extern char* (*rl_get_string_value_hook)();
+extern char* (*history_get_string_value_hook)();
 
 /* Change the readline VI-mode keymaps into or out of Posix.2 compliance.
    Called when the shell is put into or out of `posix' mode. */
@@ -186,9 +192,11 @@ initialize_readline ()
     return;
 
   /* Turn on special modes for bash.  This is normally a compile-time
-     check, but was turned into a run-time check to make bash work better
-     under Debian GNU/Linux. */
+     check, but was turned into a run-time check to make bash work
+     well with a dynamically linked libreadline2 under Debian
+     GNU/Linux. */
   set_lines_and_columns_hook = set_lines_and_columns;
+  history_get_string_value_hook = rl_get_string_value_hook = get_string_value;
   rl_shell = 1;
   history_shell = 1;
 
@@ -206,6 +214,11 @@ initialize_readline ()
   /* Bind up our special shell functions. */
   rl_add_defun ("history-expand-line", (Function *)history_expand_line, -1);
   rl_bind_key_in_map ('^', (Function *)history_expand_line, emacs_meta_keymap);
+
+#ifdef ALIAS
+  rl_add_defun ("alias-expand-line", (Function *)alias_expand_line, -1);
+  rl_add_defun ("history-and-alias-expand-line", (Function *)history_and_alias_expand_line, -1);
+#endif
 
   /* Backwards compatibility. */
   rl_add_defun ("insert-last-argument", rl_yank_last_arg, -1);
@@ -298,7 +311,7 @@ initialize_readline ()
   enable_hostname_completion (perform_hostname_completion);
 
   /* characters that need to be quoted when appearing in filenames. */
-  rl_filename_quote_characters = " \t\n\\\"'@<>=;|&()#$`?*[!";
+  rl_filename_quote_characters = " \t\n\\\"'@<>=;|&()#$`?*[!:";
   rl_filename_quoting_function = bash_quote_filename;
   rl_filename_dequoting_function = bash_dequote_filename;
   rl_char_is_quoted_p = char_is_quoted;
@@ -605,13 +618,13 @@ vi_edit_and_execute_command (count, c)
 	 the end of the history because fc ignores the last command (assumes
 	 it's supposed to deal with the command before the `fc'). */
       using_history ();
-      add_history (rl_line_buffer);
-      add_history ("");
+      bash_add_history (rl_line_buffer);
+      bash_add_history ("");
       history_lines_this_session++;
       using_history ();
       command = savestring (VI_EDIT_COMMAND);
     }
-  parse_and_execute (command, "v", -1);
+  parse_and_execute (command, "v", SEVAL_NOHIST);
   rl_line_buffer[0] = '\0';	/* XXX */
 }
 #endif /* VI_MODE */
@@ -701,8 +714,18 @@ attempt_shell_completion (text, start, end)
 	 assignments. */
     }
 
-  /* Special handling for command substitution. */
-  if (*text == '`' && unclosed_pair (rl_line_buffer, start, "`"))
+  /* Check that we haven't incorrectly flagged a closed command substitution
+     as indicating we're in a command position. */
+  if (in_command_position && rl_line_buffer[ti] == '`' && *text != '`' && 
+	unclosed_pair (rl_line_buffer, 0, "`") == 0)
+    in_command_position = 0;
+
+  /* Special handling for command substitution.  If *TEXT is a backquote,
+     it can be the start or end of an old-style command substitution, or
+     unmatched.  If it's unmatched, both calls to unclosed_pair will
+     succeed.  */
+  if (*text == '`' && unclosed_pair (rl_line_buffer, start, "`") &&
+	unclosed_pair (rl_line_buffer, end, "`"))
     matches = completion_matches (text, command_subst_completion_function);
 
   /* Variable name? */
@@ -941,7 +964,7 @@ command_word_completion_function (hint_text, state)
     }
   else
     {
-      int match;
+      int match, freetemp;
       char *temp;
 
       if (absolute_program (hint))
@@ -961,6 +984,7 @@ command_word_completion_function (hint_text, state)
 	    }
 	  else
 	    temp = savestring (val);
+	  freetemp = 1;
 	}
       else
 	{
@@ -969,12 +993,12 @@ command_word_completion_function (hint_text, state)
 	  if (temp)
 	    {
 	      temp++;
-	      match = strncmp (temp, hint, hint_len) == 0;
+	      freetemp = match = strncmp (temp, hint, hint_len) == 0;
 	      if (match)
 		temp = savestring (temp);
 	    }
 	  else
-	    match = 0;
+	    freetemp = match = 0;
 	}
 
       /* If we have found a match, and it is an executable file or a
@@ -987,12 +1011,15 @@ command_word_completion_function (hint_text, state)
 	}
       else
 	{
+	  if (freetemp)
+	    free (temp);
 	  free (val);
 	  goto inner;
 	}
     }
 }
 
+/* Completion inside an unterminated command substitution. */
 static char *
 command_subst_completion_function (text, state)
      char *text;
@@ -1161,19 +1188,23 @@ history_expand_line_internal (line)
   char *new_line;
 
   new_line = pre_process_line (line, 0, 0);
-  return new_line;
+  return (new_line == line) ? savestring (line) : new_line;
 }
 
 #if defined (ALIAS)
-/* Perform alias expansion on LINE and return the new line. */
-static char *
-alias_expand_line_internal (line)
-     char *line;
+/* Expand aliases in the current readline line. */
+static void
+alias_expand_line (ignore)
+     int ignore;
 {
-  char *alias_line;
+  char *new_line;
 
-  alias_line = alias_expand (line);
-  return alias_line;
+  new_line = alias_expand (rl_line_buffer);
+
+  if (new_line)
+    set_up_new_line (new_line);
+  else
+    cleanup_expansion_error ();
 }
 #endif
 
@@ -1186,7 +1217,8 @@ cleanup_expansion_error ()
 
   fprintf (rl_outstream, "\r\n");
   to_free = pre_process_line (rl_line_buffer, 1, 0);
-  free (to_free);
+  if (to_free != rl_line_buffer)
+    free (to_free);
   putc ('\r', rl_outstream);
   rl_forced_update_display ();
 }
@@ -1257,6 +1289,8 @@ history_and_alias_expand_line (ignore)
   char *new_line;
 
   new_line = pre_process_line (rl_line_buffer, 0, 0);
+  if (new_line == rl_line_buffer)
+    new_line = savestring (new_line);
 
 #if defined (ALIAS)
   if (new_line)
@@ -1285,6 +1319,8 @@ shell_expand_line (ignore)
   WORD_LIST *expanded_string;
 
   new_line = pre_process_line (rl_line_buffer, 0, 0);
+  if (new_line == rl_line_buffer)
+    new_line = savestring (new_line);
 
 #if defined (ALIAS)
   if (new_line)
@@ -1309,7 +1345,9 @@ shell_expand_line (ignore)
 
       /* If there is variable expansion to perform, do that as a separate
 	 operation to be undone. */
-      expanded_string = expand_string (rl_line_buffer, 0);
+      new_line = savestring (rl_line_buffer);
+      expanded_string = expand_string (new_line, 0);
+      FREE (new_line);
       if (expanded_string == 0)
 	{
 	  new_line = xmalloc (1);
@@ -1875,7 +1913,44 @@ bash_dequote_filename (text, quote_char)
   return ret;
 }
 
-/* Quote a filename using double quotes. */
+/* Quote characters that the readline completion code would treat as
+   word break characters with backslashes.  Pass backslash-quoted
+   characters through without examination. */
+static char *
+quote_word_break_chars (text)
+     char *text;
+{
+  char *ret, *r, *s;
+  int l;
+
+  l = strlen (text);
+  ret = xmalloc ((2 * l) + 1);
+  for (s = text, r = ret; *s; s++)
+    {
+      /* Pass backslash-quoted characters through, including the backslash. */
+      if (*s == '\\')
+	{
+	  *r++ = '\\';
+	  *r++ = *++s;
+	  if (*s == '\0')
+	    break;
+	  continue;
+	}
+      /* OK, we have an unquoted character.  Check its presence in
+	 rl_completer_word_break_characters. */
+      if (strchr (rl_completer_word_break_characters, *s))
+        *r++ = '\\';
+      *r++ = *s;
+    }
+  *r = '\0';
+  return ret;
+}
+
+/* Quote a filename using double quotes, single quotes, or backslashes
+   depending on the value of completion_quoting_style.  If we're
+   completing using backslashes, we need to quote some additional
+   characters (those that readline treats as word breaks), so we call
+   quote_word_break_chars on the result. */
 static char *
 bash_quote_filename (s, rtype, qcp)
      char *s;
@@ -1909,6 +1984,13 @@ bash_quote_filename (s, rtype, qcp)
   else if (*qcp == '\0' && history_expansion && cs == COMPLETE_DQUOTE &&
 	   history_expansion_inhibited == 0 && strchr (mtext, '!'))
     cs = COMPLETE_BSQUOTE;
+
+  if (*qcp == '"' && history_expansion && cs == COMPLETE_DQUOTE &&
+        history_expansion_inhibited == 0 && strchr (mtext, '!'))
+    {
+      cs = COMPLETE_BSQUOTE;
+      *qcp = '\0';
+    }
 #endif
 
   switch (cs)
@@ -1926,6 +2008,15 @@ bash_quote_filename (s, rtype, qcp)
 
   if (mtext != s)
     free (mtext);
+
+  /* We may need to quote additional characters: those that readline treats
+     as word breaks that are not quoted by backslash_quote. */
+  if (rtext && cs == COMPLETE_BSQUOTE)
+    {
+      mtext = quote_word_break_chars (rtext);
+      free (rtext);
+      rtext = mtext;
+    }
 
   /* Leave the opening quote intact.  The readline completion code takes
      care of avoiding doubled opening quotes. */

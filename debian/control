@@ -2,11 +2,11 @@ Source: bash
 Section: base
 Priority: required
 Maintainer: Guy Maor <maor@debian.org>
-Standards-Version: 2.1.1.0
+Standards-Version: 2.2.0.0
 
 Package: bash
 Architecture: any
-Pre-Depends: ${shlibs:Pre-Depends}
+Pre-Depends: ${shlibs:Depends}, libreadline2 (>=2.1-2bo4)
 Essential: yes
 Section: base
 Priority: required
@@ -20,7 +20,7 @@ Description: The GNU Bourne Again SHell
 
 Package: bash-builtins
 Architecture: any
-Depends: bash (>=2.0-1)
+Depends: bash (>=2.01)
 Section: utils
 Priority: optional
 Description: Bash loadable builtins - headers & examples
@@ -42,11 +42,11 @@ Description: GNU readline and history libraries, run-time libraries.
 
 Package: libreadline2-dev
 Architecture: any
-Depends: ${rlversion:Depends}, ${shlibs:Depends}
+Depends: ${rlversion:Depends}, ${shlibs:Depends}, libc5-dev
 Conflicts: libreadline-dev
 Provides: libreadline-dev
 Section: devel
-Priority: optional
+Priority: standard
 Description: GNU readline and history libraries, development files.
  The GNU readline library aids in the consistency of user interface
  across discrete programs that need to provide a command line
@@ -55,3 +55,17 @@ Description: GNU readline and history libraries, development files.
  The GNU history library provides a consistent user interface for
  recalling lines of previously typed input.
 
+Package: libreadline2-dbg
+Architecture: any
+Depends: ${rlversion:Depends}
+Conflicts: libreadline-dbg
+Provides: libreadline-dbg
+Section: devel
+Priority: optional
+Description: GNU readline and history libraries, debugging libraries.
+ The GNU readline library aids in the consistency of user interface
+ across discrete programs that need to provide a command line
+ interface.
+ .
+ The GNU history library provides a consistent user interface for
+ recalling lines of previously typed input.

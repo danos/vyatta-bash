@@ -6,9 +6,9 @@
 .\"	Case Western Reserve University
 .\"	chet@ins.CWRU.Edu
 .\"
-.\"	Last Change: Mon Jul  8 13:07:48 EDT 1996
+.\"	Last Change: Wed Feb  5 14:13:22 EST 1997
 .\"
-.TH READLINE 3 "1996 July 8" GNU
+.TH READLINE 3 "1997 Feb 5" GNU
 .\"
 .\" File Name macro.  This used to be `.PN', for Path Name,
 .\" but Sun doesn't seem to like that very much.
@@ -108,8 +108,8 @@ Readline is customized by putting commands in an initialization
 file (the \fIinputrc\fP file).
 The name of this file is taken from the value of the
 .B INPUTRC
-environment variable.  If that variable is unset, the default is
-.IR ~/.inputrc .
+environment variable.  If that variable is unset, readline will read both
+.IR /etc/inputrc " and " ~/.inputrc .
 When a program which uses the readline library starts up, the
 init file is read, and the key bindings and variables are set.
 There are only a few basic constructs allowed in the
@@ -682,9 +682,18 @@ Add this digit to the argument already accumulating, or start a new
 argument.  M\-\- starts a negative argument.
 .TP
 .B universal\-argument
-Each time this is executed, the argument count is multiplied by four.
+This is another way to specify an argument.
+If this command is followed by one or more digits, optionally with a
+leading minus sign, those digits define the argument.
+If the command is followed by digits, executing
+.B universal\-argument
+again ends the numeric argument, but is otherwise ignored.
+As a special case, if this command is immediately followed by a
+character that is neither a digit or minus sign, the argument count
+for the next command is multiplied by four.
 The argument count is initially one, so executing this function the
-first time makes the argument count four.
+first time makes the argument count four, a second time makes the
+argument count sixteen, and so on.
 .PD
 .SS Completing
 .PP
@@ -1069,6 +1078,9 @@ VI Command Mode functions
 .TP
 .FN ~/.inputrc
 Individual \fBreadline\fP initialization file
+.TP
+.FN /etc/inputrc
+System \fBreadline\fP initialization file
 .PD
 .SH AUTHORS
 Brian Fox, Free Software Foundation (primary author)

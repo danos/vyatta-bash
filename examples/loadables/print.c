@@ -208,7 +208,7 @@ static int printargs (list, ofp)
 
   for (sawc = 0, l = list; l; l = l->next)
     {
-      ostr = ansicstr (l->word->word, strlen (l->word->word), &sawc);
+      ostr = ansicstr (l->word->word, strlen (l->word->word), &sawc, 0);
       fprintf (ofp, "%s", ostr);
       free (ostr);
       if (sawc)

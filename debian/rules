@@ -3,145 +3,138 @@
 package = bash
 
 soversion = 2
-libversion = 2.1
-rlversion = 2.1-2
+libversion = $(soversion).1
+rlversion = $(libversion)-2bo7.3
+
+ARCH = $(shell dpkg --print-gnu-build-architecture)
+STRIP = strip
 
 build:
-	$(checkdir)
-	./configure
+	$(checkdir) 
+	CC=gcc ./configure --host="$(ARCH)-debian-linux"
 	$(MAKE) SOVERSION=$(soversion) "CFLAGS=-g -O2"
+	(cd debian; $(CC) -O2 -s -o rl.postinst rl-libc5.postinst.c)
 	touch build
 
 clean:
 	$(checkdir)
 	rm -f build
 	-$(MAKE) -i distclean
-	rm -rf debian/{tmp*,files*,substvars}
+	rm -f configc1.cache
+	rm -rf debian/{tmp*,files*,substvars,rl.postinst}
 	find . -name '*~' -print0 | xargs -0 rm -f
 
 binary-indep:	checkroot build
 
-binary-arch:	binary-bash binary-rl binary-rld binary-b
+binary-arch:	binary-bash binary-rl binary-rld binary-rlg binary-b
 
 binary-bash:	checkroot build
 	$(checkdir)
 	-rm -rf debian/tmp
-	umask 000
 	install -d debian/tmp/{DEBIAN,bin,etc/skel,usr/{bin,doc/bash,info,man/man1}}
-	cp bash debian/tmp/bin/bash
-	strip debian/tmp/bin/bash
+	install -s bash debian/tmp/bin
 	ln -s bash debian/tmp/bin/rbash
 	ln -s bash debian/tmp/bin/sh
-	cp bashbug debian/tmp/usr/bin
-	cp debian/etc.profile debian/tmp/etc/profile
-	cp debian/skel.bashrc debian/tmp/etc/skel/.bashrc
-	cp debian/skel.bash_profile debian/tmp/etc/skel/.bash_profile
-	cp doc/bashref.info debian/tmp/usr/info/bash.info
-	cp NEWS COMPAT CHANGES doc/{FAQ,INTRO} CWRU/POSIX.NOTES \
+	install bashbug debian/tmp/usr/bin
+	install -m 644 debian/etc.profile debian/tmp/etc/profile
+	install -m 644 debian/skel.bashrc debian/tmp/etc/skel/.bashrc
+	install -m 644 debian/skel.bash_profile debian/tmp/etc/skel/.bash_profile
+	install -m 644 doc/bashref.info debian/tmp/usr/info/bash.info
+	install -m 644 NEWS COMPAT CHANGES doc/{FAQ,INTRO} CWRU/POSIX.NOTES \
 	  debian/tmp/usr/doc/bash
-	cp doc/{bash.1,builtins.1,bashbug.1} debian/tmp/usr/man/man1
-	cp -r examples debian/tmp/usr/doc/bash
+	install -m 644 doc/{bash.1,builtins.1,bashbug.1,rbash.1} debian/tmp/usr/man/man1
+	find examples -type d | xargs -i install -d 'debian/tmp/usr/doc/bash/{}'
+	find examples -type f | xargs -i install -m 644 '{}' 'debian/tmp/usr/doc/bash/{}'
 	rm -rf debian/tmp/usr/doc/bash/examples/loadables
-	cp debian/changelog debian/tmp/usr/doc/bash/changelog.Debian
-	cp CWRU/changelog debian/tmp/usr/doc/bash/changelog
+	install -m 644 debian/changelog debian/tmp/usr/doc/bash/changelog.Debian
+	install -m 644 CWRU/changelog debian/tmp/usr/doc/bash/changelog
 	find debian/tmp/usr/{info,doc,man} -type f | xargs gzip -9f
-	cp debian/bash.copyright debian/tmp/usr/doc/bash/copyright
-	cp debian/bash.preinst debian/tmp/DEBIAN/preinst
-	cp debian/bash.postinst debian/tmp/DEBIAN/postinst
-	cp debian/bash.prerm debian/tmp/DEBIAN/prerm
-	chmod +x debian/tmp/DEBIAN/{preinst,postinst,prerm}
-	cp debian/bash.conffiles debian/tmp/DEBIAN/conffiles
-	dpkg-shlibdeps -dPre-Depends bash
-	( set -e ; cd debian ; \
-	  if grep -q '^shlibs:Pre-Depends=.*libreadline2' substvars ; \
-	  then true ; \
-	  else sed -e '/^shlibs:Pre-Depends=/s/=/=libreadline2 (>= 2.1), /' \
-	  substvars >s ; mv s substvars ; fi )
+	install -m 644 debian/bash.copyright debian/tmp/usr/doc/bash/copyright
+	install debian/bash.preinst debian/tmp/DEBIAN/preinst
+	install debian/bash.postinst debian/tmp/DEBIAN/postinst
+	install debian/bash.prerm debian/tmp/DEBIAN/prerm
+	install -m 644 debian/bash.conffiles debian/tmp/DEBIAN/conffiles
+# this will prevent libreadline from showing up in shlibs
+	dpkg-shlibdeps bash
 	dpkg-gencontrol -isp -pbash
-	chown -R root.root debian/tmp
-	chmod -R +r,+X,g-ws,a-ws,u+w debian/tmp
 	dpkg --build debian/tmp ..
 
 binary-rl:	checkroot build
 	$(checkdir)
 	-rm -rf debian/tmp-rl
-	umask 000
-	install -d debian/tmp-rl/{DEBIAN,lib,usr/{lib,doc/libreadline2}}
-	cp lib/readline/libreadline.so \
-	  debian/tmp-rl/lib/libreadline.so.$(libversion)
-	ln -s libreadline.so.$(libversion) \
-	  debian/tmp-rl/lib/libreadline.so.$(soversion)
-# below link can go away when nobody uses the libreadline with
-# incorrect soname
-	ln -s libreadline.so.$(libversion) debian/tmp-rl/lib/libreadline.so.2.0
-	cp lib/readline/libhistory.so \
+	install -d debian/tmp-rl/{DEBIAN,etc,lib,usr/{lib,doc/libreadline2}}
+	install -m 644 lib/readline/libreadline.so debian/tmp-rl/lib/libreadline.so.$(libversion)
+	ln -s libreadline.so.$(libversion) debian/tmp-rl/lib/libreadline.so.$(soversion)
+	install -m 644 lib/readline/libhistory.so debian/tmp-rl/usr/lib/libhistory.so.$(libversion)
+	ln -s libhistory.so.$(libversion) debian/tmp-rl/usr/lib/libhistory.so.$(soversion)
+	$(STRIP) --strip-unneeded debian/tmp-rl/lib/libreadline.so.$(libversion) \
 	  debian/tmp-rl/usr/lib/libhistory.so.$(libversion)
-	ln -s libhistory.so.$(libversion) \
-	  debian/tmp-rl/usr/lib/libhistory.so.$(soversion)
-	strip --strip-unneeded debian/tmp-rl/lib/libreadline.so.$(libversion) \
-	  debian/tmp-rl/usr/lib/libhistory.so.$(libversion)
-	cp debian/changelog debian/tmp-rl/usr/doc/libreadline2/changelog.Debian
+	install -m 644 debian/changelog debian/tmp-rl/usr/doc/libreadline2/changelog.Debian
 	gzip -9f debian/tmp-rl/usr/doc/libreadline2/changelog.Debian 
-	cp debian/rl.copyright debian/tmp-rl/usr/doc/libreadline2/copyright
-	cp debian/shlibs.local debian/tmp-rl/DEBIAN/shlibs
-	cp debian/rl.postinst debian/tmp-rl/DEBIAN/postinst
-	chmod +x debian/tmp-rl/DEBIAN/postinst
+	install -m 644 debian/rl.copyright debian/tmp-rl/usr/doc/libreadline2/copyright
+	install -m 644 debian/etc.inputrc debian/tmp-rl/etc/inputrc
+	install -m 644 debian/rl.shlibs debian/tmp-rl/DEBIAN/shlibs
+	install debian/rl.postinst debian/tmp-rl/DEBIAN/postinst
+	install -m 644 debian/rl.conffiles debian/tmp-rl/DEBIAN/conffiles
 	dpkg-shlibdeps lib/readline/lib{readline,history}.so
 	dpkg-gencontrol -isp -plibreadline2 -Pdebian/tmp-rl -v$(rlversion)
-	chown -R root.root debian/tmp-rl
-	chmod -R +r,+X,g-ws,a-ws,u+w debian/tmp-rl
 	dpkg --build debian/tmp-rl ..
 
 IP = ../../../../lib/readline/doc
 binary-rld:	checkroot build
 	$(checkdir)
 	-rm -rf debian/tmp-rld
-	umask 000
 	install -d debian/tmp-rld/{DEBIAN,usr/{man/man3,info,lib,include/readline,doc/libreadline2/examples}}
-	cp lib/readline/static/lib{readline,history}.a debian/tmp-rld/usr/lib
-	strip --strip-debug debian/tmp-rld/usr/lib/*
-	ln -s ../../lib/libreadline.so.$(libversion) \
-	  debian/tmp-rld/usr/lib/libreadline.so
+	install -m 644 lib/readline/static/lib{readline,history}.a debian/tmp-rld/usr/lib
+	$(STRIP) --strip-debug debian/tmp-rld/usr/lib/*
+	ln -s ../../lib/libreadline.so.$(libversion) debian/tmp-rld/usr/lib/libreadline.so
 	ln -s libhistory.so.$(libversion) debian/tmp-rld/usr/lib/libhistory.so
-	cp lib/readline/{readline.h,keymaps.h,chardefs.h,history.h,tilde.h} \
+	install -m 644 lib/readline/{readline.h,keymaps.h,chardefs.h,history.h,tilde.h} \
 	  debian/tmp-rld/usr/include/readline/.
-	cd debian/tmp-rld/usr/info && makeinfo -I$(IP) \
-	  $(IP)/rlman.texinfo && makeinfo -I$(IP) $(IP)/hist.texinfo
-	cp doc/readline.3 debian/tmp-rld/usr/man/man3/readline.3readline
-	cp lib/readline/examples/Inputrc \
-	  debian/tmp-rld/usr/doc/libreadline2/.
-	cp -r lib/readline/examples/{Makefile,*.c} \
+	cd debian/tmp-rld/usr/info && makeinfo -I$(IP) $(IP)/rlman.texinfo \
+	  && makeinfo -I$(IP) $(IP)/hist.texinfo
+	install -m 644 doc/readline.3 debian/tmp-rld/usr/man/man3/readline.3readline
+	install -m 644 lib/readline/examples/Inputrc debian/tmp-rld/usr/doc/libreadline2/.
+	install -m 644 lib/readline/examples/{Makefile,*.c} \
 	  debian/tmp-rld/usr/doc/libreadline2/examples/.
+	ln -s libreadline2 debian/tmp-rld/usr/doc/libreadline2-dev
 	find debian/tmp-rld/usr/{info,doc,man} -type f | xargs gzip -9f
-	cp debian/rld.postinst debian/tmp-rld/DEBIAN/postinst
-	cp debian/rld.prerm debian/tmp-rld/DEBIAN/prerm
-	chmod +x debian/tmp-rld/DEBIAN/{postinst,prerm}
+	install debian/rld.postinst debian/tmp-rld/DEBIAN/postinst
+	install debian/rld.prerm debian/tmp-rld/DEBIAN/prerm
 	echo "rlversion:Depends=libreadline2 (= $(rlversion))" > \
 	  debian/substvars
 	dpkg-shlibdeps lib/readline/lib{readline,history}.so
 	dpkg-gencontrol -isp -plibreadline2-dev -Pdebian/tmp-rld -v$(rlversion)
-	chown -R root.root debian/tmp-rld
-	chmod -R +r,+X,g-ws,a-ws,u+w debian/tmp-rld
 	dpkg --build debian/tmp-rld ..
+
+binary-rlg:	checkroot build
+	$(checkdir)
+	-rm -rf debian/tmp-rlg
+	install -d debian/tmp-rlg/{DEBIAN,usr/{lib,doc}}
+	install -m 644 lib/readline/static/libreadline.a debian/tmp-rlg/usr/lib/libreadline_g.a
+	install -m 644 lib/readline/static/libhistory.a debian/tmp-rlg/usr/lib/libhistory_g.a
+	ln -s libreadline2 debian/tmp-rlg/usr/doc/libreadline2-dbg
+	echo "rlversion:Depends=libreadline2-dev (= $(rlversion))" > debian/substvars
+	dpkg-gencontrol -isp -plibreadline2-dbg -Pdebian/tmp-rlg -v$(rlversion)
+	dpkg --build debian/tmp-rlg ..
 
 # Even though it contains only headers and example files,
 # bash-builtins is NOT arch-independent because the config.h* files
-# differ on different archs.
+# are differ on different archs.
 binary-b:	checkroot build
 	$(checkdir)
 	-rm -rf debian/tmp-b
-	umask 000
-	install -d debian/tmp-b/{DEBIAN,usr/{include/bash/{builtins,lib/{glob,tilde}},doc/bash/examples}}
-	cp *.h config.h.top config.h.bot debian/tmp-b/usr/include/bash/
-	cp builtins/*.h debian/tmp-b/usr/include/bash/builtins/
-	cp lib/glob/*.h debian/tmp-b/usr/include/bash/lib/glob/
-	cp lib/tilde/*.h debian/tmp-b/usr/include/bash/lib/tilde/
-	cp -r examples/loadables debian/tmp-b/usr/doc/bash/examples/
+	install -d debian/tmp-b/{DEBIAN,usr/{include/bash/{builtins,lib/{glob,tilde}},doc/bash/examples/loadables}}
+	install -m 644 *.h config.h.top config.h.bot debian/tmp-b/usr/include/bash/
+	install -m 644 builtins/*.h debian/tmp-b/usr/include/bash/builtins/
+	install -m 644 lib/glob/*.h debian/tmp-b/usr/include/bash/lib/glob/
+	install -m 644 lib/tilde/*.h debian/tmp-b/usr/include/bash/lib/tilde/
+	install -m 644 examples/loadables/* debian/tmp-b/usr/doc/bash/examples/loadables
+	ln -s bash debian/tmp-b/usr/doc/bash-builtins
 	find debian/tmp-b/usr/doc -type f | xargs gzip -9f
 	dpkg-gencontrol -isp -pbash-builtins -Pdebian/tmp-b
-	chown -R root.root debian/tmp-b
-	chmod -R +r,+X,g-ws,a-ws,u+w debian/tmp-b
 	dpkg --build debian/tmp-b ..
+
 
 define checkdir
 	test -f bashline.c -a -f debian/rules
@@ -160,4 +153,5 @@ checkroot:
 .PHONY: binary binary-arch binary-indep clean checkroot
 
 # Local Variables:
-# mode:Makefile
+# mode: makefile
+# end:

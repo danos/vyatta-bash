@@ -1,5 +1,105 @@
+bash (2.01-0bo5.3) bo-unstable; urgency=low
+
+  * Non-maintainer release for bo-unstable
+  * Let's hope I got it right
+
+ -- David N. Welton <davidw@efn.org>  Tue, 24 Feb 1998 19:44:01 -0900
+
+bash (2.01-0bo5.2) bo-unstable; urgency=low
+
+  * Non-maintainer release for bo-unstable
+    (slightly modified from Daniel Martin's effort))
+
+ -- Joel Klecker <jk@espy.org>  Sat, 21 Feb 1998 12:14:23 -0800
+
+bash (2.01-0bo5.1) unstable; urgency=low
+
+  * libreadline 2.1-2bo7.1
+  * a hack of bash 2.01-5 from hamm for bo
+
+ -- Daniel Martin <dtm12@jhunix.hcf.jhu.edu>  Fri, 20 Feb 1998 11:36:51 -0500
+
+bash (2.01-5) unstable; urgency=low
+
+  * libreadline 2.1-7
+  * libreadline tries INPUTRC if it's set, else _both_ /etc/inputrc and
+    ~/.inputrc
+  * A better /etc/inputrc.
+
+ -- Guy Maor <maor@ece.utexas.edu>  Thu, 25 Sep 1997 11:38:41 -0500
+
+bash (2.01-4) unstable; urgency=low
+
+  * libreadline 2.1-6
+  * bash-builtin examples moved to correct place.
+  * libreadline tries /etc/inputrc if ~/.inputrc doesn't exist.
+  * set -a; set +a problem seems to be fixed (8390)
+
+ -- Guy Maor <maor@ece.utexas.edu>  Wed, 24 Sep 1997 14:36:02 -0500
+
+bash (2.01-3) unstable; urgency=low
+
+  * libreadline 2.1-5
+  * Bash depended on wrong version of libreadlineg2. (#12150, #12316)
+  * Put current version in libreadlineg2 shlibs file.
+  * Honor TMPDIR by using tempnam(3) (#9201).
+
+ -- Guy Maor <maor@ece.utexas.edu>  Sun, 24 Aug 1997 23:31:19 -0500
+
+bash (2.01-2) unstable; urgency=low
+
+  * libreadline 2.1-4
+  * Make bash predepend on libreadlineg2 (>=2.01-1) so as not to break
+    systems which installed James's releases.
+  * Fix references to shell runtime code in libreadline.so and libhistory.so.
+  * Fix declare -p dumping core on empty temp variable (#12017).
+  * make_quoted_replacement() checks for empty rl_filename_quote_characters
+    (12051).
+  * readline/readline.h - rl_dispatching should be extern (#11049).
+  * Added libreadline2g-dbg.
+
+ -- Guy Maor <maor@ece.utexas.edu>  Sat, 16 Aug 1997 13:38:37 -0500
+
+bash (2.01-1) unstable; urgency=low
+
+  * libreadline 2.1-3
+  * Maintainer release of 2.01.  (2.01 fixes 3815, 4783, 7782, 8439, 10416,
+    10598, 10604, 11806).
+  * Cleaned and corrected rules, Makefiles, control files. (7580, 11406).
+  * Reimplemented SHELL compile time as runtime check.  Backward compatible
+    with old bash (10916).
+  * Added rbash man page (8645).
+  * ldconfig run in postinst, compiled as libc5 (10176)
+  * :( set -a;set +a problem still there, but acts differently.
+
+ -- Guy Maor <maor@ece.utexas.edu>  Thu, 14 Aug 1997 15:35:23 -0500
+
+bash (2.01-0.1) unstable; urgency=high
+  
+  * libreadline 2.1-2.2
+  * libreadline2 now has a preinst script which ensures that ld.so.1 
+    knows about /lib/libc5-compat and /usr/lib/libc5-compat.  Before this
+    change, trying to install with a libc (< 5.4.23-4) broke bash.
+  * libreadlineg2 no longer has version dependant shlibs file [#10742].
+
+ -- James Troup <jjtroup@comp.brad.ac.uk>  Mon, 23 Jun 1997 22:00:18 +0100
+
+bash (2.01-0) unstable; urgency=medium
+
+  * libreadline 2.1-2.1
+  * Non-maintainer release
+  * New upstream version [#10416, #10598, #10604, #8390]
+  * Rebuilt for glibc; now provides libreadline2g{,-dev} and
+    libreadline2{,-altdev}.
+  * Not all of Guy's changes are implemented, noticeably a security
+    improvement in execute-cmds.c and his alteration of libreadline's
+    compile time dependance on -DSHELL to run time dependance.
+    
+ -- James Troup <jjtroup@comp.brad.ac.uk>  Thur, 19 June 1997 19:13:34 +0100
+
 bash (2.0-3) unstable; urgency=medium
 
+  * libreadline 2.1-2
   * #include <sys/types.h> in general.h needed for alpha build (#7658)
   * Don't drop suid/sgid bits if invoked as sh (#7796)
   * Applied patch to fix time in for loop (#7436)

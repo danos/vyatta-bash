@@ -87,9 +87,10 @@ int history_base = 1;
 
 /* turn on shell mode */
 int history_shell = 0;
+char* (*history_get_string_value_hook)() = 0;
 
 /* for backwards compatibility with 2.0 */
-char *(*single_quote_hook)();
+char* (*single_quote_hook)();
 
 /* Return the current HISTORY_STATE of the history. */
 HISTORY_STATE *
@@ -128,6 +129,9 @@ void
 using_history ()
 {
   history_offset = history_length;
+  if (! history_get_string_value_hook)
+    history_shell = 0;		/* so won't try to call with older
+				   versions of bash */
 }
 
 /* Return the number of bytes that the primary history entries are using.

@@ -2,7 +2,7 @@ This is Debian/GNU Linux's prepackaged version of the FSF's GNU
 Readline library.
 
 This package was put together by me, Guy Maor <maor@debian.org>, from
-the GNU sources at ftp.cc.gatech.edu:/pub/gnu/bash-2.0.tar.gz.  The
+the GNU sources at ftp.cc.gatech.edu:/pub/gnu/bash-2.01.tar.gz.  The
 version of readline in bash has many bug fixes over the version
 contained in readline-2.0.tar.gz.
 

@@ -6,4 +6,4 @@ PS1="\\$ "
 export PATH PS1
 
 ulimit -c unlimited
-umask 022
+umask 002
