@@ -1,3 +1,25 @@
+bash (2.05b-2-26) testing-proposed-updates; urgency=medium
+
+  * debian/skel.bashrc: Quote dircolors invocation (closes: #285840).
+
+ -- Matthias Klose <doko@debian.org>  Sun, 19 Dec 2004 17:44:04 +0100
+
+bash (2.05b-2-25) testing-proposed-updates; urgency=low
+
+  * Add a comment to /etc/bash.bashrc that the file is not read by
+    login shells (closes: #271413).
+  * Sync skeleton files with those from unstable.
+  * Sync builtin CDPATH documentation with man page (closes: #259767).
+  * Document conditional file expressions acting on the target of
+    symbolic links as well (except -h, -L). Closes: #231267.
+  * lib/readline/chardefs.h:
+    Remove the NON_NEGATIVE macro in the definition of the _rl_lowercase_p,
+    _rl_uppercase_p, _rl_pure_alphabetic, ALPHABETIC macros. Safe for glibc.
+    Note, that the selected locale must be generated on the system to
+    make i.e. kill-word work with 8-bit strings.
+
+ -- Matthias Klose <doko@debian.org>  Sun, 17 Oct 2004 10:46:48 +0200
+
 bash (2.05b-2-24) testing-proposed-updates; urgency=low
 
   * Explicitely check for the existance of /usr/sbin/add-shell in the postrm.

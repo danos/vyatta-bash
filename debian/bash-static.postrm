@@ -3,6 +3,5 @@
 if [ -x /usr/sbin/remove-shell ]; then
   /usr/sbin/remove-shell /bin/bash-static
 fi
-/usr/sbin/remove-shell /bin/bash-static
 
 #DEBHELPER#

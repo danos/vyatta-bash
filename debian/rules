@@ -465,6 +465,8 @@ debian_patches = \
 	man-fignore \
 	man-bashrc \
 	man-bashlogout \
+	man-cdpath \
+	man-test \
 	privmode \
 	various \
 	report-155436 \
@@ -480,6 +482,7 @@ debian_patches = \
 	rl-del-backspace-policy \
 	rl-8bit-init \
 	rl-slow-multibyte \
+	rl-chardefs \
 	s390-build \
 	rbash-manpage \
 	rbash-login-shell \

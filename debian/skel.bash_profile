@@ -5,17 +5,12 @@
 # the default umask is set in /etc/login.defs
 #umask 022
 
-# the rest of this file is commented out.
-
-# set variable identifying the chroot you work in
-#if [ -f /etc/debian_chroot ]; then
-#  debian_chroot=$(cat /etc/debian_chroot)
-#fi
-
 # include .bashrc if it exists
-#if [ -f ~/.bashrc ]; then
-#    . ~/.bashrc
-#fi
+if [ -f ~/.bashrc ]; then
+    . ~/.bashrc
+fi
+
+# the rest of this file is commented out.
 
 # set PATH so it includes user's private bin if it exists
 #if [ -d ~/bin ] ; then
@@ -24,6 +19,6 @@
 
 # do the same with MANPATH
 #if [ -d ~/man ]; then
-#    MANPATH=~/man:"${MANPATH}"
+#    MANPATH=~/man${MANPATH:-:}
 #    export MANPATH
 #fi
