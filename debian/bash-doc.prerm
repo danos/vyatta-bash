@@ -1,10 +1,5 @@
 #! /bin/sh -e
 
-install-info --quiet --remove bash
+install-info --quiet --remove bashref
 
-case "$1" in upgrade|remove)
-    pkg=bash-doc
-    if [ -L /usr/doc/$pkg ]; then
-        rm -f /usr/doc/$pkg
-    fi
-esac
+#DEBHELPER#

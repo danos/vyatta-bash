@@ -7,58 +7,41 @@ elif [ $# -ne 1 ]; then
     exit 1
 fi
 case "$1" in
-    -patch) patch $pdir -f --no-backup-if-mismatch -p1 < $0;;
-    -unpatch) patch $pdir -f --no-backup-if-mismatch -R -p1 < $0;;
+    -patch) patch $pdir -f --no-backup-if-mismatch -p0 < $0;;
+    -unpatch) patch $pdir -f --no-backup-if-mismatch -R -p0 < $0;;
     *)
 	echo >&2 "`basename $0`: script expects -patch|-unpatch as argument"
 	exit 1
 esac
 exit 0
 
-# DP: Patches to handle Debian Backspace/Delete keyboard policy ???
+# DP: Handle Debian Backspace/Delete keyboard policy
 
-diff -r -u readline4-4.2.orig/terminal.c readline4-4.2/terminal.c
---- readline4-4.2.orig/lib/readline/terminal.c	Mon Feb  5 16:01:38 2001
-+++ readline4-4.2/lib/readline/terminal.c	Tue Feb  6 18:27:49 2001
-@@ -138,7 +138,10 @@
+--- lib/readline/terminal.c.orig	Mon Mar  4 18:23:09 2002
++++ lib/readline/terminal.c	Fri Jul 19 08:25:48 2002
+@@ -148,6 +148,9 @@
+ /* Insert key */
+ static char *_rl_term_kI;
  
- /* The key sequences sent by the Home and End keys, if any. */
- static char *_rl_term_kh;
--static char *_rl_term_kH;
-+static char *_rl_term_kend;
-+
 +/* The key sequence sent by the Delete key, if any. */
 +static char *_rl_term_kD;
- 
- /* Variables that hold the screen dimensions, used by the display code. */
- int _rl_screenwidth, _rl_screenheight, _rl_screenchars;
-@@ -284,7 +287,8 @@
++
+ /* Cursor control */
+ static char *_rl_term_vs;	/* very visible */
+ static char *_rl_term_ve;	/* normal */
+@@ -314,6 +317,7 @@
+   { "ic", &_rl_term_ic },
    { "im", &_rl_term_im },
-   { "kd", &_rl_term_kd },
-   { "kh", &_rl_term_kh },	/* home */
--  { "kH", &_rl_term_kH },	/* end */
-+  { "@7", &_rl_term_kend },	/* end */
+   { "kH", &_rl_term_kH },	/* home down ?? */
 +  { "kD", &_rl_term_kD },	/* delete */
-   { "kl", &_rl_term_kl },
-   { "kr", &_rl_term_kr },
-   { "ku", &_rl_term_ku },
-@@ -440,7 +444,8 @@
-   _rl_bind_if_unbound (_rl_term_kl, rl_backward);
+   { "kI", &_rl_term_kI },	/* insert */
+   { "kd", &_rl_term_kd },
+   { "ke", &_rl_term_ke },	/* end keypad mode */
+@@ -496,6 +500,7 @@
  
    _rl_bind_if_unbound (_rl_term_kh, rl_beg_of_line);	/* Home */
--  _rl_bind_if_unbound (_rl_term_kH, rl_end_of_line);	/* End */
-+  _rl_bind_if_unbound (_rl_term_kend, rl_end_of_line);	/* End */
+   _rl_bind_if_unbound (_rl_term_at7, rl_end_of_line);	/* End */
 +  _rl_bind_if_unbound (_rl_term_kD, rl_delete);	        /* Delete */
- 
- #if defined (VI_MODE)
-   _rl_keymap = vi_movement_keymap;
-@@ -450,7 +455,8 @@
-   _rl_bind_if_unbound (_rl_term_kl, rl_backward);
- 
-   _rl_bind_if_unbound (_rl_term_kh, rl_beg_of_line);	/* Home */
--  _rl_bind_if_unbound (_rl_term_kH, rl_end_of_line);	/* End */
-+  _rl_bind_if_unbound (_rl_term_kend, rl_end_of_line);	/* End */
-+  _rl_bind_if_unbound (_rl_term_kD, rl_delete);	        /* Delete */
- #endif /* VI_MODE */
  
    _rl_keymap = xkeymap;
+ }

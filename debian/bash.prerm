@@ -1,8 +1,8 @@
 #! /bin/bash -e
 
-case "$1" in upgrade|remove)
-    pkg=bash
-    if [ -L /usr/doc/$pkg ]; then
-        rm -f /usr/doc/$pkg
-    fi
-esac
+if [ $1 != "upgrade" ]; then
+    update-alternatives --remove builtins.7.gz \
+	/usr/share/man/man7/bash-builtins.7.gz
+fi
+
+#DEBHELPER#

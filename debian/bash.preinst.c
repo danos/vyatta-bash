@@ -1,5 +1,5 @@
 /* Copyright (c) 1999 Anthony Towns
- * Copyright (c) 2000 Matthias Klose
+ * Copyright (c) 2000, 2002 Matthias Klose
  *
  * You may freely use, distribute, and modify this program.
  */
@@ -118,7 +118,6 @@ int main(void) {
 	return EXIT_FAILURE;
     }
     targetlen = readlink("/bin/sh", target, PATH_MAX);
-    target[targetlen] = '\0';
     if (targetlen == -1) {
 	// error reading link. Will be overwritten.
 	puts("The bash upgrade discovered that something is wrong with your /bin/sh link.");
@@ -126,6 +125,7 @@ int main(void) {
 	fgets(answer, 1024, stdin);
 	return EXIT_SUCCESS;
     }
+    target[targetlen] = '\0';
     if (strcmp(target, "bash") != 0 && strcmp(target, "/bin/bash") != 0) {
 	char *diversion = check_diversion();
 

@@ -1,7 +1,9 @@
 #! /bin/sh -e
 
+dir=.
 if [ $# -eq 3 -a "$2" = '-d' ]; then
     pdir="-d $3"
+    dir=$3
 elif [ $# -ne 1 ]; then
     echo >&2 "`basename $0`: script expects -patch|-unpatch as argument"
     exit 1
@@ -9,14 +11,14 @@ fi
 case "$1" in
     -patch)
 	patch $pdir -f --no-backup-if-mismatch -p1 < $0
-	echo '2.05' > _distribution
-	echo '0' > _patchlevel
-	autoconf
-	rm -f _distribution _patchlevel
+	echo '2.05' > $dir/_distribution
+	echo '0' > $dir/_patchlevel
+	cd $dir && autoconf
+	rm -f $dir/_distribution $dir/_patchlevel
 	;;
     -unpatch)
 	patch $pdir -f --no-backup-if-mismatch -R -p1 < $0
-	rm -f configure _distribution _patchlevel
+	rm -f $dir/configure $dir/_distribution $dir/_patchlevel
 	;;
     *)
 	echo >&2 "`basename $0`: script expects -patch|-unpatch as argument"
@@ -60,14 +62,18 @@ exit 0
  
  /* Define if you have the sysconf function. */
  #undef HAVE_SYSCONF
---- bash-2.05-old/variables.c	Wed Nov  8 18:48:13 2000
-+++ bash-2.05a/variables.c	Wed Nov 14 23:26:01 2001
-@@ -1082,16 +1082,21 @@
+--- bash-2.05b/variables.c~	2002-06-25 15:43:33.000000000 +0200
++++ bash-2.05b/variables.c	2004-04-14 08:26:10.000000000 +0200
+@@ -1038,17 +1038,26 @@
+ /* The random number seed.  You can change this by setting RANDOM. */
  static unsigned long rseed = 1;
  static int last_random_value;
++#if defined(HAVE_RANDOM)
++static char random_state[32];
++#endif
  
 -/* A linear congruential random number generator based on the example
--   on in the ANSI C standard.  This one isn't very good, but a more
+-   one in the ANSI C standard.  This one isn't very good, but a more
 -   complicated one is overkill. */
 +/* Use the random number genrator provided by the standard C library,
 +   else use a linear congruential random number generator based on the
@@ -79,7 +85,8 @@ exit 0
  brand ()
  {
 +#if defined(HAVE_RANDOM)
-+  return rseed = (unsigned int) (labs(random()) & 32767);
++  rseed = (unsigned int) ((32767.0 * random()) / (RAND_MAX + 1.0));
++  return rseed;
 +#else
    rseed = rseed * 1103515245 + 12345;
    return ((unsigned int)((rseed >> 16) & 32767));	/* was % 32768 */
@@ -87,12 +94,14 @@ exit 0
  }
  
  /* Set the random number generator seed to SEED. */
-@@ -1099,8 +1104,12 @@
+@@ -1056,8 +1065,14 @@
  sbrand (seed)
       unsigned long seed;
  {
 +#if defined(HAVE_SRANDOM)
-+  srandom(seed);
++  initstate((unsigned int) seed, random_state, sizeof(random_state));
++  setstate(random_state);
++  srandom((unsigned int) seed);
 +#else
    rseed = seed;
    last_random_value = 0;

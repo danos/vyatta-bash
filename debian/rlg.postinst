@@ -1,8 +1,0 @@
-#! /bin/sh -e
-
-if [ "$1" = "configure" ]; then
-	pkg="`basename $0`"
-        if [ -d /usr/doc -a ! -e /usr/doc/$pkg -a -d /usr/share/doc/$pkg ]; then
-                ln -sf ../share/doc/$pkg /usr/doc/$pkg
-        fi
-fi

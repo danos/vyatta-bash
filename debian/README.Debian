@@ -62,22 +62,7 @@ A kind of FAQ for bash on Debian GNU/{Linux,Hurd}
 
    Use 'hash -r' manually or set a bash option: 'shopt -s checkhash'.
 
-7. bash unexports SSH_CLIENT in some cases
-
-   Bash uses the presence of SSH_CLIENT to decide whether or not to run
-   the shell startup files for a non-interactive shell (like it attempts
-   to do for rsh).  The problem is that if the variable is exported,
-   subsequent invocations of non-interactive shells will source the
-   startup files.  A lot of users find the former behavior desirable, and
-   the latter undesirable.  The tradeoff bash makes is to remove the
-   export attribute from SSH_CLIENT if it exists in the shell's initial
-   environment.  Users may always export it explicitly.
-
-   Further information can be found at
-
-   http://bugs.debian.org/cgi-bin/bugreport.cgi?bug=88032&repeatmerged=yes
-
-8. Bourne-style shells have always accepted multiple directory name arguments 
+7. Bourne-style shells have always accepted multiple directory name arguments 
    to cd.  If the user doesn't like it, have him define a shell function: 
  
    cd() 
@@ -89,7 +74,7 @@ A kind of FAQ for bash on Debian GNU/{Linux,Hurd}
         builtin cd "$@" 
    } 
 
-9. key bindings for ESC
+8. key bindings for ESC
 
    Consider the following .inputrc:
 
@@ -127,7 +112,7 @@ A kind of FAQ for bash on Debian GNU/{Linux,Hurd}
    to use `set keymap vi-command' and enter key bindings without
    the \M- prefix (as he discovered)."
 
-10. Why is bash configured with --disable-net-redirections?
+9. Why is bash configured with --disable-net-redirections?
 
     It can produce completely unexpected results. This kind of
     feature should not be part of a shell but a special. tool. And

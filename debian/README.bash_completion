@@ -15,4 +15,3 @@ To enable programmable completion for bash on Debian, uncomment the
 bash_completion lines in /etc/bash.bashrc to source /etc/bash_completion.
 /etc/bash_completion sources ~/.bash_completion, if it exists.
 
-

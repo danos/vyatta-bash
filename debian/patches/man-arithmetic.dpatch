@@ -23,7 +23,7 @@ exit 0
  \fB$((\fP\fIexpression\fP\fB))\fP
  .RE
  .PP
-+The old format \fB$[[\fP\fIexpression\fP\fB]]\fP is deprecated and will
++The old format \fB$[\fP\fIexpression\fP\fB]\fP is deprecated and will
 +be removed in upcoming versions of bash.
 +.PP
  The
