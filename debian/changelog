@@ -1,3 +1,28 @@
+bash (2.0-3) unstable; urgency=medium
+
+  * #include <sys/types.h> in general.h needed for alpha build (#7658)
+  * Don't drop suid/sgid bits if invoked as sh (#7796)
+  * Applied patch to fix time in for loop (#7436)
+  * Split off bash-builtins with examples & necessary headers
+  * Juggled libreadline2 documentation around (#7275)
+
+ -- Guy Maor <maor@ece.utexas.edu>  Mon, 10 Mar 1997 12:45:06 -0600
+
+bash (2.0-2) unstable; urgency=low
+
+  * Added NEWS, COMPAT to /usr/doc/bash
+
+ -- Guy Maor <maor@ece.utexas.edu>  Fri, 7 Feb 1997 17:35:21 -0600
+
+bash (2.0-1) unstable; urgency=low
+
+  * Upstream upgrade.
+  * .bash_history created 600 by default.
+  * Security improvements when creating files in /tmp
+  * Reimplemented SHELL run-time check with backward 2.0 compatibility
+
+ -- Guy Maor <maor@ece.utexas.edu>  Wed, 29 Jan 1997 03:31:47 -0600
+
 bash (1.14.7-2) frozen unstable; urgency=low
 
   * libhistory.so had wrong soname (fixes bug 5381).

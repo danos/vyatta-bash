@@ -51,7 +51,11 @@
    over a character when updating the line rather than rewriting it. */
 /* #define HACK_TERMCAP_MOTION */
 
-/* The string inserted by the vi-mode `insert comment' command. */
-#define VI_COMMENT_BEGIN_DEFAULT "#"
+/* The string inserted by the `insert comment' command. */
+#define RL_COMMENT_BEGIN_DEFAULT "#"
+
+/* Define this if you want code that allows readline to be used in an
+   X `callback' style. */
+#  define READLINE_CALLBACKS
 
 #endif /* _RLCONF_H_ */

@@ -18,11 +18,18 @@ Description: The GNU Bourne Again SHell
  Bash is ultimately intended to be a conformant implementation of the
  IEEE Posix Shell and Tools specification (IEEE Working Group 1003.2).
 
+Package: bash-builtins
+Architecture: any
+Depends: bash (>=2.0-1)
+Section: utils
+Priority: optional
+Description: Bash loadable builtins - headers & examples
+ Bash 2 can dynamically load new builtin commands.  Included are the
+ necessary headers to compile your own builtins and lots of examples.
+
 Package: libreadline2
 Architecture: any
 Depends: ${shlibs:Depends}
-Conflicts: librl (<= 2.0.3-2), libreadline
-Provides: libreadline
 Section: base
 Priority: required
 Description: GNU readline and history libraries, run-time libraries.
@@ -36,7 +43,7 @@ Description: GNU readline and history libraries, run-time libraries.
 Package: libreadline2-dev
 Architecture: any
 Depends: ${rlversion:Depends}, ${shlibs:Depends}
-Conflicts: librl (<= 2.0.3-2), libreadline-dev
+Conflicts: libreadline-dev
 Provides: libreadline-dev
 Section: devel
 Priority: optional
