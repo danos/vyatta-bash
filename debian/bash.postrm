@@ -6,8 +6,10 @@ if [ "$1" = "purge" ]; then
 fi
 
 if [ -x /usr/sbin/remove-shell ]; then
-  /usr/sbin/remove-shell /bin/bash
-  /usr/sbin/remove-shell /bin/rbash
+    /usr/sbin/remove-shell /bin/bash
+    /usr/sbin/remove-shell /bin/rbash
 fi
 
 #DEBHELPER#
+
+exit 0

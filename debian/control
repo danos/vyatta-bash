@@ -3,7 +3,7 @@ Section: base
 Priority: required
 Maintainer: Matthias Klose <doko@debian.org>
 Standards-Version: 3.6.1
-Build-Depends: autoconf2.13, automake1.7 (>= 1.7.8-1), patch, bison-1.35, libncurses5-dev, texinfo, autotools-dev, debhelper (>= 4.1), texi2html
+Build-Depends: autoconf, automake1.8, patch, bison, libncurses5-dev, texinfo, autotools-dev, debhelper (>= 4.1), texi2html
 Build-Depends-Indep: tetex-bin
 
 Package: bash
@@ -55,18 +55,17 @@ Description: The GNU Bourne Again SHell (static version)
 
 Package: bash-builtins
 Architecture: any
-Depends: bash (= ${Binary-Version})
+Depends: bash (= ${Source-Version})
 Section: utils
 Priority: optional
 Description: Bash loadable builtins - headers & examples
- Bash 2 can dynamically load new builtin commands.  Included are the
+ Bash can dynamically load new builtin commands.  Included are the
  necessary headers to compile your own builtins and lots of examples.
 
 Package: bash-doc
 Architecture: all
 Section: doc
 Priority: optional
-Replaces: bash (<< 2.03-1)
 Description: Documentation and examples for the The GNU Bourne Again SHell
  Bash is an sh-compatible command language interpreter that executes
  commands read from the standard input or from a file.  Bash also
@@ -74,3 +73,13 @@ Description: Documentation and examples for the The GNU Bourne Again SHell
  .
  This package contains the documentation in info format, all the
  examples and the main changelog.
+
+Package: bashdb
+Architecture: any
+Depends: ${shlibs:Depends}
+Suggests: bash-doc
+Section: shells
+Priority: optional
+Description: The GNU Bourne Again SHell Debugger
+ The bash debugger is a patched version of bash 2.05b to provide
+ debugging support and better error reporting.

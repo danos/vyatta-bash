@@ -1,0 +1,186 @@
+#! /bin/sh -e
+
+if [ $# -eq 3 -a "$2" = '-d' ]; then
+    pdir="-d $3"
+elif [ $# -ne 1 ]; then
+    echo >&2 "`basename $0`: script expects -patch|-unpatch as argument"
+    exit 1
+fi
+case "$1" in
+    -patch) patch $pdir -f --no-backup-if-mismatch -p1 < $0;;
+    -unpatch) patch $pdir -f --no-backup-if-mismatch -R -p1 < $0;;
+    *)
+	echo >&2 "`basename $0`: script expects -patch|-unpatch as argument"
+	exit 1
+esac
+exit 0
+
+# DP: Use the current locale when formatting HISTTIMEFORMAT.
+
+From: schwab@suse.de
+To: bug-bash@gnu.org
+Subject: HISTTIMEFORMAT doesn't track locale changes
+Date: Sun,  1 Aug 2004 11:14:00 +0200 (CEST)
+
+Configuration Information [Automatically generated, do not change]:
+Machine: ia64
+OS: linux-gnu
+Compiler: gcc
+Compilation CFLAGS:  -DPROGRAM='bash' -DCONF_HOSTTYPE='ia64' -DCONF_OSTYPE='linux-gnu' -DCONF_MACHTYPE='ia64-unknown-linux-gnu' -DCONF_VENDOR='unknown' -DLOCALEDIR='/usr/local/share/locale' -DPACKAGE='bash' -DSHELL -DHAVE_CONFIG_H  -I.  -I../bash-3.0 -I../bash-3.0/include -I../bash-3.0/lib   -O2 -g
+uname output: Linux sykes 2.6.5-22-default #1 SMP Fri Jul 2 13:43:23 UTC 2004 ia64 ia64 ia64 GNU/Linux
+Machine Type: ia64-unknown-linux-gnu
+
+Bash Version: 3.0
+Patch Level: 0
+Release Status: release
+
+Description:
+Bash doesn't use the current locale when formatting HISTTIMEFORMAT.
+
+Repeat-By:
+sykes:/tmp/bash/Build/:[0]$ locale
+LANG=de_DE.UTF-8
+LC_CTYPE="de_DE.UTF-8"
+LC_NUMERIC=POSIX
+LC_TIME=POSIX
+LC_COLLATE=POSIX
+LC_MONETARY="de_DE.UTF-8"
+LC_MESSAGES=en_US.UTF-8
+LC_PAPER="de_DE.UTF-8"
+LC_NAME="de_DE.UTF-8"
+LC_ADDRESS="de_DE.UTF-8"
+LC_TELEPHONE="de_DE.UTF-8"
+LC_MEASUREMENT="de_DE.UTF-8"
+LC_IDENTIFICATION="de_DE.UTF-8"
+LC_ALL=
+sykes:/tmp/bash/Build/:[0]$ history 1
+ 1502  history 1
+sykes:/tmp/bash/Build/:[0]$ HISTTIMEFORMAT=%c
+sykes:/tmp/bash/Build/:[0]$ history 1
+ 1504  Sun Aug  1 10:56:59 2004history 1
+sykes:/tmp/bash/Build/:[0]$ export LC_TIME=$LANG
+sykes:/tmp/bash/Build/:[0]$ history 1
+ 1506  Sun Aug  1 10:57:24 2004history 1
+
+Fix:
+--- bash-3.0/locale.c.~1~	2004-03-17 14:33:36.000000000 +0100
++++ bash-3.0/locale.c	2004-08-01 11:05:15.484280755 +0200
+@@ -71,9 +71,10 @@ set_default_locale ()
+   textdomain (PACKAGE);
+ }
+ 
+-/* Set default values for LC_CTYPE, LC_COLLATE, LC_MESSAGES and LC_NUMERIC
+-   if they are not specified in the environment, but LC_ALL is.  This
+-   should be called from main() after parsing the environment. */
++/* Set default values for LC_CTYPE, LC_COLLATE, LC_MESSAGES, LC_NUMERIC
++   and LC_TIME if they are not specified in the environment, but LC_ALL
++   is.  This should be called from main() after parsing the
++   environment. */
+ void
+ set_default_locale_vars ()
+ {
+@@ -109,6 +110,12 @@ set_default_locale_vars ()
+     setlocale (LC_NUMERIC, lc_all);
+ #  endif /* LC_NUMERIC */
+ 
++#  if defined (LC_TIME)
++  val = get_string_value ("LC_TIME");
++  if (val == 0 && lc_all && *lc_all)
++    setlocale (LC_TIME, lc_all);
++#  endif /* LC_TIME */
++
+ #endif /* HAVE_SETLOCALE */
+ 
+   val = get_string_value ("TEXTDOMAIN");
+@@ -213,6 +220,13 @@ set_locale_var (var, value)
+ 	return (setlocale (LC_NUMERIC, get_locale_var ("LC_NUMERIC")) != 0);
+ #  endif /* LC_NUMERIC */
+     }
++  else if (var[3] == 'T' && var[4] == 'I')	/* LC_TIME */
++    {
++#  if defined (LC_TIME)
++      if (lc_all == 0 || *lc_all == '\0')
++	return (setlocale (LC_TIME, get_locale_var ("LC_TIME")) != 0);
++#  endif /* LC_TIME */
++    }
+ #endif /* HAVE_SETLOCALE */
+ 
+   return (0);
+@@ -285,6 +299,9 @@ reset_locale_vars ()
+ #  if defined (LC_NUMERIC)
+   setlocale (LC_NUMERIC, get_locale_var ("LC_NUMERIC"));
+ #  endif
++#  if defined (LC_TIME)
++  setlocale (LC_TIME, get_locale_var ("LC_TIME"));
++#  endif
+ 
+   locale_setblanks ();  
+ 
+--- bash-3.0/variables.c.~1~	2004-07-04 19:57:26.000000000 +0200
++++ bash-3.0/variables.c	2004-08-01 11:07:47.331188616 +0200
+@@ -3646,6 +3646,7 @@ static struct name_and_function special_
+   { "LC_CTYPE", sv_locale },
+   { "LC_MESSAGES", sv_locale },
+   { "LC_NUMERIC", sv_locale },
++  { "LC_TIME", sv_locale },
+ 
+   { "MAIL", sv_mail },
+   { "MAILCHECK", sv_mail },
+
+
+From: Enrique Perez-Terron <enrio@online.no>
+To: bug-bash@gnu.org
+Subject: When using HISTTIMEFORMAT, the date and the command are run
+	together.
+Date: Sun, 01 Aug 2004 18:36:45 +0200
+
+Configuration Information [Automatically generated, do not change]:
+Machine: i586
+OS: linux-gnu
+Compiler: gcc
+Compilation CFLAGS:  -DPROGRAM='bash' -DCONF_HOSTTYPE='i586'
+-DCONF_OSTYPE='linux-gnu' -DCONF_MACHTYPE='i586-pc-linux-gnu'
+-DCONF_VENDOR='pc' -DLOCALEDIR='/usr/local/share/locale'
+-DPACKAGE='bash' -DSHELL -DHAVE_CONFIG_H  -I.  -I. -I./include -I./lib  
+-g -O2
+uname output: Linux arabia.home.lan 2.6.6-1.435.2.3 #1 Thu Jul 1
+09:11:28 EDT 2004 i586 i586 i386 GNU/Linux
+Machine Type: i586-pc-linux-gnu
+
+# DP: Add space separating the time and the command in the
+# DP: output from the history builtin command.
+
+Bash Version: 3.0
+Patch Level: 0
+Release Status: release
+
+Description:
+	There is no space separating the time and the command in the 
+	output from the history builtin command.
+
+Repeat-By:
+	$ export HISTTIMEFORMAT=_A_format_string_
+	$ history 3
+	  997  _A_format_string_echo $BASH_VERSION
+	  998  _A_format_string_export HISTTIMEFORMAT=_A_format_string_
+	  999  _A_format_string_history 3
+
+Fix:
+--- ./builtins/history.def.orig	2003-12-20 00:02:09.000000000 +0100
++++ ./builtins/history.def	2004-08-01 18:18:02.652720102 +0200
+@@ -287,9 +287,10 @@
+ 	  QUIT;
+ 
+ 	  timestr = (histtimefmt && *histtimefmt) ? histtime (hlist[i], histtimefmt) : (char *)NULL;
+-	  printf ("%5d%c %s%s\n", i + history_base,
++	  printf ("%5d%c %s%s%s\n", i + history_base,
+ 		  histdata(i) ? '*' : ' ',
+ 		  ((timestr && *timestr) ? timestr : ""),
++		  ((timestr && *timestr) ? " " : ""),
+ 		  histline(i));
+ 	  i++;
+ 	}
+
+
+
+

@@ -1,37 +1,234 @@
-bash (2.05b-2-26) testing-proposed-updates; urgency=medium
+bash (3.0-14) unstable; urgency=low
+
+  * Fix re-read-init-file (C-xC-r) not to read /etc/inputrc twice,
+    but /etc/inputrc and ~/.inputrc. Thanks to Vasco Pedro.
+  * Fix bug in readline's self-insert command (closes: #290103).
+  * Fix bash-builtins package description (closes: #290258).
+  * Add cross build support (closes: #283732).
+  * Update to bash_completion 20050121 (v1.786).
+    - Improve ssh2 known hosts completion. (closes: #282767).
+    - Pass over switches to metacommands like sudo, nice, exec, etc.
+      (closes: #289847)
+    - Trivial fix to allow python to be called with a path component without
+      bash displaying a bad subscript error. (closes: #290748)
+    - unzip should also work on .sxw files. (closes: #286738).
+    - Lots of commands that use _longopts() don't use filenames at all, so
+      these shouldn't be mapped with '-o filenames'. (closes: #283069, which
+      related only to wget).
+    - Make dd treat completions as filenames, which is bad for options, but
+      good for filename arguments to 'if' and 'of'. (closes: #287286).
+    - Fix lvresize errors when running as non-root (closes: #285604).
+
+ -- Matthias Klose <doko@debian.org>  Sat, 22 Jan 2005 23:08:57 +0100
+
+bash (3.0-13) unstable; urgency=low
+
+  * Update to bash_completion 20050103 (v1.772).
+  * Fix segfault in the ``reverse-search-history'' feature of the readline
+    library, if the search string matches a previously entered command (ie
+    history) and must overflow the current screen width. Closes: #288940.
+
+ -- Matthias Klose <doko@debian.org>  Wed, 12 Jan 2005 08:11:36 +0100
+
+bash (3.0-12) unstable; urgency=low
 
   * debian/skel.bashrc: Quote dircolors invocation (closes: #285840).
 
- -- Matthias Klose <doko@debian.org>  Sun, 19 Dec 2004 17:44:04 +0100
+ -- Matthias Klose <doko@debian.org>  Sun, 19 Dec 2004 17:48:17 +0100
 
-bash (2.05b-2-25) testing-proposed-updates; urgency=low
+bash (3.0-11) unstable; urgency=low
+
+  * Adjustments to the skeleton files.
+  * Fix spelling errors in the docs (closes: #281842).
+
+ -- Matthias Klose <doko@debian.org>  Wed, 17 Nov 2004 06:37:48 +0100
+
+bash (3.0-10) unstable; urgency=low
+
+  * Apply upstream patch 015-016.
+
+ -- Matthias Klose <doko@debian.org>  Thu, 11 Nov 2004 07:15:34 +0100
+
+bash (3.0-9) unstable; urgency=low
+
+  * Apply upstream patch 001-014.
+  * Document handling of parameters of the test builtin (closes: #173273).
+
+ -- Matthias Klose <doko@debian.org>  Fri, 29 Oct 2004 23:57:19 +0200
+
+bash (3.0-8) unstable; urgency=low
 
   * Add a comment to /etc/bash.bashrc that the file is not read by
     login shells (closes: #271413).
-  * Sync skeleton files with those from unstable.
   * Sync builtin CDPATH documentation with man page (closes: #259767).
   * Document conditional file expressions acting on the target of
     symbolic links as well (except -h, -L). Closes: #231267.
-  * lib/readline/chardefs.h:
-    Remove the NON_NEGATIVE macro in the definition of the _rl_lowercase_p,
-    _rl_uppercase_p, _rl_pure_alphabetic, ALPHABETIC macros. Safe for glibc.
-    Note, that the selected locale must be generated on the system to
-    make i.e. kill-word work with 8-bit strings.
+  * Update to bash_completion 20041017 (v1.758).
+    - Unset `have' variable at end of sourcing (closes: #273809).
+    - Fix scp completion breakage when filenames contained an ampersand.
+      Closes: #262354.
 
- -- Matthias Klose <doko@debian.org>  Sun, 17 Oct 2004 10:46:48 +0200
+ -- Matthias Klose <doko@debian.org>  Sun, 17 Oct 2004 09:31:03 +0200
 
-bash (2.05b-2-24) testing-proposed-updates; urgency=low
+bash (3.0-7) unstable; urgency=low
 
-  * Explicitely check for the existance of /usr/sbin/add-shell in the postrm.
+  * Apply upstream patches 001-013, remove patches collected from the net.
+  * Patch bash30-003 restores a measure of backwards compatibility for the
+    `trap signum' syntax (closes: #261948).
+  * Trim skeleton files.
 
- -- Matthias Klose <doko@debian.org>  Mon,  6 Sep 2004 19:56:50 +0200
+ -- Matthias Klose <doko@debian.org>  Sun, 19 Sep 2004 09:06:36 +0200
 
-bash (2.05b-2-23) testing-proposed-updates; urgency=low
+bash (3.0-6) unstable; urgency=low
 
+  * Fixed in bash-3.0:
+    - New option pipefail. If set, the return value of a pipeline is the
+      value of the last (rightmost) command to exit with a non-zero status,
+      or zero if all commands in the pipeline exit successfully.  This option
+      is disabled by default. The two oldest outstanding bash reports are
+      gone (closes: #7047, #10494).
+    - "$( substitution strangeness (closes: #187983).
+    - timestamp support in history (closes: #161057).
+  * Various updates from the net:
+    - Fix a bug in array expansion.
+    - Fix a bug in brace expansion.
+    - Handle multibyte characters in IFS values.
+    - Fix a bug, when pipefail option is set.
+    - History saved-line handling (closes: #253766, #268922).
+    - Fix parameter expansion with UTF-8 and ${#var} or ${var: -1}.
+  * Apply patch to fix non POSIX function name and avoid use of global
+    variables (Stephen Gildea). Closes: #262105.
+  * Add command_not_found_handle in non POSIX interactive shells.
+    Closes: #243015.
+  * Check for /usr/sbin/remove-shell before using it (closes: #265982).
+  * bash-builtins: Install missing header files (closes: #265259).
+  * Clarify documentation about substring expansion (closes: #192831, #203767).
+  * Fix completion on ~/../``/<tab> (closes: #261142).
+  * Clarify documentation about case-insensitive pathname expansion.
+    Closes: #141292.
+  * Apply patch to fix the display of UTF-8 characters.
+    Closes: #224916, #257540.
+
+ -- Matthias Klose <doko@debian.org>  Sat,  4 Sep 2004 10:21:23 +0200
+
+bash (3.0-5) unstable; urgency=medium
+
+  * Fix segfault and wrong behaviour running the firehol script.
+    Closes: #262438, #262642.
+  * Add  history scrolling patch patch (closes: #263064).
+  * Strip bash binary, leftover from debugging (closes: #263451).
+  * `cd -' printing the directory in non-interactive mode, non-POSIX mode
+    is new behaviour, not a bug (closes: #262619).
   * Address build failure calling the 'binary' target directly instead of
     dpkg-buildpackage (closes: #263797).
+  * Remove kfreebsd-gnu hack to disable bash malloc (closes: #263005).
 
- -- Matthias Klose <doko@debian.org>  Fri,  6 Aug 2004 07:14:10 +0200
+ -- Matthias Klose <doko@debian.org>  Fri,  6 Aug 2004 07:10:24 +0200
+
+bash (3.0-4) unstable; urgency=low
+
+  * Revert substitution patch trying to fix completion on ~/../``/<tab>.
+    Reopens: #261142. Closes: #261955, #262338, #262602.
+
+ -- Matthias Klose <doko@debian.org>  Sun,  1 Aug 2004 12:36:57 +0200
+
+bash (3.0-3) unstable; urgency=high
+
+  * Revert the following upstream change (until sarge is released):
+    The historical behavior of `trap' that allows a missing `action' argument
+    to cause each specified signal's handling to be reset to its default is
+    now only supported when `trap' is given a single non-option argument.
+    Addresses: #261948.
+  * Fix line wrapping (closes: #261957).
+
+ -- Matthias Klose <doko@debian.org>  Fri, 30 Jul 2004 16:17:22 +0200
+
+bash (3.0-2) unstable; urgency=medium
+
+  * Fix typo in bash-minimal's postinst. Closes: #260506.
+  * Fixed in bash-3.0:
+    - pwd builtin exiting with write error. Closes: #243872.
+
+ -- Matthias Klose <doko@debian.org>  Thu, 29 Jul 2004 07:13:13 +0200
+
+bash (3.0-1) unstable; urgency=medium
+
+  * New upstream release.
+  * Bugs fixed in this release (and the alpha/beta releases and release
+    candidates):
+    - Fixed a bug that caused the prompt to overwrite previous output when the
+      output doesn't contain a newline and the locale supports multibyte
+      characters.  This same change fixes the problem of readline redisplay
+      slowing down dramatically as the line gets longer in multibyte locales.
+      Closed: #179883.
+    - The shell no longer seg faults if the expanded value of $PS4 is null
+      and `set -x' is enabled. Closes: #165533.
+    - Don't define a default DEFAULT_MAIL_DIRECTORY, because it can cause
+      a timeout on NFS mounts. Closes: #211426.
+    - Fixed a bad interaction between alias and completion. Closes: #186218.
+    - Fix initialization of local variables with "$@". Closes: #180290.
+    - Fixed segfault in "read -a foo <<< $(echo)". Closes: #167003.
+    - Fixed the history word tokenizer to handle <( and >( better when used as
+      part of bash. Closes: #165212.
+    - Fixed EINTR signal killing redirection. Closes: #164134.
+    - Fixed infinite loop with IFS="<non-ws-char>" and compgen -W.
+      Closes: #162952.
+    - Fixed the internal logout code so that shells that time out waiting for
+      input (using $TMOUT) run ~/.bash_logout. Closes: #152847.
+    - Speedups to the multibyte character redisplay code. Closes: #197965.
+    - Better error message on wrong kill arguments. Closes: #193570.
+    - Overwriting of prompt. Closes: #176968.
+    - The shell now reports on processes that dump core due to signals when
+      invoked as `-c command'. Closes: #211693.
+    - Fixed ferror beeing called w/o always first calling clearerr
+      results in spurious errors reported. Closes: #195116.
+    - Add missing trailing slash on directory completion. Closes: #178828.
+    - Fix different behaviour for builtin and external commands together
+      with arithmetic expansion. Closes: #173744.
+    - Fixed a bug that caused redirections accompanying a null command
+      to persist in the current shell. Closes: #173148.
+    - Fixed a bug that caused a leading `-' in the shell's name to cause it to
+      not be recognized as a restricted shell. Closes: #170298.
+    - Fix segfault in ill formed paramter expansion. Closes: #162773.
+    - Fixed a bug in brace expansion that caused a quoted `$' preceding an
+      open brace to inhibit brace expansion. Closes: #157954.
+    - Removed the attempts to avoid adding a slash at the end of a completed
+      executable name if there was a directory with the same name in the
+      current directory. Closes: #155134, #189006.
+    - Fix error message for circular alias expansions. Closes: #173588.
+    - Fixed a bug that caused some key bindings set in an inputrc to be ignored
+      at shell startup. Closes: #110969.
+    - Fix segfault on bad array subscripts. Closes: #232653.
+    - Fix "set completion-ignore-case on" breaking some tab completion.
+      Closes: #224303.
+    - Flag an error when a user uses "% DIGITS" instead of "%DIGITS", and
+      don't give him a different job instead. Closes: #173854.
+    - For 'cd filename' say 'not a directory', not 'no such file or directory'
+      when filename exists and is not a directory. Closes: #219958.
+    - Expansion results are the same for ${1:+"$@"} and "$@" if IFS is not
+      the default.
+    - The locale code does a better job of recomputing the various locale
+      variable values when LC_ALL is unset. Closes: #160932.
+    - Fix substitution error triggering an assertion. Closes: #251801.
+  * Documentation updated in this release (and the alpha/beta releases):
+    - Fix documentation about exit status of unset builtin. Closes: #183352.
+    - Clarify documentation for arguments of wait builtin. Closes: #174133.
+    - Document ${!prefix@} expansion. Closes: #168318.
+    - Fix documentation of GLOBIGNORE behaviour. Closes: #168267.
+    - Document the use of $EMACS. Closes: #174744.
+    - Improve documentation of the value of arithmetic expressions.
+      Closes: #168321.
+    - Make docs more explicit about variable indirection in shell parameter
+      expansion. Closes: #167002.
+    - Documentation for values of various assignments updated. Closes: #168331.
+    - In section "Shell Functions", add documentation for syntax,
+      which bash accepts. Closes: #172971.
+    - Fix documentation of the PATH variable. Closes: #155369.
+    - Document SHELL variable in section "Shell Variables". Closes: #249657.
+    - Remove reference to missing section in rbash(1). Closes: #249219.
+  * Fix another segfault in completion code. Closes: #261142.
+
+ -- Matthias Klose <doko@debian.org>  Tue, 27 Jul 2004 21:23:42 +0200
 
 bash (2.05b-2-22) unstable; urgency=low
 
@@ -96,7 +293,7 @@ bash (2.05b-2-15) unstable; urgency=low
 
   * Fix a bug that caused a leading `-' in the shell's name to cause it to
     not be recognized as a restricted shell (closes: #170298).
-  * Fix option in menu file (closes: #162152). 
+  * Fix option in menu file (closes: #162152).
   * Backout patches/random patch (closes: #242111).
   * Update to bash_completion 20040331 (v1.700).
   * Update skeleton files and /etc/bash.bashrc to include the contents
@@ -162,15 +359,11 @@ bash (2.05b-2-11) unstable; urgency=medium
 
  -- Matthias Klose <doko@debian.org>  Tue, 14 Oct 2003 20:37:23 +0200
 
-bash (2.05b-2-10) unstable; urgency=medium
+bash (2.05b-2-10) unstable; urgency=low
 
-  * Use emacsen policy for bashdb's elisp files (closes: #213981).
-  * Update to bash_completion 20030929 (v1.630).
-    Closes: #214464.
-  * Add .bz2 completion for gnome-gv (ggv) (closes: #214428).
-  * Add completions for chiark-really (really) and vsound (closes: #214635).
+  * Update to bash_completion 20030911 (v1.624).
 
- -- Matthias Klose <doko@debian.org>  Tue,  7 Oct 2003 22:51:57 +0200
+ -- Matthias Klose <doko@debian.org>  Mon, 22 Sep 2003 11:43:39 +0200
 
 bash (2.05b-2-9.1) unstable; urgency=low
 

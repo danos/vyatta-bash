@@ -17,9 +17,10 @@ exit 0
 
 # DP: send bug reports to Debian bash maintainer too.
 
---- ./support/bashbug.sh~	Mon Nov 27 17:15:21 2000
-+++ ./support/bashbug.sh	Tue Feb  6 18:54:48 2001
-@@ -98,6 +98,7 @@
+diff -urb bash.orig/support/bashbug.sh bash/support/bashbug.sh
+--- bash.orig/support/bashbug.sh	2002-04-16 23:15:15.000000000 +0200
++++ bash/support/bashbug.sh	2003-09-27 23:35:04.000000000 +0200
+@@ -134,6 +134,7 @@
  		esac ;;
  esac
  
@@ -27,3 +28,4 @@ exit 0
  BUGADDR="${1-$BUGBASH}"
  
  if [ -z "$DEFEDITOR" ] && [ -z "$EDITOR" ]; then
+Only in bash/support: bashbug.sh.orig

@@ -13,7 +13,7 @@ if [ ${FLAVOR} = emacs ]; then exit 0; fi
 # bashdb's gud.el doesn't support emacs20
 if [ ${FLAVOR} = emacs20 ]; then exit 0; fi
 
-FILES="bashdb.el gud-bashdb.el"
+FILES="bashdb.el gud.el"
 
 echo install/${PACKAGE}: Handling install for emacsen flavor ${FLAVOR}
 

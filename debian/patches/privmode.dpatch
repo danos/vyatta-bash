@@ -23,9 +23,10 @@ exit 0
 # DP: called with the -p option.  I won't install this. 
  
 
---- bash-2.02.1.orig/shell.c
-+++ bash-2.02.1/shell.c
-@@ -378,7 +378,7 @@
+diff -urb bash.orig/shell.c bash/shell.c
+--- bash.orig/shell.c	2003-06-03 19:50:35.000000000 +0200
++++ bash/shell.c	2003-09-28 00:26:28.000000000 +0200
+@@ -447,7 +447,7 @@
    if (dump_translatable_strings)
      read_but_dont_execute = 1;
  

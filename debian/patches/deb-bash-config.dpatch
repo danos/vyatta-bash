@@ -35,10 +35,14 @@ exit 0
 # DP: 
 # DP: - try to check whether bash is being run by sshd and source
 # DP:   the .bashrc if so (like the rshd behavior).
+# DP: 
+# DP: - don't define a default DEFAULT_MAIL_DIRECTORY, because it
+# DP:   can cause a timeout on NFS mounts.
 
---- bash-2.05a.orig/config-top.h	Wed Oct 24 19:28:49 2001
-+++ bash-2.05a/config-top.h	Fri Nov  2 11:16:00 2001
-@@ -29,19 +29,19 @@
+diff -urb bash.orig/config-top.h bash/config-top.h
+--- bash.orig/config-top.h	2003-08-05 16:36:12.000000000 +0200
++++ bash/config-top.h	2003-09-28 00:20:03.000000000 +0200
+@@ -47,19 +47,19 @@
  
  /* Define DONT_REPORT_SIGPIPE if you don't want to see `Broken pipe' messages
     when a job like `cat jobs.c | exit 1' is executed. */
@@ -48,7 +52,7 @@ exit 0
  /* The default value of the PATH variable. */
  #ifndef DEFAULT_PATH_VALUE
  #define DEFAULT_PATH_VALUE \
--  "/usr/gnu/bin:/usr/local/bin:/usr/ucb:/bin:/usr/bin:."
+-  "/usr/gnu/bin:/usr/local/bin:/bin:/usr/bin:."
 +  "/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin"
  #endif
  
@@ -56,13 +60,13 @@ exit 0
     the Posix.2 confstr () function, or CS_PATH define are not present. */
  #ifndef STANDARD_UTILS_PATH
  #define STANDARD_UTILS_PATH \
--  "/bin:/usr/bin:/usr/ucb:/sbin:/usr/sbin:/etc:/usr/etc"
+-  "/bin:/usr/bin:/sbin:/usr/sbin:/etc:/usr/etc"
 +  "/bin:/usr/bin:/sbin:/usr/sbin"
  #endif
  
  /* Default primary and secondary prompt strings. */
-@@ -49,15 +49,15 @@
- #define SPROMPT "> "
+@@ -73,15 +73,15 @@
+ #define KSH_COMPATIBLE_SELECT
  
  /* System-wide .bashrc file for interactive shells. */
 -/* #define SYS_BASHRC "/etc/bash.bashrc" */
@@ -81,3 +85,12 @@ exit 0
     sshd and source the .bashrc if so (like the rshd behavior). */
 -/* #define SSH_SOURCE_BASHRC */
 +#define SSH_SOURCE_BASHRC
+
+--- bash/config-bot.h~	2003-09-19 21:57:38.000000000 +0200
++++ bash/config-bot.h	2003-10-09 21:06:01.000000000 +0200
+@@ -178,4 +178,4 @@
+ /******************************************************************/
+ 
+ /* If you don't want bash to provide a default mail file to check. */
+-/* #undef DEFAULT_MAIL_DIRECTORY */
++#undef DEFAULT_MAIL_DIRECTORY

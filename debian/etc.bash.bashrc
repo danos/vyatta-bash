@@ -15,8 +15,17 @@ if [ -z "$debian_chroot" -a -r /etc/debian_chroot ]; then
     debian_chroot=$(cat /etc/debian_chroot)
 fi
 
-# set a fancy prompt (non-color)
+# set a fancy prompt (non-color, overwrite the one in /etc/profile)
 PS1='${debian_chroot:+($debian_chroot)}\u@\h:\w\$ '
+
+# If this is an xterm set the title to user@host:dir
+case "$TERM" in
+xterm*|rxvt*)
+    PROMPT_COMMAND='echo -ne "\033]0;${USER}@${HOSTNAME}: ${PWD}\007"'
+    ;;
+*)
+    ;;
+esac
 
 # enable bash completion in interactive shells
 #if [ -f /etc/bash_completion ]; then

@@ -17,11 +17,12 @@ exit 0
 
 # DP: Modified readline examples to properly build with Debian setup.
 
---- ./lib/readline/examples/Makefile.orig	Fri Nov 26 23:13:35 1999
-+++ ./lib/readline/examples/Makefile	Fri Nov 26 23:15:19 1999
-@@ -1,8 +1,8 @@
- # This is the Makefile for the examples subdirectory of readline. -*- text -*-
- #
+diff -urb bash.orig/lib/readline/examples/Makefile bash/lib/readline/examples/Makefile
+--- bash.orig/lib/readline/examples/Makefile	2001-11-20 21:16:23.000000000 +0100
++++ bash/lib/readline/examples/Makefile	2003-09-27 23:27:51.000000000 +0200
+@@ -17,8 +17,8 @@
+ # Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111 USA.
+ 
  EXECUTABLES = fileman rltest rl
 -CFLAGS  = -g -I../.. -I.. -DREADLINE_LIBRARY
 -LDFLAGS = -g -L..
@@ -30,9 +31,11 @@ exit 0
  
  .c.o:
  	$(CC) $(CFLAGS) -c $<
---- ./lib/readline/examples/rl.c~	Mon Nov  8 22:22:03 1999
-+++ ./lib/readline/examples/rl.c	Fri Dec 31 17:34:30 1999
-@@ -11,7 +11,7 @@
+Only in bash/lib/readline/examples: Makefile.orig
+diff -urb bash.orig/lib/readline/examples/rl.c bash/lib/readline/examples/rl.c
+--- bash.orig/lib/readline/examples/rl.c	2002-04-16 22:53:16.000000000 +0200
++++ bash/lib/readline/examples/rl.c	2003-09-27 23:27:51.000000000 +0200
+@@ -31,7 +31,7 @@
  
  #include <stdio.h>
  #include <sys/types.h>
@@ -41,3 +44,4 @@ exit 0
  
  #if defined (READLINE_LIBRARY)
  #  include "readline.h"
+Only in bash/lib/readline/examples: rl.c.orig

@@ -28,21 +28,10 @@ exit 0
 
 # DP: use the system random functions
 
---- bash-2.05-old/configure.in	Mon Nov  6 14:21:35 2000
-+++ bash-2.05/configure.in	Sun Nov 26 20:42:06 2000
-@@ -479,6 +479,9 @@
- 		siginterrupt memmove ttyname gethostbyname getservbyname \
- 		inet_aton strpbrk setvbuf pathconf)
- 
-+dnl checks for random functions
-+AC_CHECK_FUNCS(random srandom)
-+
- dnl checks for locale functions
- AC_CHECK_HEADERS(libintl.h)
- AC_CHECK_FUNCS(gettext textdomain bindtextdomain)
---- bash-2.05-old/config.h.in	Mon Oct  2 15:44:22 2000
-+++ bash-2.05/config.h.in	Sun Nov 26 21:51:18 2000
-@@ -462,6 +462,9 @@
+diff -urb bash.orig/config.h.in bash/config.h.in
+--- bash.orig/config.h.in	2003-09-22 14:42:35.000000000 +0200
++++ bash/config.h.in	2003-09-28 00:27:15.000000000 +0200
+@@ -606,6 +606,9 @@
  /* Define if you have the putenv function.  */
  #undef HAVE_PUTENV
  
@@ -52,25 +41,22 @@ exit 0
  /* Define if you have the readlink function. */
  #undef HAVE_READLINK
  
-@@ -524,6 +527,9 @@
- 
+@@ -696,6 +699,9 @@
  /* Define if you have the strsignal function or macro. */
  #undef HAVE_STRSIGNAL
-+
+ 
 +/* Define if you have the srandom function.  */
 +#undef HAVE_SRANDOM
- 
++
  /* Define if you have the sysconf function. */
  #undef HAVE_SYSCONF
---- bash-2.05b/variables.c~	2002-06-25 15:43:33.000000000 +0200
-+++ bash-2.05b/variables.c	2004-04-14 08:26:10.000000000 +0200
-@@ -1038,17 +1038,26 @@
- /* The random number seed.  You can change this by setting RANDOM. */
+ 
+diff -urb bash.orig/variables.c bash/variables.c
+--- bash.orig/variables.c	2003-07-31 16:28:57.000000000 +0200
++++ bash/variables.c	2003-09-28 00:27:15.000000000 +0200
+@@ -1098,16 +1098,22 @@
  static unsigned long rseed = 1;
  static int last_random_value;
-+#if defined(HAVE_RANDOM)
-+static char random_state[32];
-+#endif
  
 -/* A linear congruential random number generator based on the example
 -   one in the ANSI C standard.  This one isn't very good, but a more
@@ -85,7 +71,7 @@ exit 0
  brand ()
  {
 +#if defined(HAVE_RANDOM)
-+  rseed = (unsigned int) ((32767.0 * random()) / (RAND_MAX + 1.0));
++  rseed = (unsigned int) (labs(random()) & 32767);
 +  return rseed;
 +#else
    rseed = rseed * 1103515245 + 12345;
@@ -94,14 +80,12 @@ exit 0
  }
  
  /* Set the random number generator seed to SEED. */
-@@ -1056,8 +1065,14 @@
+@@ -1115,8 +1121,12 @@
  sbrand (seed)
       unsigned long seed;
  {
 +#if defined(HAVE_SRANDOM)
-+  initstate((unsigned int) seed, random_state, sizeof(random_state));
-+  setstate(random_state);
-+  srandom((unsigned int) seed);
++  srandom(seed);
 +#else
    rseed = seed;
    last_random_value = 0;
@@ -109,3 +93,15 @@ exit 0
  }
  
  static SHELL_VAR *
+--- bash/configure.in~	2004-03-02 00:04:29.000000000 +0100
++++ bash/configure.in	2004-03-02 00:05:48.000000000 +0100
+@@ -667,6 +667,9 @@
+ 
+ AC_FUNC_MKTIME
+ 
++dnl checks for random functions
++AC_CHECK_FUNCS(random srandom)
++
+ dnl
+ dnl Checks for lib/intl and related code (uses some of the output from
+ dnl AM_GNU_GETTEXT)

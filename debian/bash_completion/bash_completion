@@ -1,6 +1,6 @@
 #   bash_completion - some programmable completion functions for bash 2.05b
 #
-#   $Id: bash_completion,v 1.737 2004/07/11 18:36:39 ianmacd Exp $
+#   $Id: bash_completion,v 1.786 2005/01/21 22:29:49 ianmacd Exp $
 #
 #   Copyright (C) Ian Macdonald <ian@caliban.org>
 #
@@ -22,7 +22,7 @@
 #
 #   http://www.caliban.org/bash/index.shtml#completion
 #
-#   RELEASE: 20040711
+#   RELEASE: 20050121
 
 [ -n "${DEBUG:-}" ] && set -v || set +v
 
@@ -31,14 +31,14 @@
 if [ -n "${FUNCNAME:-}" ]; then
 	# we're being sourced from within a function, so we can't use
 	# 'declare', as this will create local variables within a function
-	BASH_COMPLETION=${BASH_COMPLETION:-/etc/bash_completion} 2>/dev/null
-	BASH_COMPLETION_DIR=${BASH_COMPLETION_DIR:=/etc/bash_completion.d} \
+	BASH_COMPLETION="${BASH_COMPLETION:-/etc/bash_completion}" 2>/dev/null
+	BASH_COMPLETION_DIR="${BASH_COMPLETION_DIR:=/etc/bash_completion.d}" \
 	  2>/dev/null
 else
-	declare -r BASH_COMPLETION=${BASH_COMPLETION:-/etc/bash_completion} \
+	declare -r BASH_COMPLETION="${BASH_COMPLETION:-/etc/bash_completion}" \
 	  2>/dev/null
 	declare -r \
-	  BASH_COMPLETION_DIR=${BASH_COMPLETION_DIR:=/etc/bash_completion.d} \
+	  BASH_COMPLETION_DIR="${BASH_COMPLETION_DIR:=/etc/bash_completion.d}"\
 	  2>/dev/null
 fi
 
@@ -84,22 +84,23 @@ complete -d pushd
 #
 # START exclude -- do NOT remove this line
 complete -f -X '!*.?(t)bz2' bunzip2 bzcat bzcmp bzdiff bzegrep bzfgrep bzgrep
-complete -f -X '!*.@(zip|ZIP|jar|JAR|exe|EXE|pk3|war|wsz|ear|zargo|xpi)' unzip zipinfo
+complete -f -X '!*.@(zip|ZIP|jar|JAR|exe|EXE|pk3|war|wsz|ear|zargo|xpi|sxw)' unzip zipinfo
 complete -f -X '*.Z' compress znew
 complete -f -X '!*.@(Z|gz|tgz|Gz|dz)' gunzip zcmp zdiff zcat zegrep zfgrep zgrep zless zmore
 complete -f -X '!*.Z' uncompress
-complete -f -X '!*.@(gif|jp?(e)g|tif?(f)|pn[gm]|p[bgp]m|bmp|xpm|ico|xwd|tga|pcx|GIF|JP?(E)G|TIF?(F)|PN[GM]|P[BGP]M|BMP|XPM|ICO|XWD|TGA|PCX)' ee display
+complete -f -X '!*.@(gif|jp?(e)g|miff|tif?(f)|pn[gm]|p[bgp]m|bmp|xpm|ico|xwd|tga|pcx|GIF|JP?(E)G|MIFF|TIF?(F)|PN[GM]|P[BGP]M|BMP|XPM|ICO|XWD|TGA|PCX)' ee display
 complete -f -X '!*.@(gif|jp?(e)g|tif?(f)|png|p[bgp]m|bmp|x[bp]m|rle|rgb|pcx|fits|pm|GIF|JPG|JP?(E)G|TIF?(F)|PNG|P[BGP]M|BMP|X[BP]M|RLE|RGB|PCX|FITS|PM)' xv qiv
-complete -f -X '!*.@(@(?(e)ps|?(E)PS|pdf|PDF)?(.gz|.GZ|.bz2|.BZ2|.Z))' gv ggv
+complete -f -X '!*.@(@(?(e)ps|?(E)PS|pdf|PDF)?(.gz|.GZ|.bz2|.BZ2|.Z))' gv ggv kghostview
 complete -f -X '!*.@(dvi|DVI)?(.@(gz|Z|bz2))' xdvi
 complete -f -X '!*.@(dvi|DVI)' dvips dviselect dvitype
-complete -f -X '!*.@(pdf|PDF)' acroread gpdf xpdf
+complete -f -X '!*.@(pdf|PDF)' acroread gpdf xpdf kpdf
+complete -f -X '!*.@(?(e)ps|?(E)PS)' ps2pdf
 complete -f -X '!*.texi*' makeinfo texi2html
 complete -f -X '!*.@(?(la)tex|?(LA)TEX|texi|TEXI|dtx|DTX|ins|INS)' tex latex slitex jadetex pdfjadetex pdftex pdflatex texi2dvi
 complete -f -X '!*.@(mp3|MP3|m3u)' mpg123 mpg321
 complete -f -X '!*.@(mp?(e)g|MP?(E)G|wma|avi|AVI|asf|vob|VOB|bin|dat|vcd|ps|pes|fli|viv|rm|ram|yuv|mov|MOV|qt|QT|wmv|mp3|MP3|ogg|OGG|ogm|OGM|mp4|MP4|wav|WAV|asx|ASX)' xine
 complete -f -X '!*.@(avi|asf|wmv)' aviplay
-complete -f -X '!*.@(rm|ram|smi?(l))' realplay
+complete -f -X '!*.@(rm?(j)|ra?(m)|smi?(l))' realplay
 complete -f -X '!*.@(mpg|mpeg|avi|mov|qt)' xanim
 complete -f -X '!*.@(ogg|OGG|m3u|flac|spx)' ogg123
 complete -f -X '!*.@(mp3|MP3|ogg|OGG|pls|m3u)' gqmpeg freeamp
@@ -155,7 +156,7 @@ complete -b builtin
 
 # start of section containing completion functions called by other functions
 
-# This function checks whether we have a given programs on the system.
+# This function checks whether we have a given program on the system.
 # No need for bulky functions in memory if we don't.
 #
 have()
@@ -174,7 +175,7 @@ have()
 #
 _rl_enabled() 
 {
-    bind -v | grep -q '^set[ \t][ \t]*'$1'[ \t][ \t]*on'
+    bind -v | grep '^set[ \t][ \t]*'$1'[ \t][ \t]*on' &>/dev/null
 }
 
 
@@ -215,9 +216,9 @@ _signals()
 	done
 }
 
-# This function completes on network interfaces
+# This function completes on configured network interfaces
 #
-_interfaces()
+_configured_interfaces()
 {
 	if [ -f /etc/debian_version ]; then
 		# Debian system
@@ -225,16 +226,35 @@ _interfaces()
 			       /etc/network/interfaces ) )
 	elif [ -f /etc/SuSE-release ]; then
 		# SuSE system
-	        COMPREPLY=( $( command ls \
-		               /etc/sysconfig/network/ifcfg-* | \
-		sed -ne 's|.*ifcfg-\('$cur'.*\)|\1|p' ) )
-	    
+		COMPREPLY=( $( command ls \
+			/etc/sysconfig/network/ifcfg-* | \
+			sed -ne 's|.*ifcfg-\('$cur'.*\)|\1|p' ) )
 	else
 		# Assume Red Hat
 		COMPREPLY=( $( command ls \
 			/etc/sysconfig/network-scripts/ifcfg-* | \
 			sed -ne 's|.*ifcfg-\('$cur'.*\)|\1|p' ) )
 	fi
+}
+
+# This function completes on all available network interfaces
+# -a: restrict to active interfaces only
+# -w: restrict to wireless interfaces only
+#
+_available_interfaces()
+{
+	local cmd
+
+	if [ "${1:-}" = -w ]; then
+		cmd="iwconfig"
+	elif [ "${1:-}" = -a ]; then
+		cmd="ifconfig"
+	else
+		cmd="ifconfig -a"
+	fi
+
+	COMPREPLY=( $( eval $cmd 2>/dev/null | \
+		sed -ne 's|^\('$cur'[^[:space:][:punct:]]\{1,\}\).*$|\1|p') )
 }
 
 # This function expands tildes in pathnames
@@ -265,7 +285,7 @@ _pids()
 [ $UNAME = SunOS -o $UNAME = AIX ] &&
 _pids()
 {
-        COMPREPLY=( $( compgen -W '$( command ps -efo pid | sed 1d )' -- $cur ))
+	COMPREPLY=( $( compgen -W '$( command ps -efo pid | sed 1d )' -- $cur ))
 }
 
 # This function completes on process group IDs
@@ -279,7 +299,7 @@ _pgids()
 [ $UNAME = SunOS -o $UNAME = AIX ] &&
 _pgids()
 {
-        COMPREPLY=( $( compgen -W '$( command ps -efo pgid | sed 1d )' -- $cur ))
+	COMPREPLY=( $( compgen -W '$( command ps -efo pgid | sed 1d )' -- $cur ))
 }
 
 # This function completes on user IDs
@@ -314,13 +334,13 @@ _gids()
 	fi
 }
 
-# This function complete on services
+# This function completes on services
 #
 _services()
 {
 	local sysvdir famdir
 	[ -d /etc/rc.d/init.d ] && sysvdir=/etc/rc.d/init.d || sysvdir=/etc/init.d
-        famdir=/etc/xinetd.d
+	famdir=/etc/xinetd.d
 	COMPREPLY=( $( builtin echo $sysvdir/!(*.rpmsave|*.rpmorig|*~|functions)) )
 
 	if [ -d $famdir ]; then
@@ -330,37 +350,14 @@ _services()
 	COMPREPLY=( $( compgen -W '${COMPREPLY[@]#@($sysvdir|$famdir)/}' -- $cur ) )
 }
 
-# Linux ifconfig(8) and iwconfig(8) helper function
+# This function complete on modules
 #
-[ $UNAME = Linux -o $UNAME = FreeBSD ] && { have ifconfig || have iwconfig; } &&
-_ifwconfig()
+_modules()
 {
-	COMPREPLY=()
-	cur=${COMP_WORDS[COMP_CWORD]}
-
-	case "${COMP_WORDS[1]}" in
-	-|*[0-9]*)
-		#COMPREPLY=( $( compgen -W '${keywords[@]}' ) )
-		COMPREPLY=( ${keywords[@]} )
-		COMPREPLY=( $( echo " ${COMP_WORDS[@]}" | \
-			       (while read -d ' ' i; do
-				   [ "$i" == "" ] && continue
-				   # flatten array with spaces on either side,
-				   # otherwise we cannot grep on word
-				   # boundaries of first and last word
-				   COMPREPLY=" ${COMPREPLY[@]} "
-				   # remove word from list of completions
-				   COMPREPLY=( ${COMPREPLY/ $i / } )
-				done
-				echo ${COMPREPLY[@]})
-			  ) )
-		return 0
-		;;
-	esac
-
-	COMPREPLY=( $( eval "$@" 2>/dev/null | \
-			sed -ne \
-			  's|^\('$cur'[^[:space:][:punct:]]\{1,\}\).*$|\1|p') )
+	local modpath
+	modpath=/lib/modules/$1
+	COMPREPLY=( $( command ls -R $modpath | \
+			sed -ne 's/^\('$cur'.*\)\.k\?o\(\|.gz\)$/\1/p') )
 }
 
 # start of section containing completion functions for bash built-ins
@@ -526,9 +523,8 @@ _service()
 		_services
 	else
 		COMPREPLY=( $( compgen -W '`sed -ne "y/|/ /; \
-					    s/^.*Usage.*{\(.*\)}.*$/\1/p" \
-					    $sysvdir/${prev##*/}`' -- \
-			       $cur ) )
+				s/^.*Usage.*{\(.*\)}.*$/\1/p" \
+				$sysvdir/${prev##*/} 2>/dev/null`' -- $cur ) )
 	fi
 
 	return 0
@@ -554,6 +550,8 @@ _chown()
 	fi
 
 	if (( COMP_CWORD == 1 )) || [[ "$prev" == -* ]]; then
+	    local IFS=$'\n'
+	    cur=${cur//\\\\ / }
 	    if [[ $cur = *@(\\:|.)* ]] && [ -n "$bash205" ]; then
 		user=${cur%%*([^:.])}
 		COMPREPLY=( $(compgen -P ${user/\\\\} -g -- ${cur##*[.:]}) )
@@ -576,6 +574,7 @@ _chgrp()
 
 	COMPREPLY=()
 	cur=${COMP_WORDS[COMP_CWORD]}
+	cur=${cur//\\\\/}
 	prev=${COMP_WORDS[COMP_CWORD-1]}
 
 	# options completion
@@ -589,14 +588,15 @@ _chgrp()
 	# first parameter on line or first since an option?
 	if [ $COMP_CWORD -eq 1 ] && [[ "$cur" != -* ]] || \
 	   [[ "$prev" == -* ]] && [ -n "$bash205" ]; then
+		local IFS=$'\n'
 		COMPREPLY=( $( compgen -g $cur 2>/dev/null ) )
 	else
-		_expand || return 0
+		_filedir || return 0
 	fi
 
 	return 0
 }
-complete -F _chgrp $default chgrp
+complete -F _chgrp $filenames chgrp
 
 # umount(8) completion. This relies on the mount point being the third
 # space-delimited field in the output of mount(8)
@@ -644,6 +644,10 @@ _mount()
 		# Solaris
 		COMPREPLY=( $( awk '! /^[ \t]*#/ {if ($3 ~ /\//) print $3}' \
 				/etc/vfstab | grep "^$cur" ) )
+	elif [ ! -e /etc/fstab ]; then
+		# probably Cygwin
+		COMPREPLY=( $( mount | awk '! /^[ \t]*#/ {if ($3 ~ /\//) print $3}' \
+				 | grep "^$cur" ) )
 	else
 		# probably Linux
 		COMPREPLY=( $( awk '! /^[ \t]*#/ {if ($2 ~ /\//) print $2}' \
@@ -682,7 +686,6 @@ _insmod()
 	COMPREPLY=()
 	cur=${COMP_WORDS[COMP_CWORD]}
 	prev=${COMP_WORDS[COMP_CWORD-1]}
-	modpath=/lib/modules/`uname -r`
 
 	# behave like lsmod for modprobe -r
 	if [ $1 = "modprobe" ] &&
@@ -704,12 +707,8 @@ _insmod()
 		COMPREPLY=( $( /sbin/modinfo -p ${COMP_WORDS[1]} 2>/dev/null | \
 		       awk '{if ($1 ~ /^parm:/ && $2 ~ /^'$cur'/) { print $2 } \
 			else if ($1 !~ /:/ && $1 ~ /^'$cur'/) { print $1 }}' ) )
-	elif [ -r $modpath -a -x $modpath ]; then
-		# do module name completion
-		COMPREPLY=( $( command ls -R $modpath | \
-			sed -ne 's/^\('$cur'.*\)\.k\?o\(\|.gz\)$/\1/p') )
-	else 
-		_filedir
+	else
+		_modules $(uname -r)
 	fi
 
 	return 0
@@ -892,6 +891,7 @@ _find()
 		;;
 	-fstype)
 		# this is highly non-portable
+		[ -e /proc/filesystems ] &&
 		COMPREPLY=( $( cut -d$'\t' -f 2 /proc/filesystems | \
 				grep "^$cur" ) )
 		return 0
@@ -981,36 +981,169 @@ _find()
 }
 complete -F _find $filenames find
 
-# Linux ifconfig(8) completion
-#
-[ $UNAME = Linux -o $UNAME = FreeBSD ] && have ifconfig &&
-_ifconfig()
-{
-	local cur
-	local -a keywords=( -a up down arp promisc allmulti metric mtu dstaddr \
-			    netmask add del tunnel irq io_addr mem_start media \
-			 broadcast pointopoint hw multicast address txqueuelen )
-
-	_ifwconfig ifconfig -a
-
-	COMPREPLY=( $( compgen -W '${COMPREPLY[@]}' -- $cur ) )
-}
-[ $UNAME = Linux -o $UNAME = FreeBSD ] && have ifconfig &&
-  complete -F _ifconfig ifconfig
-
 # Linux iwconfig(8) completion
 #
 [ $UNAME = Linux ] && have iwconfig &&
 _iwconfig()
 {
-	local -a keywords=( essid nwid domain freq channel sens mode ap nick \
-			    rate bit rts frag key enc power )
+	local cur prev
 
-	_ifwconfig iwconfig
+	COMPREPLY=()
+	cur=${COMP_WORDS[COMP_CWORD]}
+	prev=${COMP_WORDS[COMP_CWORD-1]}
+	
+	case $prev in
+		mode)
+			COMPREPLY=( $( compgen -W 'managed ad-hoc master repeater secondary monitor' -- $cur ) )
+			return 0
+			;;
+		essid)
+			COMPREPLY=( $( compgen -W 'on off any' -- $cur ) )
+			return 0
+			;;
+		nwid)
+			COMPREPLY=( $( compgen -W 'on off' -- $cur ) )
+			return 0
+			;;
+		channel)
+			COMPREPLY=( $( iwlist ${COMP_WORDS[1]} channel | sed -n 's/.*Channel \(.*\) : \(.*\) GHz/\1/p') )
+			return 0
+			;;
 
-	COMPREPLY=( $( compgen -W '${COMPREPLY[@]}' -- $cur ) )
+		freq)
+			COMPREPLY=( $( iwlist ${COMP_WORDS[1]} channel | sed -n 's/.*Channel \(.*\) : \(.*\) GHz/\2G/p') )
+			return 0
+			;;
+		ap)
+			COMPREPLY=( $( compgen -W 'auto any off' -- $cur ) )
+			return 0
+			;;
+		rate)
+			COMPREPLY=($( iwlist ${COMP_WORDS[1]} rate | sed -n 's/\(.*\)M.*/\1M/p') auto fixed)
+			return 0
+			;;
+		rts)
+			COMPREPLY=( $( compgen -W 'auto fixed off' -- $cur ) )
+			return 0
+			;;
+		frag)
+			COMPREPLY=( $( compgen -W 'auto fixed off' -- $cur ) )
+			return 0
+			;;
+		key)
+			COMPREPLY=( $( compgen -W 'off on open restricted' -- $cur ) )
+			return 0
+			;;
+		enc)
+			COMPREPLY=( $( compgen -W 'off on open restricted' -- $cur ) )
+			return 0
+			;;
+		power)
+			COMPREPLY=( $( compgen -W 'period timeout off on' -- $cur ) )
+			return 0
+			;;
+		txpower)
+			COMPREPLY=( $( compgen -W 'off on auto' -- $cur ) )
+			return 0
+			;;
+		retry)
+			COMPREPLY=( $( compgen -W 'limit lifetime' -- $cur ) )
+			return 0
+			;;
+	esac
+
+	if [ $COMP_CWORD -eq 1 ]; then
+		if [[ "$cur" == -* ]]; then
+			COMPREPLY=( $( compgen -W '--help --version' -- $cur ) ) 
+		else
+			_available_interfaces -w
+		fi
+	else
+		COMPREPLY=( $( compgen -W 'essid nwid mode freq channel sens mode \
+			ap nick rate rts frag enc key power txpower commit' -- $cur ) ) 
+	fi
+
 }
-[ $UNAME = Linux ] && complete -F _iwconfig iwconfig
+[ $UNAME = Linux ] && [ -n "${have:-}" ] && complete -F _iwconfig iwconfig
+
+# Linux iwlist(8) completion
+#
+[ $UNAME = Linux ] && have iwlist &&
+_iwlist()
+{
+	local cur prev
+
+	COMPREPLY=()
+	cur=${COMP_WORDS[COMP_CWORD]}
+	prev=${COMP_WORDS[COMP_CWORD-1]}
+	
+	if [ $COMP_CWORD -eq 1 ]; then
+		if [[ "$cur" == -* ]]; then
+			COMPREPLY=( $( compgen -W '--help --version' -- $cur ) ) 
+		else
+			_available_interfaces -w
+		fi
+	else
+		COMPREPLY=( $( compgen -W 'scanning frequency rate key power txpower retry' -- $cur ) ) 
+	fi
+}
+[ $UNAME = Linux ] && [ -n "${have:-}" ] && complete -F _iwlist iwlist
+
+# Linux iwspy(8) completion
+#
+[ $UNAME = Linux ] && have iwspy &&
+_iwspy()
+{
+	local cur
+
+	COMPREPLY=()
+	cur=${COMP_WORDS[COMP_CWORD]}
+
+	if [ $COMP_CWORD -eq 1 ]; then
+		if [[ "$cur" == -* ]]; then
+			COMPREPLY=( $( compgen -W '--help --version' -- $cur ) ) 
+		else
+			_available_interfaces -w
+		fi
+	else
+		COMPREPLY=( $( compgen -W 'setthr getthr off' -- $cur ) ) 
+	fi
+}
+[ $UNAME = Linux ] && [ -n "${have:-}" ] && complete -F _iwspy iwspy
+
+# Linux iwpriv(8) completion
+#
+[ $UNAME = Linux ] && have iwpriv &&
+_iwpriv()
+{
+	local cur prev
+
+	COMPREPLY=()
+	cur=${COMP_WORDS[COMP_CWORD]}
+	prev=${COMP_WORDS[COMP_CWORD-1]}
+
+	case "$prev" in
+		roam)
+			COMPREPLY=( $( compgen -W 'on off' -- $cur ) )
+			return 0
+			;;
+		port)
+			COMPREPLY=( $( compgen -W 'ad-hoc managed' -- $cur ) )
+			return 0
+			;;
+	esac
+
+	if [ $COMP_CWORD -eq 1 ]; then
+		if [[ "$cur" == -* ]]; then
+			COMPREPLY=( $( compgen -W '--help --version' -- $cur ) ) 
+		else
+			_available_interfaces -w
+		fi
+	else
+		COMPREPLY=( $( compgen -W '--all roam port' -- $cur ) ) 
+	fi
+}
+[ $UNAME = Linux ] && [ -n "${have:-}" ] && complete -F _iwpriv iwpriv
 
 # RedHat & Debian GNU/Linux if{up,down} completion
 #
@@ -1023,7 +1156,7 @@ _ifupdown()
 	cur=${COMP_WORDS[COMP_CWORD]}
 
 	if [ $COMP_CWORD -eq 1 ]; then
-		_interfaces
+		_configured_interfaces
        fi
 
        return 0
@@ -1286,9 +1419,9 @@ set_prefix()
 
 get_entries()
 {
+	local IFS=$'\n'
 	[ -r ${prefix:-}CVS/Entries ] && \
-	entries=( $( compgen -W \
-		"$( echo $( cut -d/ -f2 -s ${prefix:-}CVS/Entries ) )" -- $cur ) )
+	entries=$(cut -d/ -f2 -s ${prefix:-}CVS/Entries)
 }
 
 get_modules()
@@ -1328,7 +1461,7 @@ _cvs()
 				mode=admin
 				;;
 			ann?(notate))
-				mode = annotate
+				mode=annotate
 				;;
 			@(checkout|co|get))
 				mode=checkout
@@ -1411,6 +1544,14 @@ _cvs()
 					$cur ) )
 		fi
 		;;
+	annotate)
+		if [[ "$cur" = -* ]]; then
+			COMPREPLY=( $( compgen -W '-D -F -f -l -R -r' -- $cur ) )
+		else
+			get_entries
+			COMPREPLY=( $( compgen -W '${entries[@]}' -- $cur ) )
+		fi
+		;;
 	checkout)
 		if [[ "$cur" != -* ]]; then
 			[ -z "$cvsroot" ] && cvsroot=$CVSROOT
@@ -1441,7 +1582,7 @@ _cvs()
 				COMPREPLY=( $( compgen -W '${changed[@]:-} \
 						   ${newremoved[@]:-}' -- $cur ) )
 			else
-				COMPREPLY=( $( compgen -f -- $cur ) )
+				_filedir
 			fi
 		else
 			COMPREPLY=( $( compgen -W '-n -R -l -f -F -m -r' -- \
@@ -1470,7 +1611,7 @@ _cvs()
 			_longopt diff
 		else
 			get_entries
-			COMPREPLY=( ${entries[@]:-} )
+			COMPREPLY=( $( compgen -W '${entries[@]}' -- $cur ) )
 		fi
 		;;
 	remove)
@@ -1539,7 +1680,7 @@ _rpm_installed_packages()
 		's|^\('$cur'.*\)-[0-9a-zA-Z._]\+-[0-9a-z.@]\+.*\.rpm$|\1|p' \
 				/var/log/rpmpkgs ) )
 	else
-		COMPREPLY=( $( rpm -qa $options | sed -ne \
+		COMPREPLY=( $( rpm -qa $nodig $nosig | sed -ne \
 		's|^\('$cur'.*\)-[0-9a-zA-Z._]\+-[0-9a-z.@]\+$|\1|p' ) )
 	fi
 }
@@ -1549,7 +1690,7 @@ _rpm_groups()
 	local IFS=$'\t'
 	# remove trailing backslash, or grep will complain
 	cur=${cur%"\\"}
-	COMPREPLY=( $( rpm -qa $options --queryformat '%{group}\n' | \
+	COMPREPLY=( $( rpm -qa $nodig $nosig --queryformat '%{group}\n' | \
 		       grep "^$cur" ) )
 	# backslash escape spaces and translate newlines to tabs
 	COMPREPLY=( $( echo ${COMPREPLY[@]} | sed 's/ /\\ /g' | tr '\n' '\t' ) )
@@ -1559,19 +1700,20 @@ _rpm_groups()
 # 
 _rpm()
 {
-	local cur prev ver options
+	local cur prev ver nodig nosig
 
 	COMPREPLY=()
 	cur=${COMP_WORDS[COMP_CWORD]}
 	prev=${COMP_WORDS[COMP_CWORD-1]}
-	options=""
+	nodig=""
+	nosig=""
 	ver=$(rpm --version); ver=${ver##* }
   
 	if [[ "$ver" > "4.0.4" ]]; then
-		options="--nodigest"
+		nodig="--nodigest"
 	fi
 	if [[ "$ver" > "4.0.99" ]]; then
-		options="$options --nosignature"
+		nosig="--nosignature"
 	fi
 
 	if [ $COMP_CWORD -eq 1 ]; then
@@ -1631,14 +1773,14 @@ _rpm()
 			_filedir
 		else
 		# complete on capabilities
-			COMPREPLY=( $( rpm -qa $options --queryformat \
+			COMPREPLY=( $( rpm -qa $nodig $nosig --queryformat \
 					'%{providename}\n' | grep "^$cur" ) )
 		fi
 		return 0
 		;;
 	--whatrequires)
 		# complete on capabilities
-		COMPREPLY=( $( rpm -qa $options --queryformat \
+		COMPREPLY=( $( rpm -qa $nodig $nosig --queryformat \
 				'%{requirename}\n' | grep "^$cur" ) )
 		return 0
 		;;
@@ -1821,7 +1963,7 @@ _apt_get()
 		remove)
 			if [ -f /etc/debian_version ]; then
 				# Debian system
-				COMPREPLY=( $( _comp-dpkg-installed-packages \
+				COMPREPLY=( $( _comp_dpkg_installed_packages \
 						$cur ) )
 			else
 				# assume RPM based
@@ -1893,7 +2035,7 @@ _apt_cache()
 	
 	if [ "$cur" != show ]; then
 	    for (( i=0; i < ${#COMP_WORDS[@]}-1; i++ )); do
-		if [[ ${COMP_WORDS[i]} == @(add|depends|dotty|policy|rdepends|show?(pkg|src)) ]]; then
+		if [[ ${COMP_WORDS[i]} == @(add|depends|dotty|policy|rdepends|show?(pkg|src|)) ]]; then
 		    special=${COMP_WORDS[i]}
 		fi
 	    done
@@ -1938,7 +2080,7 @@ _apt_cache()
 				--config-file --option' -- $cur ) )
 	else
 
-		COMPREPLY=( $( compgen -W 'add gencaches showpkg showsrc \
+		COMPREPLY=( $( compgen -W 'add gencaches show showpkg showsrc \
 				stats dump dumpavail unmet search search \
 				depends rdepends pkgnames dotty xvcg \
 				policy' -- $cur ) )
@@ -1972,10 +2114,10 @@ _aptitude()
 	dashoptions='-S -u -i -h --help --version -s --simulate -d \
 		     --download-only -P --prompt -y --assume-yes -F \
 		     --display-format -O --sort -w --width -f -r -g \
-                     --with-recommends --with-suggests -R -G \
-                     --without-recommends --without-suggests -t \
-                     --target-release -V --show-versions -D --show-deps\
-                     -Z -v --verbose'
+		     --with-recommends --with-suggests -R -G \
+		     --without-recommends --without-suggests -t \
+		     --target-release -V --show-versions -D --show-deps\
+		     -Z -v --verbose'
 
 	for (( i=0; i < ${#COMP_WORDS[@]}-1; i++ )); do
 	    if [[ ${COMP_WORDS[i]} == @(install|reinstall|hold|unhold|markauto|unmarkauto|dist-upgrade|download|forbid-version|purge|remove) ]]; then
@@ -1993,7 +2135,7 @@ _aptitude()
 		   return 0
 		   ;;
 	       @(purge|remove|reinstall|forbid-version))
-  		   COMPREPLY=( $( _comp-dpkg-installed-packages $cur ) )
+  		   COMPREPLY=( $( _comp_dpkg_installed_packages $cur ) )
 		   return 0
 		   ;;
 	       unhold)
@@ -2029,9 +2171,9 @@ _aptitude()
 	else
 	    COMPREPLY=( $( compgen -W 'update upgrade forget-new clean \
 				       autoclean install reinstall remove \
-                                       hold unhold purge markauto unmarkauto \
-                                       dist-upgrade download search show \
-                                       forbid-version' -- $cur ) )
+				       hold unhold purge markauto unmarkauto \
+				       dist-upgrade download search show \
+				       forbid-version' -- $cur ) )
 	fi
 
 
@@ -2064,7 +2206,7 @@ _apt_build()
 			return 0
 			;;
 		remove)
-			COMPREPLY=( $( _comp-dpkg-installed-packages \
+			COMPREPLY=( $( _comp_dpkg_installed_packages \
 					$cur ) )
 			return 0
 			;;
@@ -2175,7 +2317,7 @@ _user_at_host() {
 	if [[ $cur == *@* ]]; then
 		_known_hosts
 	else
-		COMPREPLY=( $( compgen -S '@' -u -- "$cur" ) )
+		COMPREPLY=( $( compgen -u -- "$cur" ) )
 	fi
 
 	return 0
@@ -2187,8 +2329,8 @@ shopt -u hostcomplete && complete -F _user_at_host $nospace talk ytalk finger
 #
 _known_hosts()
 {
-	local cur ocur user suffix aliases global_kh user_kh hosts
-	local -a kh config
+       local cur curd ocur user suffix aliases global_kh user_kh hosts i host
+       local -a kh khd config
 
 	COMPREPLY=()
 	cur=${COMP_WORDS[COMP_CWORD]}
@@ -2200,8 +2342,12 @@ _known_hosts()
 	kh=()
 
 	# ssh config files
-	[ -r /etc/ssh/ssh_config ] && config[0]=/etc/ssh/ssh_config
-	[ -r ~/.ssh/config ]	   && config[1]=~/.ssh/config
+	[ -r /etc/ssh/ssh_config ] &&
+	  config=( ${config[@]} /etc/ssh/ssh_config )
+	[ -r ~/.ssh/config ] &&
+	  config=( ${config[@]} ~/.ssh/config )
+	[ -r ~/.ssh2/config ] &&
+	  config=( ${config[@]} ~/.ssh2/config )
 
 	if [ ${#config[@]} -gt 0 ]; then
 	    # expand path (if present) to global known hosts file
@@ -2214,25 +2360,36 @@ _known_hosts()
 	if [ -r "$global_kh" ]; then
 	    kh=( "$global_kh" )
 	else
-	    [ -r /etc/ssh/ssh_known_hosts ]  && kh[0]=/etc/ssh/ssh_known_hosts
-	    [ -r /etc/ssh/ssh_known_hosts2 ] && kh[1]=/etc/ssh/ssh_known_hosts2
-	    [ -r /etc/known_hosts ]	     && kh[2]=/etc/known_hosts
-	    [ -r /etc/known_hosts2 ]	     && kh[3]=/etc/known_hosts2
+	    [ -r /etc/ssh/ssh_known_hosts ] &&
+	      kh=( ${kh[@]} /etc/ssh/ssh_known_hosts )
+	    [ -r /etc/ssh/ssh_known_hosts2 ] &&
+	      kh=( ${kh[@]} /etc/ssh/ssh_known_hosts2 )
+	    [ -r /etc/known_hosts ] &&
+	      kh=( ${kh[@]} /etc/known_hosts )
+	    [ -r /etc/known_hosts2 ] &&
+	      kh=( ${kh[@]} /etc/known_hosts2 )
+	    [ -d /etc/ssh2/knownhosts ] &&
+	      khd=( ${khd[@]} /etc/ssh2/knownhosts/*pub )
 	fi
 
 	# choose which user known hosts file to use
 	if [ -r "$user_kh" ]; then
 	    kh=( ${kh[@]} "$user_kh" )
 	else
-	    [ -r ~/.ssh/known_hosts ]  && kh=( ${kh[@]} ~/.ssh/known_hosts )
-	    [ -r ~/.ssh/known_hosts2 ] && kh=( ${kh[@]} ~/.ssh/known_hosts2 )
+	    [ -r ~/.ssh/known_hosts ] &&
+	      kh=( ${kh[@]} ~/.ssh/known_hosts )
+	    [ -r ~/.ssh/known_hosts2 ] &&
+	      kh=( ${kh[@]} ~/.ssh/known_hosts2 )
+	    [ -d ~/.ssh2/hostkeys ] &&
+	      khd=( ${khd[@]} ~/.ssh2/hostkeys/*pub )
 	fi
 
 	# If we have known_hosts files to use
-	if [ ${#kh[@]} -gt 0 ]; then
+	if [ ${#kh[@]} -gt 0 -o ${#khd[@]} -gt 0 ]; then
 	    # Escape slashes and dots in paths for awk
 	    cur=${cur//\//\\\/}
 	    cur=${cur//\./\\\.}
+	    curd=$cur
 
 	    if [[ "$cur" == [0-9]*.* ]]; then
 		# Digits followed by a dot - just search for that
@@ -2248,13 +2405,28 @@ _known_hosts()
 		cur="^$cur"
 	    fi
 
-	    # FS needs to look for a comma separated list
-	    COMPREPLY=( $( awk 'BEGIN {FS=","}
+	    if [ ${#kh[@]} -gt 0 ]; then
+
+		# FS needs to look for a comma separated list
+		COMPREPLY=( $( awk 'BEGIN {FS=","}
 				{for (i=1; i<=2; ++i) { \
 				       gsub(" .*$", "", $i); \
 				       if ($i ~ /'$cur'/) {print $i} \
 				}}' ${kh[@]} 2>/dev/null ) )
-
+	    fi
+	    if [ ${#khd[@]} -gt 0 ]; then
+		# Needs to look for files called
+		# .../.ssh2/key_22_<hostname>.pub
+		# dont fork any processes, because in a cluster environment, 
+		# there can be hundreds of hostkeys
+		for i in ${khd[@]} ; do
+		    if [[ "$i" == *key_22_$curd*.pub ]] && [ -r "$i" ] ; then
+			host=${i/#*key_22_/}
+			host=${host/%.pub/}
+			COMPREPLY=( ${COMPREPLY[@]} $host )
+		    fi
+		done
+	    fi
 	    # append any available aliases from config files
 	    if [ ${#config[@]} -gt 0 ] && [ -n "$aliases" ]; then
 		hosts=$( compgen -W "$( echo $( sed -ne "s/^[Hh][Oo][Ss][Tt]["$'\t '"]*\([^*?]*\)$/\1/p" ${config[@]} ) )" -- $ocur )
@@ -2337,17 +2509,15 @@ _scp()
 		COMPREPLY=( $( ssh -o 'Batchmode yes' $userhost \
 				command ls -aF1d "$path*" 2>/dev/null | \
 				sed -e 's/ /\\\\\\\ /g' -e 's/[*@|=]$//g' \
-				    -e 's/[^\/]$/& /g' ) )
+				    -e 's/[^\/]$/& /g' \
+				    -e 's/\([&()<>;|]\)/\\&/g' ) )
 		return 0
 	fi
 
 	[[ "$cur" == */* ]] || _known_hosts -c -a
 		COMPREPLY=( ${COMPREPLY[@]} $( command ls -aF1d $cur* \
 			    2>/dev/null | sed -e 's/ /\\ /g' -e 's/[*@|=]$//g'\
-			    -e 's/[^\/]$/& /g' ) )
-
-
-
+			    -e 's/[^\/]$/& /g' -e 's/\([&()<>;|]\)/\\&/g' ) )
 	return 0
 }
 complete -F _scp $nospace scp
@@ -2482,13 +2652,12 @@ _route()
 }
 [ $UNAME = Linux ] && complete -F _route route
 
-# GNU make(1) completion (adapted from the example supplied with the bash 2.04
-# source code)
+# GNU make(1) completion
 #
 have make &&
 _make()
 {
-	local makef cur prev i
+	local file makef makef_dir="." makef_inc cur prev i
 
 	COMPREPLY=()
 	cur=${COMP_WORDS[COMP_CWORD]}
@@ -2536,19 +2705,29 @@ _make()
 			--what-if= --new-file= --assume-new= \
 			--warn-undefined-variables' -- $cur ) )
 	else
+		# before we check for makefiles, see if a path was specified
+		# with -C
+		for (( i=0; i < ${#COMP_WORDS[@]}; i++ )); do
+			if [[ ${COMP_WORDS[i]} == -C ]]; then
+				# eval for tilde expansion
+				eval makef_dir=${COMP_WORDS[i+1]}
+				break
+			fi
+		done
+
 		# make reads `GNUmakefile', then `makefile', then `Makefile'
-		if [ -f GNUmakefile ]; then
-			makef=GNUmakefile
-		elif [ -f makefile ]; then
-			makef=makefile
-		elif [ -f Makefile ]; then
-			makef=Makefile
+		if [ -f ${makef_dir}/GNUmakefile ]; then
+			makef=${makef_dir}/GNUmakefile
+		elif [ -f ${makef_dir}/makefile ]; then
+			makef=${makef_dir}/makefile
+		elif [ -f ${makef_dir}/Makefile ]; then
+			makef=${makef_dir}/Makefile
 		else
-			makef=*.mk	       # local convention
+			makef=${makef_dir}/*.mk	       # local convention
 		fi
 
-		# before we scan for targets, see if a makefile name was specified
-		# with -f
+		# before we scan for targets, see if a Makefile name was
+		# specified with -f
 		for (( i=0; i < ${#COMP_WORDS[@]}; i++ )); do
 			if [[ ${COMP_WORDS[i]} == -f ]]; then
 				# eval for tilde expansion
@@ -2558,6 +2737,13 @@ _make()
 		done
 
 		[ ! -f $makef ] && return 0
+
+		# deal with included Makefiles
+ 		makef_inc=$( grep -E '^-?include' $makef | sed -e "s,^.* ,"$makef_dir"/," )
+
+ 		for file in $makef_inc; do
+ 			[ -f $file ] && makef="$makef $file"
+ 		done
 
 		COMPREPLY=( $( awk -F':' '/^[a-zA-Z0-9][^$#\/\t=]*:([^=]|$)/ \
 				{split($1,A,/ /);for(i in A)print A[i]}' \
@@ -2820,16 +3006,29 @@ fi
 # A meta-command completion function for commands like sudo(8), which need to
 # first complete on a command, then complete according to that command's own
 # completion definition - currently not quite foolproof (e.g. mount and umount
-# don't work properly), but still quite useful
+# don't work properly), but still quite useful.
 #
 _command()
 {
-	local cur func cline cspec noglob cmd \
+	local cur func cline cspec noglob cmd done i \
 	      _COMMAND_FUNC _COMMAND_FUNC_ARGS
 
 	COMPREPLY=()
 	cur=${COMP_WORDS[COMP_CWORD]}
+	# If the the first arguments following our meta-command-invoker are
+	# switches, get rid of them. Most definitely not foolproof.
+	done=
+	while [ -z $done ] ; do
 	cmd=${COMP_WORDS[1]}
+	    if [[ "$cmd" == -* ]] ; then
+		for (( i=1 ; i<=COMP_CWORD ; i++)) ; do
+		    COMP_WORDS[i]=${COMP_WORDS[i+1]}
+		done
+		COMP_CWORD=$(($COMP_CWORD-1))
+	    else 
+		done=1
+	    fi
+	done
 
 	if [ $COMP_CWORD -eq 1 ]; then
 		COMPREPLY=( $( compgen -c -- $cur ) )
@@ -2844,6 +3043,7 @@ _command()
 
 			# set current token number to 1 less than now
 			COMP_CWORD=$(( $COMP_CWORD - 1 ))
+
 			# get function name
 			func=${cspec#*-F }
 			func=${func%% *}
@@ -2859,7 +3059,8 @@ _command()
 			# reset noglob if necessary
 			[ $noglob -eq 1 ] && shopt -uo noglob
 			$func $cline
-			# this is needed in case user finished entering command and pressed tab (e.g. sudo ls <Tab>)
+			# This is needed in case user finished entering
+			# command and pressed tab (e.g. sudo ls <Tab>)
 			COMP_CWORD=$(( $COMP_CWORD > 0 ? $COMP_CWORD : 1 ))
 			cur=${COMP_WORDS[COMP_CWORD]}
 			_COMMAND_FUNC=$func
@@ -2886,7 +3087,7 @@ _command()
 	[ ${#COMPREPLY[@]} -eq 0 ] && _filedir
 }
 complete -F _command $filenames nohup exec nice eval strace time ltrace then \
-	 else do vsound command
+	else do vsound command xargs
 
 _root_command()
 {
@@ -2997,7 +3198,7 @@ _mysqladmin()
 have gzip &&
 _gzip()
 {
-	local cur prev xspec
+	local cur prev xspec IFS=$'\t\n'
 
 	COMPREPLY=()
 	cur=${COMP_WORDS[COMP_CWORD]}
@@ -3074,10 +3275,27 @@ _bzip2()
 
 # openssl(1) completion
 #
-have openssl &&
+have openssl && {
+_openssl_sections()
+{
+	local config
+
+	config=/etc/ssl/openssl.cnf
+	[ ! -f $config ] && config=/usr/share/ssl/openssl.cnf
+	for (( i=2; i < COMP_CWORD; i++ )); do
+		if [[ "${COMP_WORDS[i]}" == -config ]]; then
+			config=${COMP_WORDS[i+1]}
+			break
+		fi
+	done
+	[ ! -f $config ] && return 0
+
+	COMPREPLY=( $( awk '/\[.*\]/ {print $2} ' $config | grep "^$cur" ) )
+}
+
 _openssl()
 {
-	local cur
+	local cur prev
 
 	COMPREPLY=()
 	cur=${COMP_WORDS[COMP_CWORD]}
@@ -3095,39 +3313,493 @@ _openssl()
 			des-ede3-cfb des-ede3-ofb des-ofb des3 desx rc2 \
 			rc2-40-cbc rc2-64-cbc rc2-cbc rc2-cfb rc2-ecb rc2-ofb \
 			rc4 rc4-40' -- $cur ) )
+	else
+		prev=${COMP_WORDS[COMP_CWORD-1]}
+		case ${COMP_WORDS[1]} in
+			asn1parse)
+				case $prev in
+					-inform)
+						COMPREPLY=( $( compgen -W 'DER PEM' -- $cur ) )
+						return 0
+						;;
+					-@(in|out|oid))
+						_filedir
+						return 0
+						;;
+					esac
+
+				if [[ "$cur" == -* ]]; then
+					COMPREPLY=( $( compgen -W '-inform -in -out -noout -offset \
+						-length -i -oid -strparse' -- $cur ) )
+				fi
+				;;
+			ca)
+				case $prev in
+					-@(config|revoke|cert|in|out|spkac|ss_cert))
+						_filedir
+						return 0
+						;;
+					-outdir)
+						_filedir -d
+						return 0
+						;;
+					-@(name|crlexts|extensions))
+						_openssl_sections
+						return 0
+						;;
+				esac
+
+				if [[ "$cur" == -* ]]; then
+					COMPREPLY=( $( compgen -W '-verbose -config -name \
+						-gencrl -revoke -crldays -crlhours -crlexts \
+						-startdate -enddate -days -md -policy -keyfile \
+						-key -passin -cert -in -out -notext -outdir \
+						-infiles -spkac -ss_cert -preserveDN -batch \
+						-msie_hack -extensions' -- $cur ) )
+				fi
+				;;
+			ciphers)
+				if [[ "$cur" == -* ]]; then
+					COMPREPLY=( $( compgen -W '-v -ssl2 -ssl3 -tls1' -- $cur ) )
+				fi
+				;;
+			crl)
+				case $prev in
+					-@(in|out)form)
+						COMPREPLY=( $( compgen -W 'DER PEM' -- $cur ) )
+						return 0
+						;;
+					-@(in|out|CAfile))
+						_filedir
+						return 0
+						;;
+					-CAPath)
+						_filedir -d
+						return 0
+						;;
+				esac
+
+				if [[ "$cur" == -* ]]; then
+					COMPREPLY=( $( compgen -W '-inform -outform -text -in -out -noout \
+						-hash -issuer -lastupdate -nextupdate -CAfile -CApath' -- $cur ) )
+				fi
+				;;
+			crl2pkcs7)
+				case $prev in
+					-@(in|out)form)
+						COMPREPLY=( $( compgen -W 'DER PEM' -- $cur ) )
+						return 0
+						;;
+					-@(in|out))
+						_filedir
+						return 0
+						;;
+				esac
+
+				if [[ "$cur" == -* ]]; then
+					COMPREPLY=( $( compgen -W '-inform -outform -in -out -print_certs' -- $cur ) )
+				fi
+				;;
+			dgst)
+				case $prev in
+					-@(out|sign|verify|prvrify|signature))
+						_filedir
+						return 0
+						;;
+				esac
+
+				if [[ "$cur" == -* ]]; then
+					COMPREPLY=( $( compgen -W '-md5 -md4 -md2 -sha1 -sha -mdc2 -ripemd160 -dss1 \
+						-c -d -hex -binary -out -sign -verify -prverify -signature' -- $cur ) )
+				else
+						_filedir
+				fi
+			       ;;
+			dsa)
+				case $prev in
+					-@(in|out)form)
+						COMPREPLY=( $( compgen -W 'DER PEM' -- $cur ) )
+						return 0
+						;;
+					-@(in|out))
+						_filedir
+						return 0
+						;;
+				esac
+
+				if [[ "$cur" == -* ]]; then
+					COMPREPLY=( $( compgen -W '-inform -outform -in -passin -out -passout -des -des3 -idea -text -noout \
+						-modulus -pubin -pubout' -- $cur ) )
+				fi
+				;;
+			dsaparam)
+				case $prev in
+					-@(in|out)form)
+						COMPREPLY=( $( compgen -W 'DER PEM' -- $cur ) )
+						return 0
+						;;
+					-@(in|out|rand))
+						_filedir
+						return 0
+						;;
+				esac
+
+				if [[ "$cur" == -* ]]; then
+					COMPREPLY=( $( compgen -W '-inform -outform -in -out -noout \
+						-text -C -rand -genkey' -- $cur ) )
+				fi
+				;;
+			enc)
+				case $prev in
+					-@(in|out|kfile))
+						_filedir
+						return 0
+						;;
+				esac
+
+				if [[ "$cur" == -* ]]; then
+					COMPREPLY=( $( compgen -W '-ciphername -in -out -pass \
+						-e -d -a -A -k -kfile -S -K -iv -p -P -bufsize -debug' -- $cur ) )
+				fi
+				;;
+			dhparam)
+				case $prev in
+					-@(in|out)form)
+						COMPREPLY=( $( compgen -W 'DER PEM' -- $cur ) )
+						return 0
+						;;
+					-@(in|out|rand))
+						_filedir
+						return 0
+						;;
+				esac
+
+				if [[ "$cur" == -* ]]; then
+					COMPREPLY=( $( compgen -W '-inform -outform -in -out -dsaparam -noout \
+						-text -C -2 -5 -rand' -- $cur ) )
+				fi
+				;;
+			gendsa)
+				case $prev in
+					-@(out|rand))
+						_filedir
+						return 0
+						;;
+				esac
+
+				if [[ "$cur" == -* ]]; then
+					COMPREPLY=( $( compgen -W '-out -des -des3 -idea -rand' -- $cur ) )
+				else
+						_filedir
+				fi
+				;;
+			genrsa)
+				case $prev in
+					-@(out|rand))
+						_filedir
+						return 0
+						;;
+				esac
+
+				if [[ "$cur" == -* ]]; then
+					COMPREPLY=( $( compgen -W '-out -passout -des -des3 -idea -f4 -3 -rand' -- $cur ) )
+				fi
+				;;
+			pkcs7)
+				case $prev in
+					-@(in|out)form)
+						COMPREPLY=( $( compgen -W 'DER PEM' -- $cur ) )
+						return 0
+						;;
+					-@(in|out))
+						_filedir
+						return 0
+						;;
+				esac
+
+				if [[ "$cur" == -* ]]; then
+					COMPREPLY=( $( compgen -W '-inform -outform -in -out -print_certs -text -noout' -- $cur ) )
+				fi
+				;;
+			rand)
+				case $prev in
+					-@(out|rand))
+						_filedir
+						return 0
+						;;
+				esac
+
+				if [[ "$cur" == -* ]]; then
+					COMPREPLY=( $( compgen -W '-out -rand -base64' -- $cur ) )
+				fi
+				;;
+			req)
+				case "$prev" in
+					-@(in|out|key)form)
+						COMPREPLY=( $( compgen -W 'DER PEM' -- $cur ) )
+						return 0
+						;;
+
+					-@(in|out|rand|key|keyout|config))
+						_filedir
+						return 0
+						;;
+					-extensions)
+						_openssl_sections
+						return 0
+						;;
+				esac
+
+				if [[ "$cur" == -* ]]; then
+					COMPREPLY=( $( compgen -W '-inform -outform -in \
+						-passin -out -passout -text -noout -verify \
+						-modulus -new -rand -newkey -newkey -nodes \
+						-key -keyform -keyout -md5 -sha1 -md2 -mdc2 \
+						-config -x509 -days -asn1-kludge -newhdr \
+						-extensions -reqexts section' -- $cur ) )
+				fi
+				;;
+			rsa)
+				case $prev in
+					-@(in|out)form)
+						COMPREPLY=( $( compgen -W 'DER NET PEM' -- $cur ) )
+						return 0
+						;;
+					-@(in|out))
+						_filedir
+						return 0
+						;;
+				esac
+
+				if [[ "$cur" == -* ]]; then
+					COMPREPLY=( $( compgen -W '-inform -outform -in -passin -out -passout \
+						-sgckey -des -des3 -idea -text -noout -modulus -check -pubin \
+						-pubout -engine' -- $cur ) )
+				fi
+				;;
+			rsautl)
+				case $prev in
+					-@(in|out|inkey))
+						_filedir
+						return 0
+						;;
+				esac
+
+				if [[ "$cur" == -* ]]; then
+					COMPREPLY=( $( compgen -W '-in -out -inkey -pubin -certin -sign -verify \
+						-encrypt -decrypt -pkcs -ssl -raw -hexdump -asn1parse' -- $cur ) )
+				fi
+				;;
+			s_client)
+				case $prev in
+					-connect)
+						_known_hosts
+						return 0
+						;;
+					-@(cert|key|CAfile|rand))
+						_filedir
+						return 0
+						;;
+					-CApath)
+						_filedir -d
+						return 0
+						;;
+				esac
+
+				if [[ "$cur" == -* ]]; then
+					COMPREPLY=( $( compgen -W '-connect -verify -cert -key -CApath -CAfile \
+						-reconnect -pause -showcerts -debug -msg -nbio_test -state -nbio \
+						-crlf -ign_eof -quiet -ssl2 -ssl3 -tls1 -no_ssl2 -no_ssl3 -no_tls1 \
+						-bugs -cipher -starttls -engine -rand' -- $cur ) )
+				fi
+				;;
+			s_server)
+				case $prev in
+					-@(cert|key|dcert|dkey|dhparam|CAfile|rand))
+						_filedir
+						return 0
+						;;
+					-CApath)
+						_filedir -d
+						return 0
+						;;
+				esac
+
+				if [[ "$cur" == -* ]]; then
+					COMPREPLY=( $( compgen -W '-accept -context -verify -Verify -cert -key \
+						 -dcert -dkey -dhparam -nbio -nbio_test -crlf -debug -msg -state -CApath \
+						 -CAfile -nocert -cipher -quiet -no_tmp_rsa -ssl2 -ssl3 -tls1 -no_ssl2 \
+						 -no_ssl3 -no_tls1 -no_dhe -bugs -hack -www -WWW -HTTP -engine -id_prefix \
+						 -rand' -- $cur ) )
+				 fi
+				 ;;
+			s_time)
+				case $prev in
+					-connect)
+						_known_hosts
+						return 0
+						;;
+					-@(cert|key|CAfile))
+						_filedir
+						return 0
+						;;
+					-CApath)
+						_filedir -d
+						return 0
+						;;
+				esac
+
+				if [[ "$cur" == -* ]]; then
+					COMPREPLY=( $( compgen -W '-connect -www -cert -key -CApath -CAfile -reuse \
+						-new -verify -nbio -time -ssl2 -ssl3 -bugs -cipher' -- $cur ) )
+				fi
+				;;
+
+			sess_id) 
+				case $prev in
+					-@(in|out)form)
+						COMPREPLY=( $( compgen -W 'DER PEM' -- $cur ) )
+						return 0
+						;;
+					-@(in|out))
+						_filedir
+						return 0
+						;;
+				esac
+
+
+				if [[ "$cur" == -* ]]; then
+					COMPREPLY=( $( compgen -W '-inform -outform -in -out -text -noout \
+						-context ID' -- $cur ) )
+				fi
+				;;
+			smime)
+				case $prev in
+					-@(in|out)form)
+						COMPREPLY=( $( compgen -W 'SMIME DER PEM' -- $cur ) )
+						return 0
+						;;
+					-@(in|out|certfile|signer|recip|inkey|content|rand))
+						_filedir
+						return 0
+						;;
+				esac
+
+				if [[ "$cur" == -* ]]; then
+					COMPREPLY=( $( compgen -W '-encrypt -decrypt -sign -verify -pk7out -des -des3 \
+						-rc2-40 -rc2-64 -rc2-128 -aes128 -aes192 -aes256 -in -certfile -signer \
+						-recip -inform -passin -inkey -out -outform -content -to -from -subject \
+						-text -rand' -- $cur ) )
+				else
+						_filedir
+				fi
+				;;
+			speed)
+				if [[ "$cur" == -* ]]; then
+					COMPREPLY=( $( compgen -W '-engine' -- $cur ) )
+				else
+					COMPREPLY=( $( compgen -W 'md2 mdc2 md5 hmac sha1 rmd160 idea-cbc \
+						rc2-cbc rc5-cbc bf-cbc des-cbc des-ede3 rc4 rsa512 rsa1024 rsa2048 \
+						rsa4096 dsa512 dsa1024 dsa2048 idea rc2 des rsa blowfish' -- $cur ) )
+				fi
+				;;
+			verify)
+				case $prev in
+					-@(CAfile|untrusted))
+						_filedir
+						return 0
+						;;
+					-CApath)
+						_filedir -d
+						return 0
+						;;
+				esac
+
+				if [[ "$cur" == -* ]]; then
+					COMPREPLY=( $( compgen -W '-CApath -CAfile -purpose -untrusted -help -issuer_checks \
+						-verbose -certificates' -- $cur ) )
+				else
+						_filedir
+				fi
+				;;
+			x509)
+				case "$prev" in
+					-@(in|out|CA|CAkey|CAserial|extfile))
+						_filedir
+						return 0
+						;;
+					-@(in|out)form)
+						COMPREPLY=( $( compgen -W 'DER PEM NET' -- $cur ) )
+						return 0
+						;;
+					-@(key|CA|CAkey)form)
+						COMPREPLY=( $( compgen -W 'DER PEM' -- $cur ) )
+						return 0
+						;;
+					-extensions)
+						_openssl_sections
+						return 0
+						;;
+				esac
+
+				if [[ "$cur" == -* ]]; then
+					COMPREPLY=( $( compgen -W '-inform -outform \
+						-keyform -CAform -CAkeyform -in -out \
+						-serial -hash -subject -issuer -nameopt \
+						-email -startdate -enddate -purpose \
+						-dates -modulus -fingerprint -alias \
+						-noout -trustout -clrtrust -clrreject \
+						-addtrust -addreject -setalias -days \
+						-set_serial -signkey -x509toreq -req \
+						-CA -CAkey -CAcreateserial -CAserial \
+						-text -C -md2 -md5 -sha1 -mdc2 -clrext \
+						-extfile -extensions -engine' -- $cur ) )
+				fi
+				;;
+			@(md5|md4|md2|sha1|sha|mdc2|ripemd160))
+				if [[ "$cur" == -* ]]; then
+					COMPREPLY=( $( compgen -W '-c -d' -- $cur ) )
+				else
+						_filedir
+				fi
+				;;
+		esac
 	fi
 
 	return 0
 }
-[ -n "${have:-}" ] && complete -F _openssl $default openssl
+complete -F _openssl $default openssl
+}
 
 # screen(1) completion
 #
 have screen &&
 _screen()
 {
-	local cur prev
+	local cur prev preprev
 
 	COMPREPLY=()
 	cur=${COMP_WORDS[COMP_CWORD]}
 	prev=${COMP_WORDS[COMP_CWORD-1]}
-	test "$COMP_CWORD" -ge 2 && preprev=${COMP_WORDS[COMP_CWORD-2]} || unset preprev
 
-	if test "$preprev" = "-d" -o "$preprev" = "-D" -a "$prev" = "-r" -o "$prev" = "-R"; then
+	[ "$COMP_CWORD" -ge 2 ] && preprev=${COMP_WORDS[COMP_CWORD-2]}
+
+	if [ "$preprev" = "-d" -o "$preprev" = "-D" -a "$prev" = "-r" -o \
+	     "$prev" = "-R" ]; then
 		# list all
 		COMPREPLY=( $( command screen -ls | \
-				sed -ne 's|^['$'\t'']\+[0-9]\+\.\('$cur'[^'$'\t'']\+\).*$|\1|p' ) )
+				sed -ne 's|^['$'\t'']\+\('$cur'[0-9]\+\.[^'$'\t'']\+\).*$|\1|p' ) )
 	else
 		case "$prev" in
 		-[rR])
 			# list detached
 			COMPREPLY=( $( command screen -ls | \
-					sed -ne 's|^['$'\t'']\+[0-9]\+\.\('$cur'[^'$'\t'']\+\).*Detached.*$|\1|p' ) )
+					sed -ne 's|^['$'\t'']\+\('$cur'[0-9]\+\.[^'$'\t'']\+\).*Detached.*$|\1|p' ) )
 			;;
 		-[dDx])
 			# list attached
 			COMPREPLY=( $( command screen -ls | \
-					sed -ne 's|^['$'\t'']\+[0-9]\+\.\('$cur'[^'$'\t'']\+\).*Attached.*$|\1|p' ) )
+					sed -ne 's|^['$'\t'']\+\('$cur'[0-9]\+\.[^'$'\t'']\+\).*Attached.*$|\1|p' ) )
 			;;
 		-s)
 			# shells
@@ -3349,21 +4021,26 @@ _longopt()
 	if [[ "$cur" == -* ]]; then
 		COMPREPLY=( $( $1 --help 2>&1 | sed -e '/--/!d' \
 				-e 's/.*\(--[-A-Za-z0-9]\+=\?\).*/\1/' | \
-			       grep "^$cur" | sort -u ) )
+			       command grep "^$cur" | sort -u ) )
 	elif [[ "$1" == @(mk|rm)dir ]]; then
 		_filedir -d
 	else
 		_filedir
 	fi
 }
-# makeinfo and texi2dvi are defined elsewhere
+# makeinfo and texi2dvi are defined elsewhere.
 for i in a2ps autoconf automake bc gprof ld nm objcopy objdump readelf strip \
 	 bison cpio diff patch enscript cp df dir du ln ls mkfifo mknod mv rm \
-	 touch vdir xargs awk gperf grep grub indent less m4 sed shar date \
-	 env seq tee uname who texindex cat csplit cut expand fmt fold head \
+	 touch vdir awk gperf grep grub indent less m4 sed shar date \
+	 tee who texindex cat csplit cut expand fmt fold head \
 	 md5sum nl od paste pr ptx sha1sum sort split tac tail tr unexpand \
-	 uniq wc units wget ldd bash id irb mkdir rmdir netstat; do
-    have $i && complete -F _longopt $filenames $i
+	 uniq wc ldd bash id irb mkdir rmdir; do
+  have $i && complete -F _longopt $filenames $i
+done
+
+# These commands use filenames, so '-o filenames' is not needed.
+for i in env netstat seq uname units wget; do
+  have $i && complete -F _longopt $default $i
 done
 unset i
 
@@ -3409,7 +4086,7 @@ _gcc()
 		# for FORTRAN/Java it's an error
 		COMPREPLY=( $( $cc --help 2>/dev/null | tr '\t' ' ' | \
 			       sed -e '/^  *-/!d' -e 's/ *-\([^ ]*\).*/-\1/' | \
-			       grep "^$cur" | sort -u ) )
+			       command grep "^$cur" | sort -u ) )
 	else
 		_filedir
 	fi
@@ -3439,7 +4116,7 @@ _cardctl()
 # This function is required by _dpkg() and _dpkg-reconfigure()
 #
 have dpkg && {
-_comp-dpkg-installed-packages()
+_comp_dpkg_installed_packages()
 {
 	grep -A 2 "Package: $1" /var/lib/dpkg/status | \
 		grep -B 2 'ok installed' | grep "Package: $1" | cut -d\  -f2
@@ -3485,7 +4162,7 @@ _dpkg()
 		return 0
 		;;
 	-@(r|L|P|-@(remove|purge|listfiles)))
-		COMPREPLY=( $( _comp-dpkg-installed-packages $cur ) )
+		COMPREPLY=( $( _comp_dpkg_installed_packages $cur ) )
 		return 0
 		;;
 	*)
@@ -3554,7 +4231,7 @@ _dpkg_reconfigure()
 				       -u --unseen-only -h --help -s --showold \
 				       --force --terse' -- $cur ) )
 	else
-	    COMPREPLY=( $( _comp-dpkg-installed-packages $cur ) )
+	    COMPREPLY=( $( _comp_dpkg_installed_packages $cur ) )
 	fi
 }
 [ -n "${have:-}" ] && complete -F _dpkg_reconfigure $default dpkg-reconfigure
@@ -4219,7 +4896,7 @@ _python()
 
 	COMPREPLY=()
 	cur=${COMP_WORDS[COMP_CWORD]}
-	prev=${COMP_WORDS[COMP_CWORD-1]}
+	prev=${COMP_WORDS[COMP_CWORD-1]##*/}
 
 	case "$prev" in
 	-Q)
@@ -4385,7 +5062,7 @@ complete -F _perldoc $default perldoc
 have rcs &&
 _rcs()
 {
-	local cur prev file dir
+	local cur prev file dir i
 
 	COMPREPLY=()
 	cur=${COMP_WORDS[COMP_CWORD]}
@@ -4401,9 +5078,14 @@ _rcs()
 
 	for (( i=0; i < ${#COMPREPLY[@]}; i++ )); do
 		file=${COMPREPLY[$i]##*/}
-		file=${file%,v}
 		dir=${COMPREPLY[$i]%RCS/*}
 		COMPREPLY[$i]=$dir$file
+	done
+	
+	COMPREPLY=( "${COMPREPLY[@]}" $( compgen -G "$dir/$file*,v" ) )
+
+	for (( i=0; i < ${#COMPREPLY[@]}; i++ )); do
+		COMPREPLY[$i]=${COMPREPLY[$i]%,v}
 	done
 
 	# default to files if nothing returned and we're checking in.
@@ -4509,7 +5191,7 @@ _pkg_delete()
 	cur=${COMP_WORDS[COMP_CWORD]}
 	prev=${COMP_WORDS[COMP_CWORD-1]}
 
-	test "$prev" = "-o" -o "$prev" = "-p" -o "$prev" = "-W" && return 0
+	[ "$prev" = "-o" -o "$prev" = "-p" -o "$prev" = "-W" ] && return 0
 
 	COMPREPLY=( $( compgen -d $pkgdir$cur ) )
 	COMPREPLY=( ${COMPREPLY[@]#$pkgdir} )
@@ -4557,7 +5239,7 @@ _portupgrade()
 	cur=${COMP_WORDS[COMP_CWORD]}
 	prev=${COMP_WORDS[COMP_CWORD-1]}
 
-	test "$prev" = "-l" -o "$prev" = "-L" -o "$prev" = "-o" && return 0
+	[ "$prev" = "-l" -o "$prev" = "-L" -o "$prev" = "-o" ] && return 0
 
 	COMPREPLY=( $( compgen -d $pkgdir$cur ) )
 	COMPREPLY=( ${COMPREPLY[@]#$pkgdir} )
@@ -4978,7 +5660,7 @@ _mplayer()
 					-xvidencopts -of --verbose' -- $cur) )
 			;;
 		*)
-			_filedir '@(mp?(e)g|MP?(E)G|wm[av]|WM[AV]|avi|AVI|asf|ASF|vob|VOB|bin|BIN|dat|DAT|vcd|VCD|ps|PS|pes|PES|fli|FLI|viv|VIV|rm|RM|ram|RAM|yuv|YUV|mov|MOV|qt|QT|mp[34]|MP[34]|og[gm]|OG[GM]|wav|WAV|dump|DUMP|mkv|MKV|m4a|M4A|aac|AAC|m2v|M2V)'
+			_filedir '@(mp?(e)g|MP?(E)G|wm[av]|WM[AV]|avi|AVI|asf|ASF|vob|VOB|bin|BIN|dat|DAT|vcd|VCD|ps|PS|pes|PES|fli|FLI|viv|VIV|rm?(j)|RM?(J)|ra?(m)|RA?(M)|yuv|YUV|mov|MOV|qt|QT|mp[34]|MP[34]|og[gm]|OG[GM]|wav|WAV|dump|DUMP|mkv|MKV|m4a|M4A|aac|AAC|m2v|M2V|dv|DV)'
 			;;
 	esac
 
@@ -5819,33 +6501,33 @@ complete -F _composite $filenames composite
 have dd &&
 _dd()
 {
-         local cur
+	 local cur
 
-         COMPREPLY=()
-         cur=${COMP_WORDS[COMP_CWORD]}
+	 COMPREPLY=()
+	 cur=${COMP_WORDS[COMP_CWORD]}
 
-         case "$cur" in
-         if=*|of=*)
-                 cur=${cur#*=}
-                 _filedir
-                 return 0
-                 ;;
-         conv=*)
-                 cur=${cur#*=}
-                 COMPREPLY=( $( compgen -W 'ascii ebcdic ibm block unblock \
-                                lcase notrunc ucase swab noerror sync' \
-                                -- $cur ) )
-                 return 0
-                 ;;
-         esac
+	 case "$cur" in
+	 if=*|of=*)
+		 cur=${cur#*=}
+		 _filedir
+		 return 0
+		 ;;
+	 conv=*)
+		 cur=${cur#*=}
+		 COMPREPLY=( $( compgen -W 'ascii ebcdic ibm block unblock \
+				lcase notrunc ucase swab noerror sync' \
+				-- $cur ) )
+		 return 0
+		 ;;
+	 esac
 
-         _expand || return 0
+	 _expand || return 0
 
-         COMPREPLY=( $( compgen -W '--help --version' -- $cur ) \
-                     $( compgen -W 'bs cbs conv count ibs if obs of seek 
-skip' -S '=' -- $cur ) )
+	 COMPREPLY=( $( compgen -W '--help --version' -- $cur ) \
+		     $( compgen -W 'bs cbs conv count ibs if obs of seek skip'\
+				-S '=' -- $cur ) )
 }
-[ "${have:-}" ] && complete -F _dd $nospace dd
+[ "${have:-}" ] && complete -F _dd $nospace $filenames dd
 
 # CUPS cancel(1) completion
 #
@@ -6038,6 +6720,1258 @@ _info()
   -o $UNAME = FreeBSD -o $UNAME = SunOS -o $UNAME = Cygwin ] && \
 complete -F _info $filenames info
 
+# dhclient(1) completion
+#
+have dhclient && _dhclient()
+{
+	local cur prev
+
+	COMPREPLY=()
+	cur=${COMP_WORDS[COMP_CWORD]}
+	prev=${COMP_WORDS[COMP_CWORD-1]}
+
+	case "$prev" in
+		-@(cf|lf|pf|sf))
+			_filedir
+			return 0
+			;;
+		-s)
+			_known_hosts
+			return 0
+			;;
+	esac
+
+	if [[ "$cur" == -* ]]; then
+		COMPREPLY=( $( compgen -W '-p -d -q -1 -r -lf -pf \
+			-cf -sf -s -g -n -nw -w' -- $cur ) )
+	else
+		_interfaces
+	fi
+}
+[ "${have:-}" ] && complete -F _dhclient dhclient
+
+# lvm(8) completion
+#
+have lvm && {
+_volumegroups()
+{
+	COMPREPLY=( $( vgscan | \
+		awk -F'"' '/Found/ {if ($2 ~ /^'$cur'/) print $2}' ) )
+}
+
+_physicalvolumes()
+{
+	COMPREPLY=( $( pvscan | \
+		awk '/PV/ {if ($2 ~ /^'$cur'/) print $2}' ) )
+}
+
+_logicalvolumes()
+{
+	COMPREPLY=( $( lvscan 2>/dev/null | \
+		awk -F"'" '{if ($2 ~ /^'$cur'/) print $2}' ) )
+}
+
+_units()
+{
+	COMPREPLY=( $( compgen -W 'h s b k m g t H K M G T' -- $cur ) )
+}
+
+_sizes()
+{
+	COMPREPLY=( $( compgen -W 'k K m M g G t T' -- $cur ) )
+}
+
+_args()
+{
+	args=0
+	if [[ "${COMP_WORDS[0]}" == lvm ]]; then
+		offset=2
+	else
+		offset=1
+	fi
+	for (( i=$offset; i < COMP_CWORD; i++ )); do
+		if [[ "${COMP_WORDS[i]}" != -* ]]; then
+			args=$(($args + 1))
+		fi
+	done
+}
+
+_lvm()
+{
+	local prev
+
+	COMPREPLY=()
+	cur=${COMP_WORDS[COMP_CWORD]}
+
+	if [ $COMP_CWORD -eq 1 ]; then
+		COMPREPLY=( $( compgen -W 'dumpconfig help lvchange \
+			lvcreate lvdisplay lvextend lvmchange \
+			lvmdiskscan lvmsadc lvmsar lvreduce \
+			lvremove lvrename lvresize lvs lvscan \
+			pvchange pvcreate pvdata pvdisplay pvmove \
+			pvremove pvresize pvs pvscan vgcfgbackup \
+			vgcfgrestore vgchange vgck vgconvert \
+			vgcreate vgdisplay vgexport vgextend \
+			vgimport vgmerge vgmknodes vgreduce \
+			vgremove vgrename vgs vgscan vgsplit \
+			version' -- $cur ) )
+	else
+		case ${COMP_WORDS[1]} in
+			pvchange)
+				_pvchange
+				;;
+			pvcreate)
+				_pvcreate
+				;;
+			pvdisplay)
+				_pvdisplay
+				;;
+			pvmove)
+				_pvmove
+				;;
+			pvremove)
+				_pvremove
+				;;
+			pvresize)
+				_pvresize
+				;;
+			pvs)
+				_pvs
+				;;
+			pvscan)
+				_pvscan
+				;;
+			vgcfgbackup)
+				_vgcfgbackup
+				;;
+			vgcfgrestore)
+				_vgcfgrestore
+				;;
+			vgchange)
+				_vgchange
+				;;
+			vgck)
+				_vgck
+				;;
+			vgconvert)
+				_vgconvert
+				;;
+			vgcreate)
+				_vgcreate
+				;;
+			vgdisplay)
+				_vgdisplay
+				;;
+			vgexport)
+				_vgexport
+				;;
+			vgextend)
+				_vgextend
+				;;
+			vgimport)
+				_vgimport
+				;;
+			vgmerge)
+				_vgmerge
+				;;
+			vgmknodes)
+				_vgmknodes
+				;;
+			vgreduce)
+				_vgreduce
+				;;
+			vgremove)
+				_vgremove
+				;;
+			vgrename)
+				_vgrename
+				;;
+			vgs)
+				_vgs
+				;;
+			vgscan)
+				_vgscan
+				;;
+			vgsplit)
+				_vgsplit
+				;;
+			lvchange)
+				_lvchange
+				;;
+			lvcreate)
+				_lvcreate
+				;;
+			lvdisplay)
+				_lvdisplay
+				;;
+			lvextend)
+				_lvextend
+				;;
+			lvreduce)
+				_lvreduce
+				;;
+			lvremove)
+				_lvremove
+				;;
+			lvrename)
+				_lvrename
+				;;
+			lvresize)
+				_lvresize
+				;;
+			lvs)
+				_lvs
+				;;
+			lvscan)
+				_lvscan
+				;;
+		esac
+	fi
+}
+complete -F _lvm lvm
+
+_lvmdiskscan()
+{
+	local cur
+
+	COMPREPLY=()
+	cur=${COMP_WORDS[COMP_CWORD]}
+
+	if [[ "$cur" == -* ]]; then
+		COMPREPLY=( $( compgen -W '-d --debug -h -? --help -l \
+			--lvmpartition -v --verbose --version' -- $cur ) )
+	fi
+}
+complete -F _lvmdiskscan lvmdiskscan
+
+_pvscan()
+{
+	local cur
+
+	COMPREPLY=()
+	cur=${COMP_WORDS[COMP_CWORD]}
+
+	if [[ "$cur" == -* ]]; then
+		COMPREPLY=( $( compgen -W '-d --debug -e \
+			--exported -n --novolumegroup -h -? \
+			--help --ignorelockingfailure -P \
+			--partial -s --short -u --uuid -v \
+			--verbose --version' -- $cur ) )
+	fi
+}
+complete -F _pvscan pvscan
+
+_pvs()
+{
+	local cur prev
+
+	COMPREPLY=()
+	cur=${COMP_WORDS[COMP_CWORD]}
+	prev=${COMP_WORDS[COMP_CWORD-1]}
+
+	case "$prev" in
+		-@(o|O|-options|-sort))
+			COMPREPLY=( $( compgen -W 'pv_fmt pv_uuid \
+				pv_size pv_free pv_used pv_name \
+				pv_attr pv_pe_count \
+				pv_pe_alloc_count' -- $cur ) )
+			return 0
+			;;
+		--units)
+			_units
+			return 0
+			;;
+	esac
+
+	if [[ "$cur" == -* ]]; then
+		COMPREPLY=( $( compgen -W '--aligned -a --all -d --debug \
+			-h -? --help --ignorelockingfailure --noheadings \
+			--nosuffix -o --options -O --sort \
+			--separator --unbuffered --units \
+			-v --verbose --version' -- $cur ) )
+	else
+		_physicalvolumes
+	fi
+}
+complete -F _pvs pvs
+
+_pvdisplay()
+{
+	local cur prev
+
+	COMPREPLY=()
+	cur=${COMP_WORDS[COMP_CWORD]}
+	prev=${COMP_WORDS[COMP_CWORD-1]}
+
+	case "$prev" in
+		--units)
+			_units
+			return 0
+			;;
+	esac
+
+	if [[ "$cur" == -* ]]; then
+		COMPREPLY=( $( compgen -W '-c --colon -C --columns --units \
+			-v --verbose -d --debug -h --help --version' -- $cur ) )
+	else
+		_physicalvolumes
+	fi
+}
+complete -F _pvdisplay pvdisplay
+
+_pvchange()
+{
+	local cur prev
+
+	COMPREPLY=()
+	cur=${COMP_WORDS[COMP_CWORD]}
+	prev=${COMP_WORDS[COMP_CWORD-1]}
+
+	case "$prev" in
+		-@(A|x|-autobackup|--allocatable))
+			COMPREPLY=( $( compgen -W 'y n' -- $cur ) )
+			return 0
+			;;
+	esac
+
+	if [[ "$cur" == -* ]]; then
+		COMPREPLY=( $( compgen -W '-a --all -A --autobackup \
+			-d --debug -h --help -t --test -u --uuid -x \
+			--allocatable -v --verbose --addtag --deltag \
+			--version' -- $cur ) )
+	else
+		_physicalvolumes
+	fi
+}
+complete -F _pvchange pvchange
+
+_pvcreate()
+{
+	local cur prev
+
+	COMPREPLY=()
+	cur=${COMP_WORDS[COMP_CWORD]}
+	prev=${COMP_WORDS[COMP_CWORD-1]}
+
+	case "$prev" in
+		--restorefile)
+			_filedir
+			return 0
+			;;
+		-@(M|-metadatatype))
+			COMPREPLY=( $( compgen -W '1 2' -- $cur ) )
+			return 0
+			;;
+		--metadatacopies)
+			COMPREPLY=( $( compgen -W '0 1 2' -- $cur ) )
+			return 0
+			;;
+		--@(metadatasize|setphysicalvolumesize))
+			_sizes
+			return 0
+			;;
+	esac
+
+	if [[ "$cur" == -* ]]; then
+		COMPREPLY=( $( compgen -W '--restorefile -d --debug -f \
+			--force -h -? --help --labelsector -M --metadatatype \
+			--metadatacopies --metadatasize \
+			--setphysicalvolumesize -t --test -u --uuid uuid -v \
+			--verbose -y --yes --version' -- $cur ) )
+	else
+		_physicalvolumes
+	fi
+}
+complete -F _pvcreate pvcreate
+
+_pvmove()
+{
+	local cur prev
+
+	COMPREPLY=()
+	cur=${COMP_WORDS[COMP_CWORD]}
+	prev=${COMP_WORDS[COMP_CWORD-1]}
+
+	case "$prev" in
+		-@(A|-autobackup))
+			COMPREPLY=( $( compgen -W 'y n' -- $cur ) )
+			return 0
+			;;
+		-@(n|-name))
+			_logicalvolumes
+			return 0
+	esac
+
+	if [[ "$cur" == -* ]]; then
+		COMPREPLY=( $( compgen -W '--abort -A --autobackup \
+			-b --background -d --debug -f --force -h -? \
+			--help -i --interval -t --test -v --verbose \
+			--version -n --name' -- $cur ) )
+	else
+		_physicalvolumes
+	fi
+}
+complete -F _pvmove pvmove
+
+_pvremove()
+{
+	local cur
+
+	COMPREPLY=()
+	cur=${COMP_WORDS[COMP_CWORD]}
+
+	if [[ "$cur" == -* ]]; then
+		COMPREPLY=( $( compgen -W '-d --debug -f --force -h -? \
+			--help -y --yes -t --test -v --verbose \
+			--version' -- $cur ) )
+	else
+		_physicalvolumes
+	fi
+}
+complete -F _pvremove pvremove
+
+_vgscan()
+{
+	local cur
+
+	COMPREPLY=()
+	cur=${COMP_WORDS[COMP_CWORD]}
+
+	if [[ "$cur" == -* ]]; then
+		COMPREPLY=( $( compgen -W '-d --debug -h --help \
+			--ignorelockingfailure --mknodes -P \
+			--partial -v --verbose --version' -- $cur ) )
+	fi
+}
+complete -F _vgscan vgscan
+
+_vgs()
+{
+	local cur prev
+
+	COMPREPLY=()
+	cur=${COMP_WORDS[COMP_CWORD]}
+	prev=${COMP_WORDS[COMP_CWORD-1]}
+
+	case "$prev" in
+		-@(o|O|-options|-sort))
+			COMPREPLY=( $( compgen -W 'vg_fmt vg_uuid vg_name \
+				vg_attr vg_size vg_free vg_sysid \
+				vg_extent_size vg_extent_count vg_free_count \
+				max_lv max_pv pv_count lv_count snap_count \
+				vg_seqno' -- $cur ) )
+			return 0
+			;;
+		--units)
+			_units
+			return 0
+			;;
+	esac
+
+	if [[ "$cur" == -* ]]; then
+		COMPREPLY=( $( compgen -W '--aligned -d --debug \
+			-h --help --ignorelockingfailure --noheadings \
+			--nosuffix -o --options -O --sort -P --partial \
+			--separator --unbuffered --units \
+			-v --verbose --version' -- $cur ) )
+	else
+		_volumegroups
+	fi
+}
+complete -F _vgs vgs
+
+_vgdisplay()
+{
+	local cur prev
+
+	COMPREPLY=()
+	cur=${COMP_WORDS[COMP_CWORD]}
+	prev=${COMP_WORDS[COMP_CWORD-1]}
+
+	case "$prev" in
+		--units)
+			_units
+			return 0
+			;;
+	esac
+
+	if [[ "$cur" == -* ]]; then
+		COMPREPLY=( $( compgen -W '-c --colon -C --columns --units \
+			-P --partial -A --activevolumegroups -v --verbose \
+			-d --debug -h --help --version' -- $cur ) )
+	else
+		_volumegroups
+	fi
+}
+complete -F _vgdisplay vgdisplay
+
+_vgchange()
+{
+	local cur prev
+
+	COMPREPLY=()
+	cur=${COMP_WORDS[COMP_CWORD]}
+	prev=${COMP_WORDS[COMP_CWORD-1]}
+
+	case "$prev" in
+		-@(a|A|x|-available|-autobackup|-resizeable))
+			COMPREPLY=( $( compgen -W 'y n' -- $cur ) )
+			return 0
+			;;
+	esac
+
+	if [[ "$cur" == -* ]]; then
+		COMPREPLY=( $( compgen -W '-A --autobackup --alloc -P \
+			--partial -d --debug -h --help --ignorelockingfailure \
+			-t --test -u --uuid -v --verbose --version -a \
+			--available -x --resizeable -l --logicalvolume \
+			--addtag --deltag' -- $cur ) )
+	else
+		_volumegroups
+	fi
+}
+complete -F _vgchange vgchange
+
+_vgcreate()
+{
+	local cur prev
+
+	COMPREPLY=()
+	cur=${COMP_WORDS[COMP_CWORD]}
+	prev=${COMP_WORDS[COMP_CWORD-1]}
+
+	case "$prev" in
+		-@(A|-autobackup))
+			COMPREPLY=( $( compgen -W 'y n' -- $cur ) )
+			return 0
+			;;
+		-@(M|-metadatatype))
+			COMPREPLY=( $( compgen -W '1 2' -- $cur ) )
+			return 0
+			;;
+		-@(s|-physicalextentsize))
+			_sizes
+			return 0
+			;;
+	esac
+
+	if [[ "$cur" == -* ]]; then
+		COMPREPLY=( $( compgen -W '-A --autobackup --addtag \
+			--alloc -d --debug -h --help -l --maxlogicalvolumes \
+			-M --metadatatype -p --maxphysicalvolumes -s \
+			--physicalextentsize -t --test -v --verbose \
+			--version' -- $cur ) )
+	else
+		_args
+		if [ $args -eq 0 ]; then
+			_volumegroups
+		else
+			_physicalvolumes
+		fi
+	fi
+}
+complete -F _vgcreate vgcreate
+
+_vgremove()
+{
+	local cur
+
+	COMPREPLY=()
+	cur=${COMP_WORDS[COMP_CWORD]}
+
+	if [[ "$cur" == -* ]]; then
+		COMPREPLY=( $( compgen -W '-d --debug -h --help -t --test \
+		-v --verbose --version' -- $cur ) )
+	else
+		_volumegroups
+	fi
+}
+complete -F _vgremove vgremove
+
+_vgrename()
+{
+	local cur prev
+
+	COMPREPLY=()
+	cur=${COMP_WORDS[COMP_CWORD]}
+	prev=${COMP_WORDS[COMP_CWORD-1]}
+
+	case "$prev" in
+		-@(A|-autobackup))
+			COMPREPLY=( $( compgen -W 'y n' -- $cur ) )
+			return 0
+			;;
+	esac
+
+	if [[ "$cur" == -* ]]; then
+		COMPREPLY=( $( compgen -W '-A --autobackup -d --debug -h \
+			-? --help -t --test -v --verbose --version' -- $cur ) )
+	else
+		_volumegroups
+	fi
+}
+complete -F _vgrename vgrename
+
+_vgreduce()
+{
+	local cur prev
+
+	COMPREPLY=()
+	cur=${COMP_WORDS[COMP_CWORD]}
+	prev=${COMP_WORDS[COMP_CWORD-1]}
+
+	case "$prev" in
+		-@(A|-autobackup))
+			COMPREPLY=( $( compgen -W 'y n' -- $cur ) )
+			return 0
+			;;
+	esac
+
+	if [[ "$cur" == -* ]]; then
+		COMPREPLY=( $( compgen -W '-a --all -A --autobackup -d \
+			--debug -h --help --removemissing -t --test -v \
+			--verbose --version' -- $cur ) )
+
+	else
+		_args
+		if [ $args -eq 0 ]; then
+			_volumegroups
+		else
+			_physicalvolumes
+		fi
+	fi
+}
+complete -F _vgreduce vgreduce
+
+_vgextend()
+{
+	local cur prev
+
+	COMPREPLY=()
+	cur=${COMP_WORDS[COMP_CWORD]}
+	prev=${COMP_WORDS[COMP_CWORD-1]}
+
+	case "$prev" in
+		-@(A|-autobackup))
+			COMPREPLY=( $( compgen -W 'y n' -- $cur ) )
+			return 0
+			;;
+		-@(L|-size))
+			_sizes
+			return 0
+			;;
+	esac
+
+	if [[ "$cur" == -* ]]; then
+		COMPREPLY=( $( compgen -W '-A --autobackup -d --debug -h \
+			-? --help -t --test -v --verbose --version' -- $cur ) )
+	else
+		_args
+		if [ $args -eq 0 ]; then
+			_volumegroups
+		else
+			_physicalvolumes
+		fi
+	fi
+}
+complete -F _vgextend vgextend
+
+_vgport()
+{
+	local cur prev
+
+	COMPREPLY=()
+	cur=${COMP_WORDS[COMP_CWORD]}
+
+	if [[ "$cur" == -* ]]; then
+		COMPREPLY=( $( compgen -W '-a --all -d --debug -h \
+			-? --help -v --verbose --version' -- $cur ) )
+	else
+		_volumegroups
+	fi
+}
+complete -F _vgport vgimport vgexport
+
+_vgck()
+{
+	local cur prev
+
+	COMPREPLY=()
+	cur=${COMP_WORDS[COMP_CWORD]}
+
+	if [[ "$cur" == -* ]]; then
+		COMPREPLY=( $( compgen -W '-d --debug -h \
+			-? --help -v --verbose --version' -- $cur ) )
+	else
+		_volumegroups
+	fi
+}
+complete -F _vgck vgck
+
+_vgconvert()
+{
+	local cur prev
+
+	COMPREPLY=()
+	cur=${COMP_WORDS[COMP_CWORD]}
+	prev=${COMP_WORDS[COMP_CWORD-1]}
+
+	case "$prev" in
+		-@(M|-metadatatype))
+			COMPREPLY=( $( compgen -W '1 2' -- $cur ) )
+			return 0
+			;;
+		--metadatacopies)
+			COMPREPLY=( $( compgen -W '0 1 2' -- $cur ) )
+			return 0
+			;;
+		--metadatasize)
+			_sizes
+			return 0
+			;;
+	esac
+
+	if [[ "$cur" == -* ]]; then
+		COMPREPLY=( $( compgen -W '-d --debug -h --help --labelsector \ 
+			-M --metadatatype --metadatacopies --metadatasize \
+			-t --test -v --verbose --version' -- $cur ) )
+	else
+		_volumegroups
+	fi
+}
+complete -F _vgconvert vgconvert
+
+_vgcfgbackup()
+{
+	local cur prev
+
+	COMPREPLY=()
+	cur=${COMP_WORDS[COMP_CWORD]}
+	prev=${COMP_WORDS[COMP_CWORD-1]}
+
+	case "$prev" in
+		-@(f|-file))
+			_filedir
+			return 0
+			;;
+	esac
+
+	if [[ "$cur" == -* ]]; then
+		COMPREPLY=( $( compgen -W '-d --debug -f --file -h --help \
+			--ignorelockingfailure -P --partial -v --verbose \
+			--version' -- $cur ) )
+	else
+		_volumegroups
+	fi
+}
+complete -F _vgcfgbackup vgcfgbackup
+
+_vgcfgrestore()
+{
+	local cur prev
+
+	COMPREPLY=()
+	cur=${COMP_WORDS[COMP_CWORD]}
+	prev=${COMP_WORDS[COMP_CWORD-1]}
+
+	case "$prev" in
+		-@(f|-file))
+			_filedir
+			return 0
+			;;
+		-@(M|-metadatatype))
+			COMPREPLY=( $( compgen -W '1 2' -- $cur ) )
+			return 0
+			;;
+		-@(n|-name))
+			_volumegroups
+			return 0
+			;;
+	esac
+
+	if [[ "$cur" == -* ]]; then
+		COMPREPLY=( $( compgen -W '-d --debug -f --file -l --list \
+			-h --help -M --Metadatatype -n --name -t --test \
+			-v --verbose --version' -- $cur ) )
+	else
+		_volumegroups
+	fi
+}
+complete -F _vgcfgrestore vgcfgrestore
+
+_vgmerge()
+{
+	local cur prev
+
+	COMPREPLY=()
+	cur=${COMP_WORDS[COMP_CWORD]}
+	prev=${COMP_WORDS[COMP_CWORD-1]}
+
+	case "$prev" in
+		-@(A|-autobackup))
+			COMPREPLY=( $( compgen -W 'y n' -- $cur ) )
+			return 0
+			;;
+	esac
+
+	if [[ "$cur" == -* ]]; then
+		COMPREPLY=( $( compgen -W '-A --autobackup -d --debug \
+			-h --help -l --list -t --test -v --verbose \
+			--version' -- $cur ) )
+	else
+		_volumegroups
+	fi
+}
+complete -F _vgmerge vgmerge
+
+_vgsplit()
+{
+	local cur prev
+
+	COMPREPLY=()
+	cur=${COMP_WORDS[COMP_CWORD]}
+	prev=${COMP_WORDS[COMP_CWORD-1]}
+
+	case "$prev" in
+		-@(A|-autobackup))
+			COMPREPLY=( $( compgen -W 'y n' -- $cur ) )
+			return 0
+			;;
+		-@(M|-metadatatype))
+			COMPREPLY=( $( compgen -W '1 2' -- $cur ) )
+			return 0
+			;;
+	esac
+
+	if [[ "$cur" == -* ]]; then
+		COMPREPLY=( $( compgen -W '-A --autobackup -d --debug \
+			-h --help -l --list -M --metadatatype -t --test \
+			-v --verbose --version' -- $cur ) )
+	else
+		_args
+		if [ $args -eq 0 -o $args -eq 1 ]; then
+			_volumegroups
+		else
+			_physicalvolumes
+		fi
+	fi
+}
+complete -F _vgsplit vgsplit
+
+_vgmknodes()
+{
+	local cur
+
+	COMPREPLY=()
+	cur=${COMP_WORDS[COMP_CWORD]}
+
+	if [[ "$cur" == -* ]]; then
+		COMPREPLY=( $( compgen -W '-d --debug -h --help -v --verbose \
+			--version' -- $cur ) )
+	else
+		_volumegroups
+	fi
+}
+complete -F _vgmknodes vgmknodes
+
+_lvscan()
+{
+	local cur
+
+	COMPREPLY=()
+	cur=${COMP_WORDS[COMP_CWORD]}
+
+	if [[ "$cur" == -* ]]; then
+		COMPREPLY=( $( compgen -W '-b --blockdevice -d --debug \
+			-h -? --help --ignorelockingfailure -P \
+			--partial -v --verbose --version' -- $cur ) )
+	fi
+}
+complete -F _lvscan lvscan
+
+_lvs()
+{
+	local cur prev
+
+	COMPREPLY=()
+	cur=${COMP_WORDS[COMP_CWORD]}
+	prev=${COMP_WORDS[COMP_CWORD-1]}
+
+	case "$prev" in
+		-@(o|O|-options|-sort))
+			COMPREPLY=( $( compgen -W 'lv_uuid lv_name \
+				lv_attr lv_minor lv_size seg_count \
+				origin snap_percent segtype stripes \
+				stripesize chunksize seg_start \
+				seg_size' -- $cur ) )
+			return 0
+			;;
+		--units)
+			_units
+			return 0
+			;;
+	esac
+
+	if [[ "$cur" == -* ]]; then
+		COMPREPLY=( $( compgen -W '--aligned -d --debug \
+			-h --help --ignorelockingfailure --noheadings \
+			--nosuffix -o --options -O --sort -P --partial \
+			--segments --separator --unbuffered --units \
+			-v --verbose --version' -- $cur ) )
+	else
+		_logicalvolumes
+	fi
+}
+complete -F _lvs lvs
+
+_lvdisplay()
+{
+	local cur prev
+
+	COMPREPLY=()
+	cur=${COMP_WORDS[COMP_CWORD]}
+	prev=${COMP_WORDS[COMP_CWORD-1]}
+
+	case "$prev" in
+		--units)
+			_units
+			return 0
+			;;
+	esac
+
+	if [[ "$cur" == -* ]]; then
+		COMPREPLY=( $( compgen -W '-c --colon -C --columns --units \
+			-P --partial -m --maps -v --verbose -d --debug -h \
+			--help --version' -- $cur ) )
+	else
+		_logicalvolumes
+	fi
+}
+complete -F _lvdisplay lvdisplay
+
+_lvchange()
+{
+	local cur prev
+
+	COMPREPLY=()
+	cur=${COMP_WORDS[COMP_CWORD]}
+	prev=${COMP_WORDS[COMP_CWORD-1]}
+
+	case "$prev" in
+		-@(a|A|C|M|-available|-autobackup|-continguous|-persistent))
+			COMPREPLY=( $( compgen -W 'y n' -- $cur ) )
+			return 0
+			;;
+		-@(p|-permission))
+			COMPREPLY=( $( compgen -W 'r rw' -- $cur ) )
+			return 0
+			;;
+	esac
+
+	if [[ "$cur" == -* ]]; then
+		COMPREPLY=( $( compgen -W '-A --autobackup -a --available \
+			--addtag --alloc -C --contiguous -d --debug --deltag \
+			-f --force -h --help --ignorelockingfailure -M \
+			--persistent --major major --minor minor -P --partial \
+			-p --permission -r --readahead --refresh -t --test \
+			-v --verbose --version' -- $cur ) )
+	else
+		_logicalvolumes
+	fi
+}
+complete -F _lvchange lvchange
+
+_lvcreate()
+{
+	local cur prev
+
+	COMPREPLY=()
+	cur=${COMP_WORDS[COMP_CWORD]}
+	prev=${COMP_WORDS[COMP_CWORD-1]}
+
+	case "$prev" in
+		-@(A|C|M|Z|-autobackup|-continguous|-persistent|-zero))
+			COMPREPLY=( $( compgen -W 'y n' -- $cur ) )
+			return 0
+			;;
+		-@(L|-size))
+			_sizes
+			return 0
+			;;
+		-@(p|-permission))
+			COMPREPLY=( $( compgen -W 'r rw' -- $cur ) )
+			return 0
+			;;
+		-@(n|-name))
+			_logicalvolumes
+			return 0
+			;;
+	esac
+
+	if [[ "$cur" == -* ]]; then
+		COMPREPLY=( $( compgen -W '-A --autobackup --addtag --alloc \
+			-C --contiguous -d --debug -h -? --help -i --stripes \
+			-I --stripesize -l --extents -L --size -M --persistent \
+			--major --minor -n --name -p --permission -r \
+			--readahead -t --test --type -v --verbose -Z --zero \
+			--version' -- $cur ) )
+	else
+		_args
+		if [ $args -eq 0 ]; then
+			_volumegroups
+		else
+			_physicalvolumes
+		fi
+	fi
+}
+complete -F _lvcreate lvcreate
+
+_lvremove()
+{
+	local cur prev
+
+	COMPREPLY=()
+	cur=${COMP_WORDS[COMP_CWORD]}
+	prev=${COMP_WORDS[COMP_CWORD-1]}
+
+	case "$prev" in
+		-@(A|-autobackup))
+			COMPREPLY=( $( compgen -W 'y n' -- $cur ) )
+			return 0
+			;;
+	esac
+
+	if [[ "$cur" == -* ]]; then
+		COMPREPLY=( $( compgen -W '-A --autobackup -d --debug -f \
+			--force -h -?  --help -t --test -v --verbose \
+			--version' -- $cur ) )
+	else
+		_logicalvolumes
+	fi
+}
+complete -F _lvremove lvremove
+
+_lvrename()
+{
+	local cur prev
+
+	COMPREPLY=()
+	cur=${COMP_WORDS[COMP_CWORD]}
+	prev=${COMP_WORDS[COMP_CWORD-1]}
+
+	case "$prev" in
+		-@(A|-autobackup))
+			COMPREPLY=( $( compgen -W 'y n' -- $cur ) )
+			return 0
+			;;
+	esac
+
+	if [[ "$cur" == -* ]]; then
+		COMPREPLY=( $( compgen -W '-A --autobackup -d --debug -h \
+			-? --help -t --test -v --verbose --version' -- $cur ) )
+	else
+		_logicalvolumes
+	fi
+}
+complete -F _lvrename lvrename
+
+_lvreduce()
+{
+	local cur prev
+
+	COMPREPLY=()
+	cur=${COMP_WORDS[COMP_CWORD]}
+	prev=${COMP_WORDS[COMP_CWORD-1]}
+
+	case "$prev" in
+		-@(A|-autobackup))
+			COMPREPLY=( $( compgen -W 'y n' -- $cur ) )
+			return 0
+			;;
+		-@(L|-size))
+			_sizes
+			return 0
+			;;
+	esac
+
+	if [[ "$cur" == -* ]]; then
+		COMPREPLY=( $( compgen -W '-A --autobackup -d \
+			--debug -f --force -h --help -l --extents \
+			-L --size -n --nofsck -r --resizefs -t --test \
+			-v --verbose --version' -- $cur ) )
+	else
+		_logicalvolumes
+	fi
+}
+complete -F _lvreduce lvreduce
+
+_lvresize()
+{
+	local cur prev
+
+	COMPREPLY=()
+	cur=${COMP_WORDS[COMP_CWORD]}
+	prev=${COMP_WORDS[COMP_CWORD-1]}
+
+	case "$prev" in
+		-@(A|-autobackup))
+			COMPREPLY=( $( compgen -W 'y n' -- $cur ) )
+			return 0
+			;;
+		-@(L|-size))
+			_sizes
+			return 0
+			;;
+	esac
+
+	if [[ "$cur" == -* ]]; then
+		COMPREPLY=( $( compgen -W '-A --autobackup --alloc -d \
+			--debug -h --help -i --stripes -I --stripesize \
+			-l --extents -L --size -n --nofsck -r --resizefs \
+			-t --test --type -v --verbose --version' -- $cur ) )
+	else
+		_args
+		if [ $args -eq 0 ]; then
+			_logicalvolumes
+		else
+			_physicalvolumes
+		fi
+	fi
+}
+complete -F _lvresize lvresize
+
+_lvextend()
+{
+	local cur prev
+
+	COMPREPLY=()
+	cur=${COMP_WORDS[COMP_CWORD]}
+	prev=${COMP_WORDS[COMP_CWORD-1]}
+
+	case "$prev" in
+		-@(A|-autobackup))
+			COMPREPLY=( $( compgen -W 'y n' -- $cur ) )
+			return 0
+			;;
+		-@(L|-size))
+			_sizes
+			return 0
+			;;
+	esac
+
+	if [[ "$cur" == -* ]]; then
+		COMPREPLY=( $( compgen -W '-A --autobackup --alloc -d \
+			--debug -h --help -i --stripes -I --stripesize \
+			-l --extents -L --size -n --nofsck -r --resizefs \
+			-t --test --type -v --verbose --version' -- $cur ) )
+	else
+		_args
+		if [ $args -eq 0 ]; then
+			_logicalvolumes
+		else
+			_physicalvolumes
+		fi
+	fi
+}
+complete -F _lvextend lvextend
+}
+
+# mkinitrd(8) completion
+#
+have mkinitrd &&
+_mkinitrd()
+{
+	local cur args
+
+	COMPREPLY=()
+	cur=${COMP_WORDS[COMP_CWORD]}
+	prev=${COMP_WORDS[COMP_CWORD-1]}
+
+	# --name value style option
+	case "$prev" in
+		--preload)
+			_modules
+			return 0
+			;;
+	esac
+
+	# --name=value style option
+	if [[ "$cur" == *=* ]]; then
+		prev=${cur/=*/}
+		cur=${cur/*=/}
+		case "$prev" in
+			--@(with|builtin))
+				_modules
+				return 0
+				;;
+			--@(fstab|dsdt))
+				_filedir
+				return 0
+				;;
+			--tmpdir)
+				_filedir -d
+				return 0
+				;;
+		esac
+	fi
+
+
+	if [[ "$cur" == -* ]]; then
+		COMPREPLY=( $( compgen -W '--version -v -f --preload \
+			--with= --omit-scsi-modules --omit-raid-modules \
+			--images-version --fstab= --nocompress --builtin= \
+			--nopivot --noudev --allow-missing --tmpdir= \
+			--initrdfs= --dsdt= --lvm-version= --froce-usb' \
+			-- $cur ) )
+	else
+		# count number of mandatory args given sofar
+		args=1
+		for (( i=1; i < COMP_CWORD; i++ )); do
+			if [[ "${COMP_WORDS[i]}" != -* ]]; then
+				args=$(($args+1))
+			fi
+		done
+
+		case $args in
+			1)
+				_filedir
+				;;
+			2)
+				COMPREPLY=( $( command ls /lib/modules | grep "^$cur" ) )
+				;;
+		esac
+	fi
+
+}
+[ -n "${have:-}" ] && complete -F _mkinitrd mkinitrd
+
+# pkgconfig(1) completion
+#
+have pkg-config &&
+_pkg_config()
+{
+	local cur
+
+	COMPREPLY=()
+	cur=${COMP_WORDS[COMP_CWORD]}
+
+	if [[ "$cur" == -* ]]; then
+		# return list of available options
+		COMPREPLY=( $( compgen -W '-version --modversion \
+		      --atleast-pkgconfig-version= --libs --libs-only-l \
+		      --libs-only-other --libs-only-L --cflags \
+		      --cflags-only-I --cflags-only-othee --variable= \
+		      --define-variable= --exists --uninstalles \
+		      --atleast-version= --exact-version= --max-version= \
+		      --list-all --debug --print-errors --silence-errors \
+		      --errors-to-stdout -? --help --usage' -- $cur))
+	else
+		COMPREPLY=( $( pkg-config --list-all 2>/dev/null | \
+				    awk '{print $1}' | grep "^$cur" ) )
+	fi
+}
+[ -n "${have:-}" ] && complete -F _pkg_config pkg-config
+
 _filedir_xspec()
 {
 	local IFS cur xspec
@@ -6097,7 +8031,8 @@ unset i
 [ $BASH_COMPLETION != ~/.bash_completion -a -r ~/.bash_completion ] \
 	&& . ~/.bash_completion
 unset -f have
-unset UNAME RELEASE default dirnames filenames nospace bashdefault plusdirs
+unset UNAME RELEASE default dirnames filenames have nospace bashdefault \
+      plusdirs
 
 ###  Local Variables:
 ###  mode: shell-script

@@ -6,14 +6,18 @@ export DH_COMPAT=4
 
 # architecture dependent variables
 ARCH			:= $(shell dpkg --print-gnu-build-architecture)
+DEB_BUILD_GNU_TYPE	:= $(shell dpkg-architecture -qDEB_BUILD_GNU_TYPE)
 DEB_HOST_ARCH		:= $(shell dpkg-architecture -qDEB_HOST_ARCH)
 DEB_HOST_GNU_CPU	:= $(shell dpkg-architecture -qDEB_HOST_GNU_CPU)
 DEB_HOST_GNU_SYSTEM	:= $(shell dpkg-architecture -qDEB_HOST_GNU_SYSTEM)
 DEB_HOST_GNU_TYPE	:= $(shell dpkg-architecture -qDEB_HOST_GNU_TYPE)
 
-VERSION	:= 2.05b
-PKGVERSION := $(shell dpkg-parsechangelog \
-		| sed -n '/Version:/s/\(.* \)\(.*\)-2\(.*\)/\2\3/p')
+VERSION		:= 3.0
+#PKGVERSION	:= $(shell dpkg-parsechangelog \
+#			| sed -n '/Version:/s/\(.* \)\(.*\)-2\(.*\)/\2\3/p')
+#PKGVERSION	:= 3.0
+#dpkg_ctrl_args := -v$(PKGVERSION) -VBinary-Version=$(PKGVERSION)
+
 
 CC	= gcc
 CFLAGS	= -g -O2
@@ -43,8 +47,6 @@ d_bins	= debian/$(p_bins)
 d_doc	= debian/$(p_doc)
 d_bdb	= debian/$(p_bdb)
 
-dpkg_ctrl_args := -v$(PKGVERSION) -VBinary-Version=$(PKGVERSION)
-
 conf_args = \
 	--with-curses \
 	--disable-net-redirections \
@@ -58,21 +60,17 @@ endif
 
 static_conf_args := $(conf_args) \
 	--enable-static-link \
-	$(DEB_HOST_GNU_TYPE)
+	--host=$(DEB_HOST_GNU_TYPE)
 
-conf_args += $(DEB_HOST_GNU_TYPE)
+conf_args += --host=$(DEB_HOST_GNU_TYPE)
 
 min_conf_args = \
 	--enable-minimal-config \
 	--enable-largefile \
 	--prefix=/usr \
 	--infodir=/usr/share/info \
-	--mandir=/usr/share/man \
-# bash malloc is broken on GNU/FreeBSD
-ifeq ($(DEB_HOST_GNU_SYSTEM),kfreebsd-gnu)
-    min_conf_args += --without-bash-malloc
-endif
-min_conf_args += $(DEB_HOST_GNU_TYPE)
+	--mandir=/usr/share/man
+min_conf_args += --host=$(DEB_HOST_GNU_TYPE)
 
 
 #build: bash-build minimal-build static-build preinst-build all-bashdb-build check
@@ -163,10 +161,16 @@ stamps/stamp-build-bash-doc:
 
 # ---------------------------------------------------------------------------
 
-check: bash-build
-	echo BEGIN test
+check: stamps/stamp-check
+stamps/stamp-check: bash-build
+	@echo BEGIN test
+ifeq ($(DEB_BUILD_GNU_TYPE),$(DEB_HOST_GNU_TYPE))
 	$(MAKE) -C build-bash test 2>&1 | tee build-bash/test-protocol
-	echo END test
+else
+	@echo Suppress 'make' test, because this is cross build
+endif
+	@echo END test
+	touch stamps/stamp-check
 
 # ---------------------------------------------------------------------------
 
@@ -175,6 +179,7 @@ clean:
 	dh_testroot
 	rm -rf stamps build-* bash bashdb
 	rm -f debian/bash.preinst
+	rm -f debian/README.Debian
 	dh_clean
 
 preinst-build: debian/bash.preinst
@@ -184,8 +189,7 @@ debian/bash.preinst: debian/bash.preinst.c
 # ---------------------------------------------------------------------------
 
 
-#install: build bash-install bashdb-install
-install: build bash-install
+install: bash-install #bashdb-install
 
 bash-install: bash-build stamps/stamp-install-bash
 stamps/stamp-install-bash: stamps/stamp-build-bash
@@ -202,6 +206,9 @@ stamps/stamp-install-bash: stamps/stamp-build-bash
 	dh_installdirs -p$(p_bins) \
 		usr/share/doc/$(p)/examples/loadables \
 		usr/{include/bash/{builtins,lib/{glob,tilde}}}
+
+# XXXXX
+	cp -p build-bash/doc/*.info bash/doc/
 
 	: # install it
 	$(MAKE) -C build-bash install \
@@ -258,7 +265,7 @@ stamps/stamp-install-bash: stamps/stamp-build-bash
 		scripts/bcsh.sh scripts/krand.bash
 
 	: # files for the bash-builtins package
-	$(ID) bash/include/*.h bash/*.h build-bash/{config.h,version.h} \
+	$(ID) bash/include/*.h bash/*.h build-bash/*.h \
 		$(d_bins)/usr/include/bash/
 	$(ID) bash/builtins/*.h $(d_bins)/usr/include/bash/builtins/
 	$(ID) bash/lib/glob/*.h $(d_bins)/usr/include/bash/lib/glob/
@@ -269,9 +276,11 @@ stamps/stamp-install-bash: stamps/stamp-build-bash
 		$(d_bins)/usr/share/doc/$(p)/examples/loadables
 	ln -sf bash $(d_bins)/usr/share/doc/$(p_bins)
 
+	cat debian/README stamps/stamp-patch-bash > debian/README.Debian
+
 	touch stamps/stamp-install-bash
 
-bashdb-install: bashdb-build stamps/stamp-install-bashdb
+bashdb-install: stamps/stamp-install-bashdb
 stamps/stamp-install-bashdb: stamps/stamp-build-bashdb
 	dh_testdir
 	dh_testroot
@@ -307,10 +316,8 @@ stamps/stamp-install-bashdb: stamps/stamp-build-bashdb
 		$(d_bdb)/usr/bin/bashdb > $(d_bdb)/usr/bin/bashdb.new
 	mv -f $(d_bdb)/usr/bin/bashdb.new $(d_bdb)/usr/bin/bashdb
 	chmod 755 $(d_bdb)/usr/bin/bashdb
-	cp -p bashdb/debugger/emacs/bashdb.el \
+	cp -p bashdb/debugger/emacs/*.el \
 		$(d_bdb)/usr/share/emacs/site-lisp/$(p_bdb)/
-	cp -p bashdb/debugger/emacs/gud.el \
-		$(d_bdb)/usr/share/emacs/site-lisp/$(p_bdb)/gud-bashdb.el
 
 	touch stamps/stamp-install-bashdb
 
@@ -326,7 +333,7 @@ binary-doc: bash-install bash-doc-build
 	dh_compress -p$(p_doc) -Xexamples -X.pdf
 	dh_fixperms -p$(p_doc)
 	dh_installdeb -p$(p_doc)
-	dh_gencontrol -p$(p_doc) -- $(dpkg_ctrl_args)
+	dh_gencontrol -p$(p_doc)
 	dh_md5sums -p$(p_doc)
 	dh_builddeb -p$(p_doc)
 
@@ -345,10 +352,8 @@ binary-bash: bash-install debian/bash.preinst
 	dh_compress -p$(p)
 	dh_fixperms -p$(p)
 	dh_shlibdeps -p$(p) -- -dPre-Depends $(d)/bin/bash debian/bash.preinst
-#	sed 's/>= 4.2/>= 4.2a/' debian/substvars > debian/substvars.new \
-#		&& mv -f debian/substvars.new debian/substvars
 	dh_installdeb -p$(p)
-	dh_gencontrol -p$(p) -- $(dpkg_ctrl_args)
+	dh_gencontrol -p$(p)
 	dh_md5sums -p$(p)
 	dh_builddeb -p$(p)
 
@@ -361,7 +366,7 @@ binary-builtins: bash-install
 	dh_compress -p$(p_bins) -Xexamples
 	dh_fixperms -p$(p_bins)
 	dh_installdeb -p$(p_bins)
-	dh_gencontrol -p$(p_bins) -- $(dpkg_ctrl_args)
+	dh_gencontrol -p$(p_bins)
 	dh_md5sums -p$(p_bins)
 	dh_builddeb -p$(p_bins)
 
@@ -380,7 +385,7 @@ binary-static: static-build
 	dh_compress -p$(p_stat)
 	dh_fixperms -p$(p_stat)
 	dh_installdeb -p$(p_stat)
-	dh_gencontrol -p$(p_stat) -- $(dpkg_ctrl_args)
+	dh_gencontrol -p$(p_stat)
 	dh_md5sums -p$(p_stat)
 	dh_builddeb -p$(p_stat)
 
@@ -400,7 +405,7 @@ binary-minimal: minimal-build
 	dh_fixperms -p$(p_min)
 	dh_shlibdeps -p$(p_min)
 	dh_installdeb -p$(p_min)
-	dh_gencontrol -p$(p_min) -- $(dpkg_ctrl_args)
+	dh_gencontrol -p$(p_min)
 	dh_md5sums -p$(p_min)
 	dh_builddeb -p$(p_min)
 
@@ -420,16 +425,13 @@ binary-bashdb: bashdb-install
 	dh_strip -p$(p_bdb)
 	dh_compress -p$(p_bdb)
 	dh_fixperms -p$(p_bdb)
-	dh_shlibdeps -p$(p_bdb)
 	dh_installdeb -p$(p_bdb)
-	dh_gencontrol -p$(p_bdb) -- $(dpkg_ctrl_args)
+	dh_gencontrol -p$(p_bdb)
 	dh_md5sums -p$(p_bdb)
 	dh_builddeb -p$(p_bdb)
 
 binary-indep: binary-doc
-#binary-arch: binary-bash binary-builtins binary-static binary-minimal binary-bashdb
-binary-arch: binary-bash binary-builtins binary-static binary-minimal
-
+binary-arch: binary-bash binary-builtins binary-static binary-minimal #binary-bashdb
 binary:	binary-indep binary-arch
 
 # ---------------------------------------------------------------------------
@@ -444,6 +446,9 @@ stamps/stamp-build-$(build): stamps/stamp-configure-$(build)
 		YACC="$(YACC)" \
 		deb_builddir=build-$(build)/ \
 		$(debflags)
+# XXX not done by toplevel make?
+	$(MAKE) -C build-$(build)/doc \
+		bash.info
 	touch stamps/stamp-build-$(build)
 
 do-configure-$(build): stamps/stamp-configure-$(build)
@@ -458,6 +463,28 @@ stamps/stamp-configure-$(build): stamps/stamp-patch-$(bash_src)
 
 patchdir	= debian/patches
 debian_patches = \
+	bash30-001 \
+	bash30-002 \
+	bash30-003 \
+	bash30-004 \
+	bash30-005 \
+	bash30-006 \
+	bash30-007 \
+	bash30-008 \
+	bash30-009 \
+	bash30-010 \
+	bash30-011 \
+	bash30-012 \
+	bash30-013 \
+	bash30-014 \
+	bash30-015 \
+	bash30-016 \
+	rl-del-backspace-policy \
+	rl-examples \
+	rl-inputrc \
+	rl-setenv \
+	rl-display \
+	rl-self-insert \
 	bashbug-editor \
 	deb-bash-config \
 	deb-examples \
@@ -465,36 +492,17 @@ debian_patches = \
 	man-fignore \
 	man-bashrc \
 	man-bashlogout \
+	man-substring-exp \
+	man-nocaseglob \
 	man-cdpath \
 	man-test \
+	man-test2 \
 	privmode \
-	various \
-	report-155436 \
-	bash205b-001 \
-	bash205b-002 \
-	bash205b-003 \
-	bash205b-004 \
-	bash205b-005 \
-	bash205b-006 \
-	bash205b-007 \
-	rl-examples \
-	rl-inputrc \
-	rl-del-backspace-policy \
-	rl-8bit-init \
-	rl-slow-multibyte \
-	rl-chardefs \
-	s390-build \
 	rbash-manpage \
-	rbash-login-shell \
-	execute-cmd \
-	builtins-shift \
-	suspend-segfault \
-	mailcheck \
-	bashline-dir-comp \
-	gcc-3.4 \
-
-#	random \
-#	jobs-update
+	histtimeformat \
+	command-not-found \
+	update-multibyte-ifs \
+	speling \
 
 # all debian_patches, without bash205b-*
 # patches integrated in bashdb: builtins-shift, execute-cmd, man-arithmetic,
@@ -505,25 +513,21 @@ debian_patches = \
 
 bashdb_patches = \
 	bashdb \
+	rl-del-backspace-policy \
+	rl-examples-bdb \
+	rl-inputrc \
 	bashbug-editor \
 	deb-bash-config \
 	deb-examples \
-	man-bashrc \
 	privmode \
-	various \
-	rl-examples-bdb \
-	rl-inputrc \
-	rl-del-backspace-policy \
-	suspend-segfault \
-	rbash-login-shell \
-	gud-bashdb \
+
+#	various \
 
 # these are applied in bashdb cvs as well
 #	man-arithmetic \
 #	man-fignore \
 #	random \
 #	report-155436 \
-#	rl-8bit-init \
 #	s390-build \
 #	builtins-shift
 

@@ -4,11 +4,13 @@ the Bourne Again SHell.
 This package was put together by Matthias Klose <doko@debian.org>, from
 the following sources:
 
-  bash:			ftp.gnu.org:/pub/gnu/bash/bash-2.05b.tar.gz
-  bash_completion:	http://www.caliban.org/bash/index.shtml#completion
+  bash:			ftp.gnu.org:/pub/gnu/bash/bash-3.0.tar.gz
+  bash_completion:	http://freshmeat.net/projects/bashcompletion/
   bashdb:		http://bashdb.sf.net/
 
-Copyright (C) 1987-2002 Free Software Foundation, Inc.
+Bash homepage:		 http://cnswww.cns.cwru.edu/~chet/bash/bashtop.html
+
+Copyright (C) 1989-2004 Free Software Foundation, Inc.
 
 Bash is free software; you can redistribute it and/or modify it under
 the terms of the GNU General Public License as published by the Free
@@ -34,12 +36,11 @@ and standards expect shells not to print such messages.  This
 exception applies to any program that serves as a shell and that is
 based primarily on Bash as opposed to other GNU software.
 
--------------------------------------------------------------------------------
-bash_completion is Copyright (C) Ian Macdonald <ian@caliban.org>
 
 bash_completion is free software; you can redistribute it and/or modify it
 under the terms of the GNU General Public License as published by the Free
 Software Foundation; either version 2, or (at your option) any later version.
 
-On Debian GNU/Linux systems, the complete text of the GNU General
-Public License can be found in `/usr/share/common-licenses/GPL'.
+bashdb is free software; you can redistribute it and/or modify it
+under the terms of the GNU General Public License as published by the Free
+Software Foundation; either version 2, or (at your option) any later version.

@@ -7,8 +7,8 @@ elif [ $# -ne 1 ]; then
     exit 1
 fi
 case "$1" in
-    -patch) patch $pdir -f --no-backup-if-mismatch -p0 < $0;;
-    -unpatch) patch $pdir -f --no-backup-if-mismatch -R -p0 < $0;;
+    -patch) patch $pdir -f --no-backup-if-mismatch -p1 < $0;;
+    -unpatch) patch $pdir -f --no-backup-if-mismatch -R -p1 < $0;;
     *)
 	echo >&2 "`basename $0`: script expects -patch|-unpatch as argument"
 	exit 1
@@ -17,9 +17,10 @@ exit 0
 
 # DP: bash(1): mention quoting when assigning to FIGNORE
 
---- doc/bash.1~	Fri May 31 00:45:57 2002
-+++ doc/bash.1	Fri May 31 00:48:52 2002
-@@ -1456,7 +1456,9 @@
+diff -urb bash.orig/doc/bash.1 bash/doc/bash.1
+--- bash.orig/doc/bash.1	2003-09-25 21:42:45.000000000 +0200
++++ bash/doc/bash.1	2003-09-28 00:25:21.000000000 +0200
+@@ -1584,7 +1584,9 @@
  is excluded from the list of matched filenames.
  A sample value is
  .if t \f(CW".o:~"\fP.
