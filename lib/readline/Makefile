@@ -5,7 +5,9 @@
 ####################################################################
 
 srcdir = .
-VPATH = .:$(srcdir)
+VPATH = .
+vpath %.c $(srcdir)
+vpath %.h $(srcdir)
 
 INSTALL = install -c
 INSTALL_PROGRAM = ${INSTALL}
@@ -26,8 +28,11 @@ CPPFLAGS = $(DEFS) $(LOCAL_INCLUDES)
 
 # Here is a rule for making .o files from .c files that doesn't force
 # the type of the machine (like -sun3) into the flags.
+ifndef NOFPIC
+PICFLAGS := -fPIC
+endif
 .c.o:
-	$(CC) -c $(CPPFLAGS) $(CFLAGS) $<
+	$(CC) -c $(CPPFLAGS) $(CFLAGS) $(PICFLAGS) $<
 
 # The name of the main library target.
 LIBRARY_NAME = libreadline.a
@@ -62,7 +67,21 @@ THINGS_TO_TAR = $(SOURCES) $(SUPPORT)
 
 ##########################################################################
 
-all: libreadline.a libhistory.a
+all: libreadline.so libhistory.so staticlibs
+
+staticlibs:
+	test -d static || mkdir static
+	$(MAKE) -C static -f ../Makefile srcdir=.. NOFPIC=1 libreadline.a libhistory.a
+
+libreadline.so: $(OBJECTS)
+	$(RM) -f $@
+	$(CC) -shared -Wl,-soname,libreadline.so.$(SOVERSION) \
+	  -o libreadline.so $(OBJECTS) -lncurses
+
+libhistory.so: history.o
+	$(RM) -f $@
+	$(CC) -shared -Wl,-soname,libhistory.so.$(SOVERSION) \
+	  -o libhistory.so history.o
 
 libreadline.a: $(OBJECTS)
 	$(RM) -f $@
@@ -108,11 +127,12 @@ readline: readline.h rldefs.h chardefs.h
 readline: $(OBJECTS)
 	$(CC) $(CFLAGS) $(CPPFLAGS) $(READLINE_DEFINES) \
 	  $(LOCAL_INCLUDES) -DTEST -o readline readline.c vi_mode.o funmap.o \
-	  keymaps.o -ltermcap
+	  keymaps.o -lncurses
 
 clean:
-	$(RM) -f $(OBJECTS) libreadline.a libhistory.a
+	$(RM) -f $(OBJECTS) libreadline.so libhistory.so
 	(if [ -d doc ]; then cd doc; $(MAKE) $(MFLAGS) $@; fi)
+	-$(RM) -rf static
 
 maintainer-clean realclean distclean mostlyclean: clean
 	(if [ -d doc ]; then cd doc; $(MAKE) $(MFLAGS) $@; fi)

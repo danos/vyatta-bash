@@ -1,0 +1,6 @@
+#! /bin/sh
+set -e
+install-info --quiet --section "Development" "Development" \
+  --description="GNU History Library" /usr/info/history.info.gz
+install-info --quiet --section "Development" "Development" \
+  --description="GNU Readline Library" /usr/info/readline.info.gz

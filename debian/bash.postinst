@@ -1,0 +1,4 @@
+#! /bin/sh
+set -e
+install-info --quiet --description="GNU Bourne-Again SHell Features." \
+ --section "General Commands" "General Commands" /usr/info/bash.info.gz

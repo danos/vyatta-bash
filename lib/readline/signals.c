@@ -119,13 +119,12 @@ rl_handle_sigwinch (sig)
 static SigHandler
   *old_int  = (SigHandler *)NULL,
   *old_alrm = (SigHandler *)NULL;
-#if !defined (SHELL)
+
 static SigHandler
   *old_tstp = (SigHandler *)NULL,
   *old_ttou = (SigHandler *)NULL,
   *old_ttin = (SigHandler *)NULL,
   *old_cont = (SigHandler *)NULL;
-#endif /* !SHELL */
 
 /* Handle an interrupt character. */
 static sighandler
@@ -233,7 +232,7 @@ rl_set_signals ()
   if (old_alrm == (SigHandler *)SIG_IGN)
     rl_set_sighandler (SIGALRM, SIG_IGN);
 
-#if !defined (SHELL)
+  if (!rl_shell) {
 
 #if defined (SIGTSTP)
   old_tstp = (SigHandler *)rl_set_sighandler (SIGTSTP, rl_signal_handler);
@@ -251,7 +250,7 @@ rl_set_signals ()
     }
 #endif /* SIGTTOU */
 
-#endif /* !SHELL */
+}
 
 #if defined (SIGWINCH)
   old_sigwinch =
@@ -265,7 +264,7 @@ rl_clear_signals ()
   rl_set_sighandler (SIGINT, old_int);
   rl_set_sighandler (SIGALRM, old_alrm);
 
-#if !defined (SHELL)
+  if (!rl_shell) {
 
 #if defined (SIGTSTP)
   rl_set_sighandler (SIGTSTP, old_tstp);
@@ -276,7 +275,7 @@ rl_clear_signals ()
   rl_set_sighandler (SIGTTIN, old_ttin);
 #endif /* SIGTTOU */
 
-#endif /* !SHELL */
+}
 
 #if defined (SIGWINCH)
   rl_set_sighandler (SIGWINCH, old_sigwinch);

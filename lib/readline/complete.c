@@ -248,11 +248,9 @@ int rl_filename_quoting_desired = 1;
    to implement FIGNORE a la SunOS csh. */
 Function *rl_ignore_some_completions_function = (Function *)NULL;
 
-#if defined (SHELL)
 /* A function to strip quotes that are not protected by backquotes.  It
    allows single quotes to appear within double quotes, and vice versa.
-   It should be smarter.  It's fairly shell-specific, hence the SHELL
-   definition wrapper. */
+   It should be smarter.  It's fairly shell-specific. */
 static char *
 _delete_quotes (text)
      char *text;
@@ -284,7 +282,6 @@ _delete_quotes (text)
   *r = '\0';
   return ret;
 }
-#endif /* SHELL */
 
 /* Return the portion of PATHNAME that should be output when listing
    possible completions.  If we are hacking filename completion, we
@@ -481,12 +478,11 @@ rl_complete_internal (what_to_do)
 	      if (strchr (rl_completer_word_break_characters, scan) == 0)
 		continue;
 
-#if defined (SHELL)
 	      /* Don't let word break characters in quoted substrings break
 		 words for the completer. */
-	      if (found_quote && char_is_quoted (rl_line_buffer, rl_point))
+	      if (rl_shell && found_quote &&
+		  (*char_is_quoted_hook) (rl_line_buffer, rl_point))
 		continue;
-#endif /* SHELL */
 
 	      /* Convoluted code, but it avoids an n^2 algorithm with calls
 	      	 to char_is_quoted. */
@@ -496,12 +492,11 @@ rl_complete_internal (what_to_do)
 
       /* If we are at an unquoted word break, then advance past it. */
       scan = rl_line_buffer[rl_point];
-#if defined (SHELL)
-      if ((found_quote == 0 || char_is_quoted (rl_line_buffer, rl_point) == 0) &&
-          strchr (rl_completer_word_break_characters, scan))
-#else
-      if (strchr (rl_completer_word_break_characters, scan))
-#endif
+      if (rl_shell ? 
+	  ((found_quote == 0 ||
+	    (*char_is_quoted_hook) (rl_line_buffer, rl_point) == 0) &&
+	   strchr (rl_completer_word_break_characters, scan) != 0) :
+	  (strchr (rl_completer_word_break_characters, scan) != 0))
 	{
 	  /* If the character that caused the word break was a quoting
 	     character, then remember it as the delimiter. */
@@ -535,10 +530,10 @@ rl_complete_internal (what_to_do)
 	}
     }
 
-#if defined (SHELL)
   /* Beware -- we're stripping the quotes here.  Do this only if we know
      we are doing filename completion. */
-  if (found_quote && our_func == (Function *)filename_completion_function)
+  if (rl_shell &&
+      found_quote && our_func == (Function *)filename_completion_function)
     {
       /* delete single and double quotes */
       replacement = _delete_quotes (text);
@@ -546,7 +541,6 @@ rl_complete_internal (what_to_do)
       text = replacement;
       replacement = (char *)0;
     }
-#endif /* SHELL */
 
   matches = completion_matches (text, our_func);
 
@@ -659,11 +653,9 @@ rl_complete_internal (what_to_do)
 			 rl_filename_quoting_desired;
 
 	  if (should_quote)
-#if defined (SHELL)
-	    should_quote = should_quote && (!quote_char || quote_char == '"');
-#else
-	    should_quote = should_quote && !quote_char;
-#endif
+	    should_quote = rl_shell ?
+	      should_quote && (!quote_char || quote_char == '"') :
+		should_quote && !quote_char;
 
 	  if (should_quote)
 	    {
@@ -676,22 +668,21 @@ rl_complete_internal (what_to_do)
 		 matches needs to be quoted.  If the common prefix should
 		 not be checked, add !matches[1] to the if clause. */
 	      should_quote = rl_strpbrk (matches[0], rl_completer_word_break_characters) != 0;
-#if defined (SHELL)
-	      should_quote = should_quote || rl_strpbrk (matches[0], "#$`?*[!") != 0;
-#endif
+	      if (rl_shell)
+		should_quote = should_quote || rl_strpbrk (matches[0], "#$`?*[!") != 0;
 
 	      if (should_quote)
 		do_replace = matches[1] ? MULT_MATCH : SINGLE_MATCH;
 
 	      if (do_replace != NO_MATCH)
 		{
-#if defined (SHELL)
+		  if (rl_shell) {
 		  /* Quote the replacement, since we found an
 		     embedded word break character in a potential
 		     match. */
 		  char *rtext, *mtext;
 		  int rlen;
-		  extern char *double_quote ();	/* in builtins/common.c */
+		  /* extern char *double_quote ();	in builtins/common.c */
 
 		  /* If DO_REPLACE == MULT_MATCH, it means that there is
 		     more than one match.  In this case, we do not add
@@ -703,7 +694,7 @@ rl_complete_internal (what_to_do)
 		  mtext = matches[0];
 		  if (mtext[0] == '~' && do_replace == SINGLE_MATCH)
 		    mtext = tilde_expand (matches[0]);
-		  rtext = double_quote (mtext);
+		  rtext = (*double_quote_hook) (mtext);
 		  if (mtext != matches[0])
 		    free (mtext);
 
@@ -724,7 +715,7 @@ rl_complete_internal (what_to_do)
 		  if (do_replace == MULT_MATCH)
 		    replacement[rlen - 1] = '\0';
 		  free (rtext);
-#else /* !SHELL */
+		  } else {
 		  /* Found an embedded word break character in a potential
 		     match, so we need to prepend a quote character if we
 		     are replacing the completion string. */
@@ -732,7 +723,7 @@ rl_complete_internal (what_to_do)
 		  quote_char = *rl_completer_quote_characters;
 		  *replacement = quote_char;
 		  strcpy (replacement + 1, matches[0]);
-#endif /* SHELL */
+		  }
 		}
 	    }
 

@@ -1,0 +1,138 @@
+#!/usr/bin/make -f
+
+package = bash
+
+soversion = 2.0
+libversion = 2.0.1
+rlversion = 2.0.1-2
+# whoever built it before made the soversion 2.0 intead of 2, so I
+# have to make the new version 2.0.1 instead of 2.1
+
+build:
+	$(checkdir)
+	$(MAKE) SOVERSION=$(soversion) "CFLAGS=-O2 -g"
+	touch build
+
+clean:
+	$(checkdir)
+	-rm -f build
+	-$(MAKE) -i clean
+	-rm -rf debian/tmp{,-rl,-rld} debian/{*~,files*,substvars}
+
+binary-indep:	checkroot build
+	$(checkdir)
+
+binary-arch:	binary-bash binary-rl binary-rld
+
+binary-bash:	checkroot build
+	$(checkdir)
+	-rm -rf debian/tmp
+	umask 000
+	install -d debian/tmp/{DEBIAN,bin,etc/skel,usr/{bin,doc/bash,info,man/man1}}
+	cp bash debian/tmp/bin/bash
+	strip debian/tmp/bin/bash
+	ln -s bash debian/tmp/bin/rbash
+	ln -s bash debian/tmp/bin/sh
+	cp bashbug debian/tmp/usr/bin
+	cp debian/etc.profile debian/tmp/etc/profile
+	cp debian/skel.bashrc debian/tmp/etc/skel/.bashrc
+	cp debian/skel.bash_profile debian/tmp/etc/skel/.bash_profile
+	touch debian/tmp/etc/skel/.bash_history
+	chmod 600 debian/tmp/etc/skel/.bash_history
+	cp documentation/features.info debian/tmp/usr/info/bash.info
+	cp NEWS debian/tmp/usr/doc/bash
+	cp documentation/FAQ debian/tmp/usr/doc/bash
+	cp documentation/{bash.1,builtins.1} debian/tmp/usr/man/man1
+	cp -r examples debian/tmp/usr/doc/bash
+	cp debian/changelog debian/tmp/usr/doc/bash/changelog.Debian
+	find debian/tmp/usr/{info,doc,man} -type f | xargs gzip -9f
+	cp debian/bash.copyright debian/tmp/usr/doc/bash/copyright
+	cp debian/bash.preinst debian/tmp/DEBIAN/preinst
+	cp debian/bash.postinst debian/tmp/DEBIAN/postinst
+	cp debian/bash.prerm debian/tmp/DEBIAN/prerm
+	chmod +x debian/tmp/DEBIAN/{preinst,postinst,prerm}
+	cp debian/bash.conffiles debian/tmp/DEBIAN/conffiles
+	dpkg-shlibdeps -dPre-Depends bash
+	dpkg-gencontrol -isp -pbash
+	chown -R root.root debian/tmp
+	chmod -R g-ws debian/tmp
+	dpkg --build debian/tmp ..
+
+binary-rl:	checkroot build
+	$(checkdir)
+	-rm -rf debian/tmp-rl
+	umask 000
+	install -d debian/tmp-rl/{DEBIAN,lib,usr/{lib,doc/libreadline2}}
+	cp lib/readline/libreadline.so \
+	  debian/tmp-rl/lib/libreadline.so.$(libversion)
+	ln -s libreadline.so.$(libversion) \
+	  debian/tmp-rl/lib/libreadline.so.$(soversion)
+	cp lib/readline/libhistory.so \
+	  debian/tmp-rl/usr/lib/libhistory.so.$(libversion)
+	ln -s libhistory.so.$(libversion) \
+	  debian/tmp-rl/usr/lib/libhistory.so.$(soversion)
+	strip --strip-unneeded debian/tmp-rl/lib/libreadline.so.$(libversion) \
+	  debian/tmp-rl/usr/lib/libhistory.so.$(libversion)
+	cp debian/rl.copyright debian/tmp-rl/usr/doc/libreadline2/copyright
+	cp debian/changelog debian/tmp-rl/usr/doc/libreadline2/changelog
+	gzip -9 debian/tmp-rl/usr/doc/libreadline2/changelog
+	cp debian/shlibs.local debian/tmp-rl/DEBIAN/shlibs
+	dpkg-shlibdeps lib/readline/lib{readline,history}.so
+	dpkg-gencontrol -isp -plibreadline2 -Pdebian/tmp-rl -v$(rlversion)
+	chown -R root.root debian/tmp-rl
+	chmod -R g-ws debian/tmp-rl
+	dpkg --build debian/tmp-rl ..
+
+IP = ../../../../lib/readline/doc
+binary-rld:	checkroot build
+	$(checkdir)
+	-rm -rf debian/tmp-rld
+	umask 000
+	install -d debian/tmp-rld/{DEBIAN,usr/{man/man3,info,lib,include/readline,doc/libreadline2/examples}}
+	cp lib/readline/static/lib{readline,history}.a debian/tmp-rld/usr/lib
+	strip --strip-debug debian/tmp-rld/usr/lib/*
+	ln -s ../../lib/libreadline.so.$(libversion) \
+	  debian/tmp-rld/usr/lib/libreadline.so
+	ln -s libhistory.so.$(libversion) debian/tmp-rld/usr/lib/libhistory.so
+	cp lib/readline/{readline.h,keymaps.h,chardefs.h,history.h,tilde.h} \
+	  debian/tmp-rld/usr/include/readline/.
+# the pre-made info files are corrupt so have to remake, and makeinfo
+# dumps core for >1 texinfo file
+	( cd debian/tmp-rld/usr/info && makeinfo -I$(IP) \
+	  $(IP)/rlman.texinfo && makeinfo -I$(IP) $(IP)/hist.texinfo )
+	cp documentation/readline.3 \
+	  debian/tmp-rld/usr/man/man3/readline.3readline
+	cp lib/readline/examples/Inputrc \
+	  debian/tmp-rld/usr/doc/libreadline2/.
+	cp -r lib/readline/examples/*.c \
+	  debian/tmp-rld/usr/doc/libreadline2/examples/.
+	find debian/tmp-rld/usr/{info,doc,man} -type f | xargs gzip -9f
+	cp debian/rld.postinst debian/tmp-rld/DEBIAN/postinst
+	cp debian/rld.prerm debian/tmp-rld/DEBIAN/prerm
+	chmod +x debian/tmp-rld/DEBIAN/{postinst,prerm}
+	echo "rlversion:Depends=libreadline2 (= $(rlversion))" > \
+	  debian/substvars
+	dpkg-shlibdeps lib/readline/lib{readline,history}.so
+	dpkg-gencontrol -isp -plibreadline2-dev -Pdebian/tmp-rld -v$(rlversion)
+	chown -R root.root debian/tmp-rld
+	chmod -R g-ws debian/tmp-rld
+	dpkg --build debian/tmp-rld ..
+
+define checkdir
+	test -f bashline.c -a -f debian/rules
+endef
+
+
+binary:		binary-indep binary-arch
+
+source diff:
+	@echo >&2 'source and diff are obsolete - use dpkg-source -b'; false
+
+checkroot:
+	$(checkdir)
+	test root = "`whoami`"
+
+.PHONY: binary binary-arch binary-indep clean checkroot
+
+# Local Variables:
+# mode:Makefile

@@ -1,0 +1,20 @@
+bash (1.14.7-2) frozen unstable; urgency=low
+
+  * libhistory.so had wrong soname (fixes bug 5381).
+
+ -- Guy Maor <maor@ece.utexas.edu>  Sat, 16 Nov 1996 11:07:08 -0600
+
+bash (1.14.7-1) frozen unstable; urgency=low
+  
+  * New upstream version converted to new source format.
+    libreadline2, libreadline2-dev produced from bash source.
+  * Made libreadline SHELL define into a runtime check with rl_shell,
+    history_shell flags, 4 hooks.
+  * echo checks write errors (fixes 818).
+  * default unreadable .bash_history in /etc/skel (fixes 1549).
+
+ -- Guy Maor <maor@ece.utexas.edu>  Sat, 9 Nov 1996 05:07:31 -0600
+
+Local variables:
+mode: debian-changelog
+End:

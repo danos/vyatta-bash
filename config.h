@@ -90,7 +90,7 @@
 
 /* The default value of the PATH variable. */
 #define DEFAULT_PATH_VALUE \
-  "/usr/gnu/bin:/usr/local/bin:/usr/ucb:/bin:/usr/bin:."
+  "/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin"
 
 /* The value for PATH when invoking `command -p'.  This is only used when
    the Posix.2 confstr () function, or CS_PATH define are not present. */
@@ -144,7 +144,7 @@
    ability to be a restricted one.  The shell thus generated can become
    restricted by being run with the name "rbash", or by setting the -r
    flag. */
-/* #define RESTRICTED_SHELL */
+#define RESTRICTED_SHELL
 
 /* Define DISABLED_BUILTINS if you want "builtin foo" to always run the
    shell builtin "foo", even if it has been disabled with "enable -n foo". */

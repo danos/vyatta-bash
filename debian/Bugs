@@ -1,0 +1,32 @@
+Status of bugs
+
+----Fixed:
+
+818 - echo didn't check write errors
+1549 - readable .bash_history
+1624, 1702, 1746 - thermal runaway.  can't duplicate
+1714 - confused when breaking lines
+2110 - completion of non-alphanumeric characters
+2362 - bash dumps core with readline
+2818 - not enough docs
+2899 - postinst has bad perms
+3174 - he misread the docs
+3345 - libreadline2 m68k build
+3353 - bash m68k build
+3538 - bash m68k needs patch to machines.h
+3561 - no extended description
+4180 - duplicate examples
+4245 - 1.14.7 should be released.
+5135 - shared libs not stripped
+
+
+----Outstanding
+
+1009 - doesn't single-quote or escape `!' in filename expansion.  Is
+that really a bug?
+
+2265 - horizontal-scroll-mode can't be turned off. can't duplicate...
+
+2301 - no docs on how to create tmp file
+
+2856 - fd leak in bash. I don't have time to mess with this.

@@ -125,6 +125,11 @@ static char *xmalloc (), *xrealloc ();
 extern char *xmalloc (), *xrealloc ();
 #endif /* STATIC_MALLOC */
 
+int rl_shell = 0;
+int (*char_is_quoted_hook)() = 0;
+void (*set_lines_and_columns_hook)() = 0;
+char *(*double_quote_hook)() = 0;
+
 
 /* **************************************************************** */
 /*								    */
@@ -1284,11 +1289,10 @@ _rl_set_screen_size (tty, ignore_env)
   if (screenheight <= 0)
     screenheight = 24;
 
-#if defined (SHELL)
+  if (rl_shell)
   /* If we're being compiled as part of bash, set the environment
      variables $LINES and $COLUMNS to new values. */
-  set_lines_and_columns (screenheight, screenwidth);
-#endif
+    (*set_lines_and_columns_hook) (screenheight, screenwidth);
 
   if (!term_xn)
     screenwidth--;
@@ -3358,7 +3362,6 @@ rl_getc (stream)
     }
 }
 
-#if !defined (SHELL)
 #ifdef savestring
 #undef savestring
 #endif
@@ -3370,7 +3373,6 @@ savestring (s)
 {
   return ((char *)strcpy (xmalloc (1 + (int)strlen (s)), (s)));
 }
-#endif
 
 /* Function equivalents for the macros defined in chartypes.h. */
 #undef uppercase_p

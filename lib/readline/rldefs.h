@@ -87,11 +87,11 @@
 #  include <sgtty.h>
 #endif
 
-#if !defined (SHELL) && (defined (_POSIX_VERSION) || defined (USGr3))
+#if 1 && (defined (_POSIX_VERSION) || defined (USGr3))
 #  if !defined (HAVE_DIRENT_H)
 #    define HAVE_DIRENT_H
 #  endif /* !HAVE_DIRENT_H */
-#endif /* !SHELL && (_POSIX_VERSION || USGr3) */
+#endif /* 1 && (_POSIX_VERSION || USGr3) */
 
 #if defined (HAVE_DIRENT_H)
 #  include <dirent.h>

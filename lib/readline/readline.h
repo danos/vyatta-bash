@@ -230,6 +230,16 @@ extern int rl_filename_quoting_desired;
    user-specified completion function has been called. */
 extern int rl_attempted_completion_over;
 
+/* Non-zero means to turn on special modes for bash.  This is normally
+   a compile-time check, but was turned into a run-time check to make
+   bash work better under Debian GNU/Linux.  The running program has
+   to provide functions for the three hooks. */
+extern int rl_shell;
+extern int (*char_is_quoted_hook)();
+extern void (*set_lines_and_columns_hook)();
+extern char *(*double_quote_hook)();
+
+
 /* **************************************************************** */
 /*								    */
 /*			Well Published Functions		    */

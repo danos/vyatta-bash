@@ -104,9 +104,7 @@ static int subst_rhs_len = 0;
 static char *get_history_word_specifier ();
 static char *history_find_word ();
 
-#if defined (SHELL)
-extern char *single_quote ();
-#endif
+/* extern char *single_quote (); */
 
 /* **************************************************************** */
 /*								    */
@@ -158,6 +156,9 @@ char *history_no_expand_chars = " \t\n\r=";
 
 /* The logical `base' of the history array.  It defaults to 1. */
 int history_base = 1;
+
+int history_shell = 0;
+char *(*single_quote_hook)() = 0;
 
 /* Return the current HISTORY_STATE of the history. */
 HISTORY_STATE *
@@ -966,9 +967,7 @@ get_history_event (string, caller_index, delimiting_quote)
   /* Only a closing `?' or a newline delimit a substring search string. */
   for (local_index = i; c = string[i]; i++)
     if ((!substring_okay && (whitespace (c) || c == ':' ||
-#if defined (SHELL)
-	  member (c, ";&()|<>") ||
-#endif /* SHELL */
+			     (history_shell && member (c, ";&()|<>")) ||
 	  string[i] == delimiting_quote)) ||
 	string[i] == '\n' ||
 	(substring_okay && string[i] == '?'))
@@ -1024,7 +1023,6 @@ get_history_event (string, caller_index, delimiting_quote)
 #undef FAIL_SEARCH
 #undef RETURN_ENTRY
 }
-#if defined (SHELL)
 /* Function for extracting single-quoted strings.  Used for inhibiting
    history expansion within single quotes. */
 
@@ -1086,7 +1084,6 @@ quote_breaks (s)
   *r = '\0';
   return ret;
 }
-#endif /* SHELL */
 
 static char *
 hist_error(s, start, current, errtype)
@@ -1310,20 +1307,21 @@ history_expand_internal (string, start, end_index_ptr, ret_string, current_line)
       switch (c)
 	{
 	default:
+	defaultcase:
 	  *ret_string = hist_error (string, i+1, i+2, BAD_MODIFIER);
 	  free (result);
 	  free (temp);
 	  return -1;
 
-#if defined (SHELL)
 	case 'q':
+	  if (!history_shell) goto defaultcase;
 	  want_quotes = 'q';
 	  break;
 
 	case 'x':
+	  if (!history_shell) goto defaultcase;
 	  want_quotes = 'x';
 	  break;
-#endif /* SHELL */
 
 	  /* :p means make this the last executed line.  So we
 	     return an error state after adding this line to the
@@ -1494,13 +1492,12 @@ history_expand_internal (string, start, end_index_ptr, ret_string, current_line)
   /* Believe it or not, we have to back the pointer up by one. */
   --i;
 
-#if defined (SHELL)
-  if (want_quotes)
+  if (history_shell && want_quotes)
     {
       char *x;
 
       if (want_quotes == 'q')
-	x = single_quote (temp);
+	x = (*single_quote_hook) (temp);
       else if (want_quotes == 'x')
 	x = quote_breaks (temp);
       else
@@ -1509,7 +1506,6 @@ history_expand_internal (string, start, end_index_ptr, ret_string, current_line)
       free (temp);
       temp = x;
     }
-#endif /* SHELL */
 
   n = strlen (temp);
   if (n > result_len)
@@ -1624,25 +1620,22 @@ history_expand (hstring, output)
 	    {
 	      if (!cc || member (cc, history_no_expand_chars))
 		continue;
-#if defined (SHELL)
 	      /* The shell uses ! as a pattern negation character
 	         in globbing [...] expressions, so let those pass
 	         without expansion. */
-	      else if (i > 0 && (string[i - 1] == '[') &&
+	      else if (history_shell && i > 0 && (string[i - 1] == '[') &&
 		       member (']', string + i + 1))
 		continue;
-#endif /* SHELL */
 	      else
 		break;
 	    }
-#if defined (SHELL)
-	  else if (string[i] == '\'')
+	  else if (history_shell && string[i] == '\'')
 	    {
 	      /* If this is bash, single quotes inhibit history expansion. */
 	      i++;
 	      rl_string_extract_single_quoted (string, &i);
 	    }
-	  else if (string[i] == '\\')
+	  else if (history_shell && string[i] == '\\')
 	    {
 	      /* If this is bash, allow backslashes to quote single
 		 quotes and
@@ -1650,7 +1643,6 @@ history_expand (hstring, output)
 	      if (cc == '\'' || cc == history_expansion_char)
 		i++;
 	    }
-#endif /* SHELL */
 	}
 	  
       if (string[i] != history_expansion_char)
@@ -1679,6 +1671,7 @@ history_expand (hstring, output)
       switch (tchar)
 	{
 	default:
+	defaultcase:
 	  ADD_CHAR (string[i]);
 	  break;
 
@@ -1687,8 +1680,8 @@ history_expand (hstring, output)
 	  ADD_CHAR (tchar);
 	  break;
 
-#if defined (SHELL)
 	case '\'':
+	  if (!history_shell) goto defaultcase;
 	  {
 	    /* If this is bash, single quotes inhibit history expansion. */
 	    int quote, slen;
@@ -1704,7 +1697,6 @@ history_expand (hstring, output)
 	    free (temp);
 	    break;
 	  }
-#endif /* SHELL */
 
 	case -3:		/* history_expansion_char */
 	  cc = string[i + 1];

@@ -204,10 +204,10 @@ get_tty_settings (tty, tiop)
      int tty;
      TIOTYPE *tiop;
 {
-#if !defined (SHELL) && defined (TIOCGWINSZ)
+#if defined (TIOCGWINSZ)
   struct winsize w;
 
-  if (ioctl (tty, TIOCGWINSZ, &w) == 0)
+  if (!rl_shell && ioctl (tty, TIOCGWINSZ, &w) == 0)
       (void) ioctl (tty, TIOCSWINSZ, &w);
 #endif
 
@@ -382,10 +382,10 @@ get_tty_settings (tty, tiop)
      TIOTYPE *tiop;
 {
   int ioctl_ret;
-#if !defined (SHELL) && defined (TIOCGWINSZ)
+#if defined (TIOCGWINSZ)
   struct winsize w;
 
-  if (ioctl (tty, TIOCGWINSZ, &w) == 0)
+  if (!rl_shell && ioctl (tty, TIOCGWINSZ, &w) == 0)
       (void) ioctl (tty, TIOCSWINSZ, &w);
 #endif
 

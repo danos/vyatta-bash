@@ -653,11 +653,12 @@ LIBRARY_TAR     = $(LIBRARY_SOURCE) $(LIBRARY_DOC) $(LIBRARY_SUPPORT)
 
 #if defined (READLINE)
 /**/# You wish to compile with the line editing features installed.
-READLINE_LIB = -lreadline
+# READLINE_LIB = $(RL_LIBDIR)static/libreadline.a
+READLINE_LIB = $(RL_LIBDIR)libreadline.so
 
 /**/# You only need termcap (or curses) if you are linking with GNU Readline.
 #  if defined (USE_TERMCAP_EMULATION)
-TERMCAP_LIB = -lcurses
+TERMCAP_LIB = -lncurses
 #  else  /* !USE_TERMCAP_EMULATION */
 TERMCAP_LIB = -ltermcap
 #  endif /* !USE_TERMCAP_EMULATION */
@@ -1053,7 +1054,7 @@ parser-built:	parse.y parser.h command.h stdc.h input.h
 
 #if defined (READLINE) && defined (HAVE_READLINE_SOURCE)
 $(READLINE_LIBRARY): $(READLINE_SOURCE)
-	build_lib_in_dir ($(RL_LIBDIR), libreadline.a, srcdir=$(RL_ABSSRC), $(RL_ABSSRC)Makefile)
+	build_lib_in_dir ($(RL_LIBDIR), all, srcdir=$(RL_ABSSRC), $(RL_ABSSRC)Makefile)
 #endif /* READLINE && HAVE_READLINE_SOURCE */
 
 #if defined (HISTORY) && defined (HAVE_HISTORY_SOURCE) && !defined (READLINE)

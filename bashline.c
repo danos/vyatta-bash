@@ -133,6 +133,16 @@ initialize_readline ()
   if (bash_readline_initialized)
     return;
 
+  /* Turn on special modes for bash.  This is normally a compile-time
+     check, but was turned into a run-time check to make bash work better
+     under Debian GNU/Linux. */
+  char_is_quoted_hook = char_is_quoted;
+  set_lines_and_columns_hook = set_lines_and_columns;
+  rl_shell = 1;
+  single_quote_hook = single_quote;
+  double_quote_hook = double_quote;
+  history_shell = 1;
+
   rl_terminal_name = get_string_value ("TERM");
   rl_instream = stdin;
   rl_outstream = stderr;

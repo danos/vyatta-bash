@@ -179,3 +179,11 @@ extern char history_expansion_char;
 extern char history_subst_char;
 extern char history_comment_char;
 extern char *history_no_expand_chars;
+
+/* Non-zero means to turn on special modes for bash.  This is normally
+   a compile-time check, but was turned into a run-time check to make
+   bash work better under Debian GNU/Linux.  The running program has
+   to provide functions for the hook. */
+extern int history_shell;
+extern char *(*single_quote_hook)();
+

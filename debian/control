@@ -1,0 +1,50 @@
+Source: bash
+Section: base
+Priority: required
+Maintainer: Guy Maor <maor@debian.org>
+Standards-Version: 2.1.1.0
+
+Package: bash
+Architecture: any
+Pre-Depends: ${shlibs:Pre-Depends}
+Essential: yes
+Section: base
+Priority: required
+Description: The GNU Bourne Again SHell
+ Bash is an sh-compatible command language interpreter that executes
+ commands read from the standard input or from a file.  Bash also
+ incorporates useful features from the Korn and C shells (ksh and csh).
+ .
+ Bash is ultimately intended to be a conformant implementation of the
+ IEEE Posix Shell and Tools specification (IEEE Working Group 1003.2).
+
+Package: libreadline2
+Architecture: any
+Depends: ${shlibs:Depends}
+Conflicts: librl (<= 2.0.3-2), libreadline
+Provides: libreadline
+Section: base
+Priority: required
+Description: GNU readline and history libraries, run-time libraries.
+ The GNU readline library aids in the consistency of user interface
+ across discrete programs that need to provide a command line
+ interface.
+ .
+ The GNU history library provides a consistent user interface for
+ recalling lines of previously typed input.
+
+Package: libreadline2-dev
+Architecture: any
+Depends: ${rlversion:Depends}, ${shlibs:Depends}
+Conflicts: librl (<= 2.0.3-2), libreadline-dev
+Provides: libreadline-dev
+Section: devel
+Priority: optional
+Description: GNU readline and history libraries, development files.
+ The GNU readline library aids in the consistency of user interface
+ across discrete programs that need to provide a command line
+ interface.
+ .
+ The GNU history library provides a consistent user interface for
+ recalling lines of previously typed input.
+

@@ -178,4 +178,8 @@ extern char **shell_glob_filename __P((char *));
    is one of the special ones where something special happens. */
 extern void stupidly_hack_special_variables __P((char *));
 
+/* Return 1 if the portion of STRING ending at EINDEX is quoted or if
+   the character at EINDEX is quoted by a backslash. */
+extern int char_is_quoted __P((char *, int));
+
 #endif /* !_SUBST_H_ */
