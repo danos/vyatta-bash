@@ -39,15 +39,23 @@
 #include "shell.h"
 #include "flags.h"
 #include "execute_cmd.h"
+#include "findcmd.h"
 #include "mailcheck.h"
 #include "input.h"
 
 #include "builtins/getopt.h"
 #include "builtins/common.h"
-#include <tilde/tilde.h>
+
+#if defined (READLINE)
+#  include "bashline.h"
+#  include <readline/readline.h>
+#else
+#  include <tilde/tilde.h>
+#endif
 
 #if defined (HISTORY)
 #  include "bashhist.h"
+#  include <readline/history.h>
 #endif /* HISTORY */
 
 /* Variables used here and defined in other files. */
@@ -129,20 +137,22 @@ static int qsort_var_comp ();
 #define set_auto_export(var) \
   do { var->attributes |= att_exported; array_needs_making = 1; } while (0)
 
-/* Initialize the shell variables from the current environment. */
+/* Initialize the shell variables from the current environment.
+   If PRIVMODE is nonzero, don't import functions from ENV or
+   parse $SHELLOPTS. */
 void
-initialize_shell_variables (env, no_functions)
+initialize_shell_variables (env, privmode)
      char **env;
-     int no_functions;	/* If set, don't import functions from ENV. */
+     int privmode;
 {
   char *name, *string, *temp_string;
   int c, char_index, string_index, string_length;
   SHELL_VAR *temp_var;
 
-  if (!shell_variables)
+  if (shell_variables == 0)
     shell_variables = make_hash_table (0);
 
-  if (!shell_functions)
+  if (shell_functions == 0)
     shell_functions = make_hash_table (0);
 
   for (string_index = 0; string = env[string_index++]; )
@@ -165,7 +175,7 @@ initialize_shell_variables (env, no_functions)
          char_index == strlen (name) */
 
       /* If exported function, define it now. */
-      if (no_functions == 0 && STREQN ("() {", string, 4))
+      if (privmode == 0 && STREQN ("() {", string, 4))
 	{
 	  string_length = strlen (string);
 	  temp_string = xmalloc (3 + string_length + char_index);
@@ -233,10 +243,17 @@ initialize_shell_variables (env, no_functions)
       temp_string = get_working_directory ("shell-init");
       if (temp_string)
 	{
-	  bind_variable ("PWD", temp_string);
+	  temp_var = bind_variable ("PWD", temp_string);
+	  set_auto_export (temp_var);
 	  free (temp_string);
 	}
     }
+
+  /* According to the Single Unix Specification, v2, $OLDPWD is an
+     `environment variable' and therefore should be auto-exported.
+     Make a dummy invisible variable for OLDPWD, and mark it as exported. */
+  temp_var = bind_variable ("OLDPWD", (char *)NULL);
+  temp_var->attributes |= (att_exported | att_invisible);
 
   /* Set up initial value of $_ */
   temp_var = bind_variable ("_", dollar_vars[0]);
@@ -265,7 +282,13 @@ initialize_shell_variables (env, no_functions)
   /* set up the prompts. */
   if (interactive_shell)
     {
+#if defined (PROMPT_STRING_DECODE)
       set_if_not ("PS1", primary_prompt);
+#else
+      if (current_user.uid == -1)
+	get_current_user_info ();
+      set_if_not ("PS1", current_user.euid == 0 ? "# " : primary_prompt);
+#endif
       set_if_not ("PS2", secondary_prompt);
     }
   set_if_not ("PS4", "+ ");
@@ -293,14 +316,7 @@ initialize_shell_variables (env, no_functions)
   /* Do some things with shell level. */
   initialize_shell_level ();
 
-  /* Make a variable $PPID, which holds the pid of the shell's parent.  */
-  name = itos ((int) getppid ());
-  temp_var = find_variable ("PPID");
-  if (temp_var)
-    temp_var->attributes &= ~(att_readonly | att_exported);
-  temp_var = bind_variable ("PPID", name);
-  temp_var->attributes |= (att_readonly | att_integer);
-  free (name);
+  set_ppid ();
 
   /* Initialize the `getopts' stuff. */
   bind_variable ("OPTIND", "1");
@@ -384,6 +400,17 @@ initialize_shell_variables (env, no_functions)
 
 /* Set $HOME to the information in the password file if we didn't get
    it from the environment. */
+
+/* This function is not static so the tilde and readline libraries can
+   use it. */
+char *
+get_home_dir ()
+{
+  if (current_user.home_dir == 0)
+    get_current_user_info ();
+  return current_user.home_dir;
+}
+
 static void
 set_home_var ()
 {
@@ -391,11 +418,7 @@ set_home_var ()
 
   temp_var = find_variable ("HOME");
   if (temp_var == 0)
-    {
-      if (current_user.home_dir == 0)
-	get_current_user_info ();
-      temp_var = bind_variable ("HOME", current_user.home_dir);
-    }
+    temp_var = bind_variable ("HOME", get_home_dir ());
   temp_var->attributes |= att_exported;
 }
 
@@ -500,7 +523,7 @@ adjust_shell_level (change)
     shell_level = 0;
   else if (shell_level > 1000)
     {
-      internal_error ("warning: shell level (%d) too high, resetting to 1", shell_level);
+      internal_warning ("shell level (%d) too high, resetting to 1", shell_level);
       shell_level = 1;
     }
 
@@ -541,33 +564,44 @@ initialize_shell_level ()
   adjust_shell_level (1);
 }
 
+/* Make a variable $PPID, which holds the pid of the shell's parent.  */
+void
+set_ppid ()
+{
+  char namebuf[32], *name;
+  SHELL_VAR *temp_var;
+
+  name = inttostr ((int) getppid (), namebuf, sizeof(namebuf));
+  temp_var = find_variable ("PPID");
+  if (temp_var)
+    temp_var->attributes &= ~(att_readonly | att_exported);
+  temp_var = bind_variable ("PPID", name);
+  temp_var->attributes |= (att_readonly | att_integer);
+}
+
 static void
 uidset ()
 {
-  char *buff;
+  char buff[32], *b;
   register SHELL_VAR *v;
 
-  buff = itos (current_user.uid);
+  b = inttostr (current_user.uid, buff, sizeof (buff));
   v = find_variable ("UID");
   if (v)
     v->attributes &= ~att_readonly;
 
-  v = bind_variable ("UID", buff);
+  v = bind_variable ("UID", b);
   v->attributes |= (att_readonly | att_integer);
 
   if (current_user.euid != current_user.uid)
-    {
-      free (buff);
-      buff = itos (current_user.euid);
-    }
+    b = inttostr (current_user.euid, buff, sizeof (buff));
 
   v = find_variable ("EUID");
   if (v)
     v->attributes &= ~att_readonly;
 
-  v = bind_variable ("EUID", buff);
+  v = bind_variable ("EUID", b);
   v->attributes |= (att_readonly | att_integer);
-  free (buff);
 }
 
 #if defined (ARRAY_VARS)
@@ -576,7 +610,7 @@ make_vers_array ()
 {
   SHELL_VAR *vv;
   ARRAY *av;
-  char *s, d[16];
+  char *s, d[32];
 
   makunbound ("BASH_VERSINFO", shell_variables);
 
@@ -588,12 +622,10 @@ make_vers_array ()
     *s++ = '\0';
   array_add_element (av, 0, d);
   array_add_element (av, 1, s);
-  s = itos (patch_level);
+  s = inttostr (patch_level, d, sizeof (d));
   array_add_element (av, 2, s);
-  free (s);
-  s = itos (build_version);
+  s = inttostr (build_version, d, sizeof (d));
   array_add_element (av, 3, s);
-  free (s);
   array_add_element (av, 4, release_status);
   array_add_element (av, 5, MACHTYPE);
 
@@ -607,15 +639,13 @@ void
 set_lines_and_columns (lines, cols)
      int lines, cols;
 {
-  char *val;
+  char val[32], *v;
 
-  val = itos (lines);
-  bind_variable ("LINES", val);
-  free (val);
+  v = inttostr (lines, val, sizeof (val));
+  bind_variable ("LINES", v);
 
-  val = itos (cols);
-  bind_variable ("COLUMNS", val);
-  free (val);
+  v = inttostr (cols, val, sizeof (val));
+  bind_variable ("COLUMNS", v);
 }
 
 /* Set NAME to VALUE if NAME has no value. */
@@ -626,7 +656,7 @@ set_if_not (name, value)
   SHELL_VAR *v;
 
   v = find_variable (name);
-  if (!v)
+  if (v == 0)
     v = bind_variable (name, value);
   return (v);
 }
@@ -873,7 +903,7 @@ assign_seconds (self, value)
      SHELL_VAR *self;
      char *value;
 {
-  seconds_value_assigned = string_to_long (value);
+  seconds_value_assigned = strtol (value, (char **)NULL, 10);
   shell_start_time = NOW;
   return (self);
 }
@@ -900,18 +930,15 @@ static unsigned long rseed = 1;
 static unsigned long last_random_value;
 
 /* A linear congruential random number generator based on the ANSI
-   C standard.  A more complicated one is overkill.  */
+   C standard.  This one isn't very good (the values are alternately
+   odd and even, for example), but a more complicated one is overkill.  */
 
 /* Returns a pseudo-random number between 0 and 32767. */
 static int
 brand ()
 {
   rseed = rseed * 1103515245 + 12345;
-#if 0
-  return ((unsigned int)(rseed / 65536) % 32768);
-#else
-  return ((unsigned int)(rseed % 32768));
-#endif
+  return ((unsigned int)(rseed & 32767));	/* was % 32768 */
 }
 
 /* Set the random number generator seed to SEED. */
@@ -1143,7 +1170,8 @@ find_function (name)
 
 /* Return the string value of a variable.  Return NULL if the variable
    doesn't exist, or only has a function as a value.  Don't cons a new
-   string. */
+   string.  This is a potential memory leak if the variable is found
+   in the temporary environment. */
 char *
 get_string_value (var_name)
      char *var_name;
@@ -1160,6 +1188,14 @@ get_string_value (var_name)
 #endif
   else
     return (var->value);
+}
+
+/* This is present for use by the tilde and readline libraries. */
+char *
+get_env_value (v)
+     char *v;
+{
+  return get_string_value (v);
 }
 
 /* Create a local variable referenced by NAME. */
@@ -1451,6 +1487,8 @@ bind_array_variable (name, ind, value)
   return (entry);
 }
 
+/* Perform a compound assignment statement for array NAME, where VALUE is
+   the text between the parens:  NAME=( VALUE ) */
 SHELL_VAR *
 assign_array_from_string (name, value)
      char *name, *value;
@@ -1467,10 +1505,6 @@ assign_array_from_string (name, value)
     }
   else if (array_p (var) == 0)
     var = convert_var_to_array (var);
-#if 0
-  else
-    empty_array (array_cell (var));
-#endif
 
   return (assign_array_var_from_string (var, value));
 }
@@ -1492,6 +1526,8 @@ assign_array_var_from_word_list (var, list)
   return var;
 }
 
+/* Perform a compound array assignment:  VAR->name=( VALUE ).  The
+   VALUE has already had the parentheses stripped. */
 SHELL_VAR *
 assign_array_var_from_string (var, value)
      SHELL_VAR *var;
@@ -1502,28 +1538,46 @@ assign_array_var_from_string (var, value)
   char *w, *val, *nval;
   int ni, len, ind, last_ind;
 
-  a = array_cell (var);
+  if (value == 0)
+    return var;
 
-  /* Expand the value string into a list of words, performing all the
-     shell expansions including word splitting. */
-  if (*value == '(')
+  /* If this is called from declare_builtin, value[0] == '(' and
+     strchr(value, ')') != 0.  In this case, we need to extract
+     the value from between the parens before going on. */
+  if (*value == '(')	/*)*/
     {
       ni = 1;
       val = extract_array_assignment_list (value, &ni);
       if (val == 0)
-	return var;
-      nlist = expand_string (val, 0);
-      free (val);
+        return var;
     }
   else
-    nlist = expand_string (value, 0);
+    val = value;
 
-#if 1
+  /* Expand the value string into a list of words, performing all the
+     shell expansions including pathname generation and word splitting. */
+  /* First we split the string on whitespace, using the shell parser
+     (ksh93 seems to do this). */
+  list = parse_string_to_word_list (val, "array assign");
+  /* Now that we've split it, perform the shell expansions on each
+     word in the list. */
+#if 0
+  nlist = list ? expand_words_shellexp (list) : (WORD_LIST *)NULL;
+#else
+  nlist = list ? expand_words_no_vars (list) : (WORD_LIST *)NULL;
+#endif
+
+  dispose_words (list);
+
+  if (val != value)
+    free (val);
+
+  a = array_cell (var);
+
   /* Now that we are ready to assign values to the array, kill the existing
      value. */
   if (a)
     empty_array (a);
-#endif
 
   for (last_ind = 0, list = nlist; list; list = list->next)
     {
@@ -1656,8 +1710,9 @@ int
 unbind_variable (name)
      char *name;
 {
-  SHELL_VAR *var = find_variable (name);
+  SHELL_VAR *var;
 
+  var = find_variable (name);
   if (!var)
     return (-1);
 
@@ -1947,6 +2002,7 @@ set_var_read_only (name)
   entry->attributes |= att_readonly;
 }
 
+#ifdef INCLUDE_UNUSED
 /* Make the function associated with NAME be readonly.
    If NAME does not exist, we just punt, like auto_export code below. */
 void
@@ -1983,6 +2039,7 @@ set_func_auto_export (name)
   if (entry)
     set_auto_export (entry);
 }
+#endif
 
 #if defined (ARRAY_VARS)
 /* This function assumes s[i] == '['; returns with s[ret] == ']' if
@@ -2045,6 +2102,8 @@ assignment (string)
   return (0);
 }
 
+#ifdef READLINE
+
 static int
 visible_var (var)
      SHELL_VAR *var;
@@ -2077,6 +2136,8 @@ all_visible_functions ()
 {
   return (_visible_names (shell_functions));
 }
+
+#endif /* READLINE */
 
 /* Return non-zero if the variable VAR is visible and exported.  Array
    variables cannot be exported. */
@@ -2161,7 +2222,6 @@ assign_in_env (string)
   name = savestring (string);
   value = (char *)NULL;
 
-#define freetemp nlen
   if (name[offset] == '=')
     {
       name[offset] = 0;
@@ -2174,9 +2234,7 @@ assign_in_env (string)
   	  return (0);
 	}
       temp = name + offset + 1;
-      freetemp = strchr (temp, '~') != 0;
-      if (freetemp)
-	temp = bash_tilde_expand (temp);
+      temp = (strchr (temp, '~') != 0) ? bash_tilde_expand (temp) : savestring (temp);
 
       list = expand_string_unsplit (temp, 0);
       value = string_list (list);
@@ -2184,10 +2242,8 @@ assign_in_env (string)
       if (list)
 	dispose_words (list);
 
-      if (freetemp)
-	free (temp);
+      free (temp);
     }
-#undef freetemp
 
   nlen = strlen (name);
   vlen = value ? strlen (value) : 0;
@@ -2248,12 +2304,15 @@ find_name_in_env_array (name, array)
 	  SHELL_VAR *temp;
 	  char *w;
 
-	  temp = new_shell_variable (name);	/* XXX memory leak here */
+	  /* This is a potential memory leak.  The code should really save
+	     the created variables in some auxiliary data structure, which
+	     can be disposed of at the appropriate time. */
+	  temp = new_shell_variable (name);
 	  w = array[i] + l + 1;
 
 	  temp->value = *w ? savestring (w) : (char *)NULL;
 
-	  temp->attributes = att_exported;
+	  temp->attributes = att_exported|att_tempvar;
 	  temp->context = 0;
 	  temp->prev_context = (SHELL_VAR *)NULL;
 
@@ -2275,7 +2334,9 @@ SHELL_VAR *
 find_tempenv_variable (name)
      char *name;
 {
-  SHELL_VAR *var = (SHELL_VAR *)NULL;
+  SHELL_VAR *var;
+
+  var = (SHELL_VAR *)NULL;
 
   if (temporary_env)
     var = find_name_in_env_array (name, temporary_env);
@@ -2379,7 +2440,7 @@ do \
     export_env[export_env_index] = (char *)NULL; \
   } while (0)
 
-#define ISFUNC(s, o) ((s[o + 1] == '(')  && (s[o + 2] == ')'))
+#define ISFUNCTION(s, o) ((s[o + 1] == '(')  && (s[o + 2] == ')'))
 
 /* Add ASSIGN to EXPORT_ENV, or supercede a previous assignment in the
    array with the same left-hand side.  Return the new EXPORT_ENV. */
@@ -2476,22 +2537,39 @@ maybe_make_export_env ()
     }
 }
 
+/* This is an efficiency hack.  PWD and OLDPWD are auto-exported, so
+   we will need to remake the exported environment every time we
+   change directories.  `_' is always put into the environment for
+   every external command, so without special treatment it will always
+   cause the environment to be remade.
+
+   If there is no other reason to make the exported environment, we can
+   just update the variables in place and mark the exported environment
+   as no longer needing a remake. */
+void
+update_export_env_inplace (env_prefix, preflen, value)
+     char *env_prefix;
+     int preflen;
+     char *value;
+{
+  char *evar;
+
+  evar = xmalloc (STRLEN (value) + preflen + 1);
+  strcpy (evar, env_prefix);
+  if (value)
+    strcpy (evar + preflen, value);
+  export_env = add_or_supercede_exported_var (evar, 0);
+}
+
 /* We always put _ in the environment as the name of this command. */
 void
 put_command_name_into_env (command_name)
      char *command_name;
 {
-  char *dummy;
-
-  dummy = xmalloc (4 + strlen (command_name));
-
-  /* These three statements replace a call to sprintf */
-  dummy[0] = '_';
-  dummy[1] = '=';
-  strcpy (dummy + 2, command_name);
-  export_env = add_or_supercede_exported_var (dummy, 0);
+  update_export_env_inplace ("_=", 2, command_name);
 }
 
+#if 0	/* UNUSED -- it caused too many problems */
 void
 put_gnu_argv_flags_into_env (pid, flags_string)
      int pid;
@@ -2516,6 +2594,7 @@ put_gnu_argv_flags_into_env (pid, flags_string)
 
   export_env = add_or_supercede_exported_var (dummy, 0);
 }
+#endif
 
 /* Return a string denoting what our indirection level is. */
 static char indirection_string[100];
@@ -2543,4 +2622,374 @@ indirection_level_string ()
   indirection_string[i] = '\0';
   free (ps4);
   return (indirection_string);
+}
+
+/*************************************************
+ *						 *
+ *	Functions to manage special variables	 *
+ *						 *
+ *************************************************/
+
+/* Extern declarations for variables this code has to manage. */
+extern int eof_encountered, eof_encountered_limit, ignoreeof;
+
+#if defined (READLINE)
+extern int no_line_editing;
+extern int hostname_list_initialized;
+#endif
+
+/* An alist of name.function for each special variable.  Most of the
+   functions don't do much, and in fact, this would be faster with a
+   switch statement, but by the end of this file, I am sick of switch
+   statements. */
+
+#define SET_INT_VAR(name, intvar)  intvar = find_variable (name) != 0
+
+struct name_and_function {
+  char *name;
+  VFunction *function;
+} special_vars[] = {
+  { "PATH", sv_path },
+  { "MAIL", sv_mail },
+  { "MAILPATH", sv_mail },
+  { "MAILCHECK", sv_mail },
+
+  { "POSIXLY_CORRECT", sv_strict_posix },
+  { "GLOBIGNORE", sv_globignore },
+
+  /* Variables which only do something special when READLINE is defined. */
+#if defined (READLINE)
+  { "TERM", sv_terminal },
+  { "TERMCAP", sv_terminal },
+  { "TERMINFO", sv_terminal },
+  { "HOSTFILE", sv_hostfile },
+#endif /* READLINE */
+
+  /* Variables which only do something special when HISTORY is defined. */
+#if defined (HISTORY)
+  { "HISTIGNORE", sv_histignore },
+  { "HISTSIZE", sv_histsize },
+  { "HISTFILESIZE", sv_histsize },
+  { "HISTCONTROL", sv_history_control },
+#  if defined (BANG_HISTORY)
+  { "histchars", sv_histchars },
+#  endif /* BANG_HISTORY */
+#endif /* HISTORY */
+
+  { "IGNOREEOF", sv_ignoreeof },
+  { "ignoreeof", sv_ignoreeof },
+
+  { "OPTIND", sv_optind },
+  { "OPTERR", sv_opterr },
+
+  { "TEXTDOMAIN", sv_locale },
+  { "TEXTDOMAINDIR", sv_locale },
+  { "LC_ALL", sv_locale },
+  { "LC_COLLATE", sv_locale },
+  { "LC_CTYPE", sv_locale },
+  { "LC_MESSAGES", sv_locale },
+  { "LANG", sv_locale },
+
+#if defined (HAVE_TZSET) && defined (PROMPT_STRING_DECODE)
+  { "TZ", sv_tz },
+#endif
+
+  { (char *)0, (VFunction *)0 }
+};
+
+/* The variable in NAME has just had its state changed.  Check to see if it
+   is one of the special ones where something special happens. */
+void
+stupidly_hack_special_variables (name)
+     char *name;
+{
+  int i;
+
+  for (i = 0; special_vars[i].name; i++)
+    {
+      if (STREQ (special_vars[i].name, name))
+	{
+	  (*(special_vars[i].function)) (name);
+	  return;
+	}
+    }
+}
+
+/* What to do just after the PATH variable has changed. */
+void
+sv_path (name)
+     char *name;
+{
+  /* hash -r */
+  flush_hashed_filenames ();
+}
+
+/* What to do just after one of the MAILxxxx variables has changed.  NAME
+   is the name of the variable.  This is called with NAME set to one of
+   MAIL, MAILCHECK, or MAILPATH.  */
+void
+sv_mail (name)
+     char *name;
+{
+  /* If the time interval for checking the files has changed, then
+     reset the mail timer.  Otherwise, one of the pathname vars
+     to the users mailbox has changed, so rebuild the array of
+     filenames. */
+  if (name[4] == 'C')  /* if (strcmp (name, "MAILCHECK") == 0) */
+    reset_mail_timer ();
+  else
+    {
+      free_mail_files ();
+      remember_mail_dates ();
+    }
+}
+
+/* What to do when GLOBIGNORE changes. */
+void
+sv_globignore (name)
+     char *name;
+{
+  setup_glob_ignore (name);
+}
+
+#if defined (READLINE)
+/* What to do just after one of the TERMxxx variables has changed.
+   If we are an interactive shell, then try to reset the terminal
+   information in readline. */
+void
+sv_terminal (name)
+     char *name;
+{
+  if (interactive_shell && no_line_editing == 0)
+    rl_reset_terminal (get_string_value ("TERM"));
+}
+
+void
+sv_hostfile (name)
+     char *name;
+{
+  hostname_list_initialized = 0;
+}
+#endif /* READLINE */
+
+#if defined (HISTORY)
+/* What to do after the HISTSIZE or HISTFILESIZE variables change.
+   If there is a value for this HISTSIZE (and it is numeric), then stifle
+   the history.  Otherwise, if there is NO value for this variable,
+   unstifle the history.  If name is HISTFILESIZE, and its value is
+   numeric, truncate the history file to hold no more than that many
+   lines. */
+void
+sv_histsize (name)
+     char *name;
+{
+  char *temp;
+  long num;
+
+  temp = get_string_value (name);
+
+  if (temp && *temp)
+    {
+      if (legal_number (temp, &num))
+        {
+	  if (name[4] == 'S')
+	    {
+	      stifle_history (num);
+	      num = where_history ();
+	      if (history_lines_this_session > num)
+		history_lines_this_session = num;
+	    }
+	  else
+	    {
+	      history_truncate_file (get_string_value ("HISTFILE"), (int)num);
+	      if (num <= history_lines_in_file)
+		history_lines_in_file = num;
+	    }
+	}
+    }
+  else if (name[4] == 'S')
+    unstifle_history ();
+}
+
+/* What to do after the HISTIGNORE variable changes. */
+void
+sv_histignore (name)
+     char *name;
+{
+  setup_history_ignore (name);
+}
+
+/* What to do after the HISTCONTROL variable changes. */
+void
+sv_history_control (name)
+     char *name;
+{
+  char *temp;
+
+  history_control = 0;
+  temp = get_string_value (name);
+
+  if (temp && *temp && STREQN (temp, "ignore", 6))
+    {
+      if (temp[6] == 's')	/* ignorespace */
+	history_control = 1;
+      else if (temp[6] == 'd')	/* ignoredups */
+	history_control = 2;
+      else if (temp[6] == 'b')	/* ignoreboth */
+	history_control = 3;
+    }
+}
+
+#if defined (BANG_HISTORY)
+/* Setting/unsetting of the history expansion character. */
+void
+sv_histchars (name)
+     char *name;
+{
+  char *temp;
+
+  temp = get_string_value (name);
+  if (temp)
+    {
+      history_expansion_char = *temp;
+      if (temp[0] && temp[1])
+	{
+	  history_subst_char = temp[1];
+	  if (temp[2])
+	      history_comment_char = temp[2];
+	}
+    }
+  else
+    {
+      history_expansion_char = '!';
+      history_subst_char = '^';
+      history_comment_char = '#';
+    }
+}
+#endif /* BANG_HISTORY */
+#endif /* HISTORY */
+
+#if defined (HAVE_TZSET) && defined (PROMPT_STRING_DECODE)
+void
+sv_tz (name)
+     char *name;
+{
+  tzset ();
+}
+#endif
+
+/* If the variable exists, then the value of it can be the number
+   of times we actually ignore the EOF.  The default is small,
+   (smaller than csh, anyway). */
+void
+sv_ignoreeof (name)
+     char *name;
+{
+  SHELL_VAR *tmp_var;
+  char *temp;
+
+  eof_encountered = 0;
+
+  tmp_var = find_variable (name);
+  ignoreeof = tmp_var != 0;
+  temp = tmp_var ? value_cell (tmp_var) : (char *)NULL;
+  if (temp)
+    eof_encountered_limit = (*temp && all_digits (temp)) ? atoi (temp) : 10;
+  set_shellopts ();	/* make sure `ignoreeof' is/is not in $SHELLOPTS */
+}
+
+void
+sv_optind (name)
+     char *name;
+{
+  char *tt;
+  int s;
+
+  tt = get_string_value ("OPTIND");
+  if (tt && *tt)
+    {
+      s = atoi (tt);
+
+      /* According to POSIX, setting OPTIND=1 resets the internal state
+	 of getopt (). */
+      if (s < 0 || s == 1)
+	s = 0;
+    }
+  else
+    s = 0;
+  getopts_reset (s);
+}
+
+void
+sv_opterr (name)
+     char *name;
+{
+  char *tt;
+
+  tt = get_string_value ("OPTERR");
+  sh_opterr = (tt && *tt) ? atoi (tt) : 1;
+}
+
+void
+sv_strict_posix (name)
+     char *name;
+{
+  SET_INT_VAR (name, posixly_correct);
+  posix_initialize (posixly_correct);
+#if defined (READLINE)
+  if (interactive_shell)
+    posix_readline_initialize (posixly_correct);
+#endif /* READLINE */
+  set_shellopts ();	/* make sure `posix' is/is not in $SHELLOPTS */
+}
+
+void
+sv_locale (name)
+     char *name;
+{
+  char *v;
+
+  v = get_string_value (name);
+  if (name[0] == 'L' && name[1] == 'A')	/* LANG */
+    set_lang (name, v);
+  else
+    set_locale_var (name, v);		/* LC_*, TEXTDOMAIN* */
+}
+
+#if defined (ARRAY_VARS)
+void
+set_pipestatus_array (ps)
+     int *ps;
+{
+  SHELL_VAR *v;
+  ARRAY *a;
+  register int i;
+  char *t, tbuf[16];
+
+  v = find_variable ("PIPESTATUS");
+  if (v == 0)
+    v = make_new_array_variable ("PIPESTATUS");
+  if (array_p (v) == 0)
+    return;		/* Do nothing if not an array variable. */
+  a = array_cell (v);
+  if (a)
+    empty_array (a);
+  for (i = 0; ps[i] != -1; i++)
+    {
+      t = inttostr (ps[i], tbuf, sizeof (tbuf));
+      array_add_element (a, i, t);
+    }
+}
+#endif
+
+void
+set_pipestatus_from_exit (s)
+     int s;
+{
+#if defined (ARRAY_VARS)
+  static int v[2] = { 0, -1 };
+
+  v[0] = s;
+  set_pipestatus_array (v);
+#endif
 }

@@ -1,0 +1,76 @@
+#! /bin/sh -e
+
+if [ $# -eq 3 -a "$2" = '-d' ]; then
+    pdir="-d $3"
+elif [ $# -ne 1 ]; then
+    echo >&2 "`basename $0`: script expects -patch|-unpatch as argument"
+    exit 1
+fi
+case "$1" in
+    -patch) patch $pdir -f --no-backup-if-mismatch -p1 < $0;;
+    -unpatch) patch $pdir -f --no-backup-if-mismatch -R -p1 < $0;;
+    *)
+	echo >&2 "`basename $0`: script expects -patch|-unpatch as argument"
+	exit 1
+esac
+exit 0
+
+# DP: manpage tweaks for rbash(1) and builtins(1)
+
+diff -u ./doc/bash.1.orig ./doc/bash.1
+--- ./doc/bash.1.orig	Wed Jan 20 22:48:04 1999
++++ ./doc/bash.1	Thu Nov 11 15:58:20 1999
+@@ -10,6 +10,7 @@
+ .\"
+ .\" bash_builtins, strip all but Built-Ins section
+ .if \n(zZ=1 .ig zZ
++.if \n(zY=1 .ig zY
+ .TH BASH 1 "1999 Jan 20" GNU
+ .\"
+ .\" There's some problem with having a `@'
+@@ -7265,6 +7266,8 @@
+ .\" bash_builtins
+ .if \n(zZ=1 .ig zZ
+ .SH "RESTRICTED SHELL"
++.\" start of rbash man
++.zY
+ .PP
+ If
+ .B bash
+@@ -7334,6 +7337,8 @@
+ .B rbash
+ turns off any restrictions in the shell spawned to execute the
+ script.
++.\" end of rbash man
++.if \n(zY=1 .ig zY
+ .SH "SEE ALSO"
+ .PD 0
+ .TP
+@@ -7451,3 +7456,4 @@
+ .PP
+ Array variables may not (yet) be exported.
+ .zZ
++.zY
+diff -u ./doc/builtins.1.orig ./doc/builtins.1
+--- ./doc/builtins.1.orig	Fri Apr 12 17:20:01 1996
++++ ./doc/builtins.1	Thu Nov 11 16:01:05 1999
+@@ -10,6 +10,6 @@
+ ulimit, umask, unalias, unset, until, wait, while \- bash built-in commands, see \fBbash\fR(1)
+ .SH BASH BUILTIN COMMANDS
+ .nr zZ 1
+-.so bash.1
++.so /usr/share/man/man1/bash.1
+ .SH SEE ALSO
+ bash(1), sh(1)
+diff -u ./doc/rbash.1.orig ./doc/rbash.1
+--- ./doc/rbash.1.orig	Thu Nov 11 15:56:27 1999
++++ ./doc/rbash.1	Thu Nov 11 16:00:35 1999
+@@ -0,0 +1,8 @@
++.TH RBASH 1 "1996 March 20" GNU
++.SH NAME
++rbash \- restricted bash, see \fBbash\fR(1)
++.SH RESTRICTED SHELL
++.nr zY 1
++.so /usr/share/man/man1/bash.1
++.SH SEE ALSO
++bash(1)

@@ -1,3 +1,8 @@
-#! /bin/sh
-set -e
-install-info --quiet --remove bash
+#! /bin/bash -e
+
+case "$1" in upgrade|remove)
+    pkg=bash
+    if [ -L /usr/doc/$pkg ]; then
+        rm -f /usr/doc/$pkg
+    fi
+esac

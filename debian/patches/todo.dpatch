@@ -1,0 +1,84 @@
+#! /bin/sh -e
+
+if [ $# -eq 3 -a "$2" = '-d' ]; then
+    pdir="-d $3"
+elif [ $# -ne 1 ]; then
+    echo >&2 "`basename $0`: script expects -patch|-unpatch as argument"
+    exit 1
+fi
+case "$1" in
+    -patch) patch $pdir -f --no-backup-if-mismatch -p1 < $0;;
+    -unpatch) patch $pdir -f --no-backup-if-mismatch -R -p1 < $0;;
+    *)
+	echo >&2 "`basename $0`: script expects -patch|-unpatch as argument"
+	exit 1
+esac
+exit 0
+
+# DP: XXX patches which need inspection
+
+XXX why apply this one?
+
+--- bash-2.02.1.orig/builtins/common.c
++++ bash-2.02.1/builtins/common.c
+@@ -716,6 +716,7 @@
+ /*								    */
+ /* **************************************************************** */
+ 
++#if !defined (READLINE)
+ /* Return a new string which is the single-quoted version of STRING.
+    Used by alias and trap, among others. */
+ char *
+@@ -746,6 +747,7 @@
+ 
+   return (result);
+ }
++#endif /* !READLINE */
+ 
+ /* Quote STRING using double quotes.  Return a new string. */
+ char *
+
+--- bash-2.02.1.orig/Makefile.in
++++ bash-2.02.1/Makefile.in
+@@ -262,7 +262,7 @@
+ BASHPOSIX_SUPPORT = $(BASHPOSIX_LIB)/posixstat.h $(BASHPOSIX_LIB)/ansi_stdlib.h \
+ 		    $(BASHPOSIX_LIB)/memalloc.h $(BASHPOSIX_LIB)/stdc.h
+ 
+-LIBRARIES = $(READLINE_LIB) $(HISTORY_LIB) $(TERMCAP_LIB) $(GLOB_LIB) \
++LIBRARIES = $(READLINE_LIB) $(TERMCAP_LIB) $(GLOB_LIB) \
+ 	    $(TILDE_LIB) $(MALLOC_LIB) $(SHLIB_LIB) $(LOCAL_LIBS)
+ 
+ LIBDEP = $(READLINE_DEP) $(TERMCAP_DEP) $(GLOB_DEP) $(HISTORY_DEP) \
+
+--- bash-2.02.1.orig/bashline.c
++++ bash-2.02.1/bashline.c
+@@ -154,6 +154,13 @@
+ #define COMPLETE_BSQUOTE 3
+ static int completion_quoting_style = COMPLETE_BSQUOTE;
+ 
++/* bash mode for readline and history */
++extern int rl_shell;
++extern int history_shell;
++extern void (*set_lines_and_columns_hook)();
++extern char* (*rl_get_string_value_hook)();
++extern char* (*history_get_string_value_hook)();
++
+ /* Change the readline VI-mode keymaps into or out of Posix.2 compliance.
+    Called when the shell is put into or out of `posix' mode. */
+ void
+@@ -191,6 +198,15 @@
+ {
+   if (bash_readline_initialized)
+     return;
++
++  /* Turn on special modes for bash.  This is normally a compile-time
++     check, but was turned into a run-time check to make bash work
++     well with a dynamically linked libreadline2 under Debian
++     GNU/Linux. */
++  set_lines_and_columns_hook = set_lines_and_columns;
++  history_get_string_value_hook = rl_get_string_value_hook = get_string_value;
++  rl_shell = 1;
++  history_shell = 1;
+ 
+   rl_terminal_name = get_string_value ("TERM");
+   rl_instream = stdin;

@@ -21,11 +21,49 @@
 #include <string.h>
 #include <errno.h>
 #include <string.h>
+#include <sys/stat.h>
+
+int doc_link(void)
+{
+  struct stat buf;
+  int rv;
+
+  /* [ -d /usr/doc ] */
+  if (lstat("/usr/doc", &buf) == -1)
+    return 1;
+  if (!S_ISDIR(buf.st_mode))
+    return 0;
+
+  /* [ -d /usr/share/doc/<pkg> ] */
+  if (stat("/usr/share/doc/" PKG_NAME, &buf) == -1)
+    return 1;
+  if (!S_ISDIR(buf.st_mode))
+    return 0;
+
+  /* [ ! -e /usr/doc/<pkg> ] */
+  if (stat("/usr/doc/" PKG_NAME, &buf) == -1) {
+    if (errno != ENOENT)
+      return 1;
+  }
+  else
+    return 0;
+
+  /* link it */
+  unlink("/usr/doc/" PKG_NAME);
+  errno = 0;
+  rv = symlink("../share/doc/" PKG_NAME, "/usr/doc/" PKG_NAME);
+  return rv;
+}
 
 int
 main (int argc, char **argv)
 {
   if (argv[1] && !strcmp(argv[1], "configure")) {
+
+    if (doc_link()) {
+      fprintf(stderr, "Error: %s\n", strerror (errno));
+      fprintf(stderr, "Symbolic link (/usr/doc --> /usr/share/doc) not created\n");
+    }
     execlp("ldconfig", "ldconfig", 0);
     fprintf(stderr, "Error: exec ldconfig: %s\n", strerror (errno));
     fprintf(stderr, "Run ldconfig by hand, or bash might be unusable !\n");

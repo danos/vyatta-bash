@@ -190,6 +190,16 @@ internal_error (format, arg1, arg2, arg3, arg4, arg5)
 }
 
 void
+internal_warning (format, arg1, arg2, arg3, arg4, arg5)
+     char *format;
+{
+  fprintf (stderr, "%s: warning: ", get_name_for_error ());
+
+  fprintf (stderr, format, arg1, arg2, arg3, arg4, arg5);
+  fprintf (stderr, "\n");
+}
+
+void
 sys_error (format, arg1, arg2, arg3, arg4, arg5)
      char *format;
 {
@@ -307,6 +317,31 @@ internal_error (format, va_alist)
   va_list args;
 
   fprintf (stderr, "%s: ", get_name_for_error ());
+
+#if defined (PREFER_STDARG)
+  va_start (args, format);
+#else
+  va_start (args);
+#endif
+
+  vfprintf (stderr, format, args);
+  fprintf (stderr, "\n");
+
+  va_end (args);
+}
+
+void
+#if defined (PREFER_STDARG)
+internal_warning (const char *format, ...)
+#else
+internal_warning (format, va_alist)
+     const char *format;
+     va_dcl
+#endif
+{
+  va_list args;
+
+  fprintf (stderr, "%s: warning: ", get_name_for_error ());
 
 #if defined (PREFER_STDARG)
   va_start (args, format);
@@ -461,3 +496,32 @@ trace (format, va_alist)
 #endif /* 0 */
 
 #endif /* USE_VARARGS */
+
+static char *cmd_error_table[] = {
+	"unknown command error",	/* CMDERR_DEFAULT */
+	"bad command type",		/* CMDERR_BADTYPE */
+	"bad connector",		/* CMDERR_BADCONN */
+	"bad jump",			/* CMDERR_BADJUMP */
+	0
+};
+
+void
+command_error (func, code, e, flags)
+     const char *func;
+     int code, e, flags;	/* flags currently unused */
+{
+  if (code > CMDERR_LAST)
+    code = CMDERR_DEFAULT;
+
+  programming_error ("%s: %s: %d", func, cmd_error_table[code], e);
+}
+
+char *
+command_errstr (code)
+     int code;
+{
+  if (code > CMDERR_LAST)
+    code = CMDERR_DEFAULT;
+
+  return (cmd_error_table[code]);
+}

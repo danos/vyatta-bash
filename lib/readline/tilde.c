@@ -24,6 +24,9 @@
 #endif
 
 #if defined (HAVE_UNISTD_H)
+#  ifdef _MINIX
+#    include <sys/types.h>
+#  endif
 #  include <unistd.h>
 #endif
 
@@ -43,8 +46,6 @@
 #include <pwd.h>
 
 #include "tilde.h"
-
-#include "shell.h"
 
 #if !defined (HAVE_GETPW_DECLS)
 extern struct passwd *getpwuid (), *getpwnam ();
@@ -71,6 +72,12 @@ static char *xmalloc (), *xrealloc ();
 #else
 extern char *xmalloc (), *xrealloc ();
 #endif /* TEST || STATIC_MALLOC */
+
+/* If being compiled as part of bash, these will be satisfied from
+   variables.o.  If being compiled as part of readline, they will
+   be satisfied from shell.o. */
+extern char *get_home_dir ();
+extern char *get_env_value ();
 
 /* The default value of tilde_additional_prefixes.  This is set to
    whitespace preceding a tilde so that simple programs which do not
@@ -105,8 +112,6 @@ char **tilde_additional_prefixes = default_prefixes;
    the end of a username, instead of just "/".  Bash sets this to
    `:' and `=~'. */
 char **tilde_additional_suffixes = default_suffixes;
-
-extern int rl_shell;
 
 /* Find the start of a tilde expansion in STRING, and return the index of
    the tilde which starts the expansion.  Place the length of the text
@@ -167,8 +172,6 @@ tilde_find_suffix (string)
     }
   return (i);
 }
-
-extern char *get_env_value ();
 
 /* Return a new string which is the result of tilde expanding STRING. */
 char *
@@ -272,19 +275,6 @@ glue_prefix_and_suffix (prefix, suffix, suffind)
     strcpy (ret, prefix);
   strcpy (ret + plen, suffix + suffind);
   return ret;
-}
-
-static char *
-get_home_dir ()
-{
-  /* this function will work whether rl_shell is set or not */
-  char *home_dir = "/";
-  struct passwd *entry;
-
-  entry = getpwuid (getuid ());
-  if (entry)
-    home_dir = entry->pw_dir;
-  return (home_dir);
 }
 
 /* Do the work of tilde expansion on FILENAME.  FILENAME starts with a

@@ -1,0 +1,35 @@
+#! /bin/sh -e
+
+if [ $# -eq 3 -a "$2" = '-d' ]; then
+    pdir="-d $3"
+elif [ $# -ne 1 ]; then
+    echo >&2 "`basename $0`: script expects -patch|-unpatch as argument"
+    exit 1
+fi
+case "$1" in
+    -patch) patch $pdir -f --no-backup-if-mismatch -p1 < $0;;
+    -unpatch) patch $pdir -f --no-backup-if-mismatch -R -p1 < $0;;
+    *)
+	echo >&2 "`basename $0`: script expects -patch|-unpatch as argument"
+	exit 1
+esac
+exit 0
+
+# DP: Define DONT_REPORT_SIGPIPE: We don't want to see `Broken pipe' messages
+# DP: when a job like `cat jobs.c | exit 1' is executed. Fixes part of #7047,
+# DP: #10259, #10433 and #10494. Comment from the upstream author: "The default
+# DP: bash behavior with respect to the exit status of a pipeline will not
+# DP: change.  Changing it as suggested in the discussion of #10494 would render
+# DP: bash incompatible with every other shell out there.".
+
+--- ./config-top.h~	Sun Dec 19 18:57:57 1999
++++ ./config-top.h	Sun Dec 19 19:09:15 1999
+@@ -29,7 +29,7 @@
+ 
+ /* Define DONT_REPORT_SIGPIPE if you don't want to see `Broken pipe' messages
+    when a job like `cat jobs.c | exit 1' is executed. */
+-/* #define DONT_REPORT_SIGPIPE */
++#define DONT_REPORT_SIGPIPE
+ 
+ /* The default value of the PATH variable. */
+ #ifndef DEFAULT_PATH_VALUE

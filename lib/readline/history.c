@@ -38,6 +38,9 @@
 #endif /* HAVE_STDLIB_H */
 
 #if defined (HAVE_UNISTD_H)
+#  ifdef _MINIX
+#    include <sys/types.h>
+#  endif
 #  include <unistd.h>
 #endif
 
@@ -85,13 +88,6 @@ static int history_size;
 /* The logical `base' of the history array.  It defaults to 1. */
 int history_base = 1;
 
-/* turn on shell mode */
-int history_shell = 0;
-char* (*history_get_string_value_hook)() = 0;
-
-/* for backwards compatibility with 2.0 */
-char* (*single_quote_hook)();
-
 /* Return the current HISTORY_STATE of the history. */
 HISTORY_STATE *
 history_get_history_state ()
@@ -129,9 +125,6 @@ void
 using_history ()
 {
   history_offset = history_length;
-  if (! history_get_string_value_hook)
-    history_shell = 0;		/* so won't try to call with older
-				   versions of bash */
 }
 
 /* Return the number of bytes that the primary history entries are using.
@@ -285,7 +278,7 @@ HIST_ENTRY *
 replace_history_entry (which, line, data)
      int which;
      char *line;
-     char *data;
+     histdata_t data;
 {
   HIST_ENTRY *temp = (HIST_ENTRY *)xmalloc (sizeof (HIST_ENTRY));
   HIST_ENTRY *old_value;

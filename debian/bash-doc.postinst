@@ -1,0 +1,11 @@
+#! /bin/sh -e
+
+install-info --quiet --description="GNU Bourne-Again SHell Features." \
+  --section "General Commands" "General Commands" /usr/share/info/bash.info.gz
+
+if [ "$1" = "configure" ]; then
+  pkg=bash-doc
+  if [ -d /usr/doc -a ! -e /usr/doc/$pkg -a -d /usr/share/doc/$pkg ]; then
+    ln -sf ../share/doc/$pkg /usr/doc/$pkg
+  fi
+fi

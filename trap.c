@@ -21,16 +21,16 @@
 
 #include "config.h"
 
-#include <stdio.h>
-
 #if defined (HAVE_UNISTD_H)
 #  include <unistd.h>
 #endif
 
 #include "bashtypes.h"
-#include "trap.h"
-
 #include "bashansi.h"
+
+#include <stdio.h>
+
+#include "trap.h"
 
 #include "shell.h"
 #include "signames.h"
@@ -116,6 +116,11 @@ initialize_traps ()
   set_signal_handler (SIGINT, original_signals[SIGINT]);
   sigmodes[SIGINT] |= SIG_SPECIAL;
 
+#if defined (__BEOS__)
+  /* BeOS sets SIGINT to SIG_IGN! */
+  original_signals[SIGINT] = SIG_DFL;
+#endif
+
   original_signals[SIGQUIT] =
     (SigHandler *) set_signal_handler (SIGQUIT, SIG_DFL);
   set_signal_handler (SIGQUIT, original_signals[SIGQUIT]);
@@ -135,7 +140,13 @@ char *
 signal_name (sig)
      int sig;
 {
-  return ((sig > NSIG || sig < 0) ? "bad signal number" : signal_names[sig]);
+  char *ret;
+
+  /* on cygwin32, signal_names[sig] could be null */
+  ret = (sig > NSIG || sig < 0) ? "bad signal number" : signal_names[sig];
+  if (ret == NULL)
+    ret = "unrecognized signal number";
+  return ret;
 }
 
 /* Turn a string into a signal number, or a number into
@@ -153,10 +164,14 @@ decode_signal (string)
 
   /* A leading `SIG' may be omitted. */
   for (sig = 0; sig <= NSIG; sig++)
-    if (strcasecmp (string, signal_names[sig]) == 0 ||
-	(STREQN (signal_names[sig], "SIG", 3) &&
-	  strcasecmp (string, &(signal_names[sig])[3]) == 0))
-      return ((int)sig);
+    {
+      if (signal_names[sig] == 0 || signal_names[sig][0] == '\0')
+	continue;
+      if (strcasecmp (string, signal_names[sig]) == 0 ||
+	  (STREQN (signal_names[sig], "SIG", 3) &&
+	    strcasecmp (string, &(signal_names[sig])[3]) == 0))
+	return ((int)sig);
+    }
 
   return (NO_SIG);
 }
@@ -246,6 +261,8 @@ trap_handler (sig)
 }
 
 #if defined (JOB_CONTROL) && defined (SIGCHLD)
+
+#ifdef INCLUDE_UNUSED
 /* Make COMMAND_STRING be executed when SIGCHLD is caught. */
 void
 set_sigchld_trap (command_string)
@@ -253,6 +270,7 @@ set_sigchld_trap (command_string)
 {
   set_signal (SIGCHLD, command_string);
 }
+#endif
 
 /* Make COMMAND_STRING be executed when SIGCHLD is caught iff the current
    SIGCHLD trap handler is DEFAULT_SIG. */
@@ -272,12 +290,14 @@ set_debug_trap (command)
   set_signal (DEBUG_TRAP, command);
 }
 
+#ifdef INCLUDE_UNUSED
 void
 set_sigint_trap (command)
      char *command;
 {
   set_signal (SIGINT, command);
 }
+#endif
 
 /* Reset the SIGINT handler so that subshells that are doing `shellsy'
    things, like waiting for command substitution or executing commands
@@ -515,7 +535,10 @@ run_exit_trap ()
       code = setjmp (top_level);
 
       if (code == 0)
-	parse_and_execute (trap_command, "exit trap", SEVAL_NONINT|SEVAL_NOHIST);
+	{
+	  reset_parser ();
+	  parse_and_execute (trap_command, "exit trap", SEVAL_NONINT|SEVAL_NOHIST);
+	}
       else if (code == EXITPROG)
         return (last_command_exit_value);
       else
@@ -587,6 +610,7 @@ run_interrupt_trap ()
   _run_trap_internal (SIGINT, "interrupt trap");
 }
 
+#ifdef INCLUDE_UNUSED
 /* Free all the allocated strings in the list of traps and reset the trap
    values to the default. */
 void
@@ -602,6 +626,7 @@ free_trap_strings ()
     }
   trap_list[DEBUG_TRAP] = trap_list[EXIT_TRAP] = (char *)NULL;
 }
+#endif
 
 /* Reset the handler for SIG to the original value. */
 static void

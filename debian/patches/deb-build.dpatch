@@ -1,0 +1,109 @@
+#! /bin/sh -e
+
+if [ $# -eq 3 -a "$2" = '-d' ]; then
+    pdir="-d $3"
+elif [ $# -ne 1 ]; then
+    echo >&2 "`basename $0`: script expects -patch|-unpatch as argument"
+    exit 1
+fi
+case "$1" in
+    -patch) patch $pdir -f --no-backup-if-mismatch -p1 < $0;;
+    -unpatch) patch $pdir -f --no-backup-if-mismatch -R -p1 < $0;;
+    *)
+	echo >&2 "`basename $0`: script expects -patch|-unpatch as argument"
+	exit 1
+esac
+exit 0
+
+# DP: Debian specific patches that allow libreadline to be built
+# DP: as a static _and_ a shared library.
+
+--- ./Makefile.in~	Thu Feb 18 18:07:38 1999
++++ ./Makefile.in	Thu Nov 11 14:09:04 1999
+@@ -129,7 +129,7 @@
+ SHLIB_LIB = -lsh
+ SHLIB_LIBNAME = libsh.a
+ SHLIB_LIBRARY = ${SH_LIBDIR}/${SHLIB_LIBNAME}
+-SHLIB_LDFLAGS = -L${SH_LIBDIR}
++SHLIB_LDFLAGS = -L${deb_builddir}${SH_LIBDIR}
+ SHLIB_DEP = ${SHLIB_LIBRARY}
+ 
+ # we assume for now that readline source is being shipped with bash
+@@ -140,7 +140,7 @@
+ 
+ READLINE_LIB = @READLINE_LIB@
+ READLINE_LIBRARY = $(RL_LIBDIR)/libreadline.a
+-READLINE_LDFLAGS = -L${RL_LIBDIR}
++READLINE_LDFLAGS = -L${deb_builddir}${RL_LIBDIR}
+ READLINE_DEP = @READLINE_DEP@
+ 
+ # The source, object and documentation of the GNU Readline library.
+@@ -186,7 +186,7 @@
+ 
+ HISTORY_LIB = @HISTORY_LIB@
+ HISTORY_LIBRARY = $(HIST_LIBDIR)/libhistory.a
+-HISTORY_LDFLAGS = -L$(HIST_LIBDIR)
++HISTORY_LDFLAGS = -L${deb_builddir}$(HIST_LIBDIR)
+ HISTORY_DEP = @HISTORY_DEP@
+ 
+ # The source, object and documentation of the history library.
+@@ -205,7 +205,7 @@
+ 
+ TERMCAP_LIB = @TERMCAP_LIB@
+ TERMCAP_LIBRARY = $(TERM_LIBDIR)/libtermcap.a
+-TERMCAP_LDFLAGS = -L$(TERM_LIBDIR)
++TERMCAP_LDFLAGS = -L${deb_builddir}$(TERM_LIBDIR)
+ TERMCAP_DEP = @TERMCAP_DEP@
+ 
+ TERMCAP_SOURCE	= $(TERM_LIBSRC)/termcap.c $(TERM_LIBSRC)/tparam.c
+@@ -217,7 +217,7 @@
+ 
+ GLOB_LIB     = -lglob
+ GLOB_LIBRARY = $(GLOB_LIBDIR)/libglob.a
+-GLOB_LDFLAGS = -L$(GLOB_LIBDIR)
++GLOB_LDFLAGS = -L${deb_builddir}$(GLOB_LIBDIR)
+ GLOB_DEP = $(GLOB_LIBRARY)
+ 
+ GLOB_SOURCE = $(GLOB_LIBSRC)/glob.c $(GLOB_LIBSRC)/fnmatch.c \
+@@ -231,7 +231,7 @@
+ 
+ TILDE_LIB = -ltilde
+ TILDE_LIBRARY = $(TILDE_LIBDIR)/libtilde.a
+-TILDE_LDFLAGS = -L$(TILDE_LIBDIR)
++TILDE_LDFLAGS = -L${deb_builddir}$(TILDE_LIBDIR)
+ TILDE_DEP = $(TILDE_LIBRARY)
+ 
+ TILDE_SOURCE	= $(TILDE_LIBSRC)/tilde.c $(TILDE_LIBSRC)/tilde.h
+@@ -253,7 +253,7 @@
+ 
+ MALLOC_LIB     = -lmalloc
+ MALLOC_LIBRARY = $(ALLOC_LIBDIR)/libmalloc.a
+-MALLOC_LDFLAGS = -L$(ALLOC_LIBDIR)
++MALLOC_LDFLAGS = -L${deb_builddir}$(ALLOC_LIBDIR)
+ MALLOC_DEP = $(MALLOC_LIBRARY)
+ 
+ ALLOC_HEADERS = $(ALLOC_LIBSRC)/getpagesize.h
+@@ -358,7 +358,7 @@
+ 
+ BUILTINS_LIBRARY = $(DEFDIR)/libbuiltins.a
+ BUILTINS_LIB = -lbuiltins
+-BUILTINS_LDFLAGS = -L$(DEFDIR)
++BUILTINS_LDFLAGS = -L${deb_builddir}$(DEFDIR)
+ BUILTINS_DEP = $(BUILTINS_LIBRARY)
+ 
+ # Documentation for the shell.
+@@ -441,12 +441,12 @@
+ $(READLINE_LIBRARY): config.h $(READLINE_SOURCE)
+ 	@echo making $@ in ${RL_LIBDIR}
+ 	@( { test "${RL_LIBDIR}" = "${libdir}" && exit 0; } || \
+-		cd ${RL_LIBDIR} && $(MAKE) $(MFLAGS) libreadline.a) || exit 1
++		cd ${RL_LIBDIR} && $(MAKE) $(MFLAGS) all) || exit 1
+ 
+ $(HISTORY_LIBRARY): config.h $(HISTORY_SOURCE)
+ 	@echo making $@ in ${HIST_LIBDIR}
+ 	@( { test "${HIST_LIBDIR}" = "${libdir}" && exit 0; } || \
+-		cd ${HIST_LIBDIR} && $(MAKE) $(MFLAGS) libhistory.a) || exit 1
++		cd ${HIST_LIBDIR} && $(MAKE) $(MFLAGS) all) || exit 1
+ 
+ $(GLOB_LIBRARY): config.h $(GLOB_SOURCE)
+ 	@echo making $@ in ${GLOB_LIBDIR}

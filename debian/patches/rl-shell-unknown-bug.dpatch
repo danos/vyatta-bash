@@ -1,0 +1,31 @@
+#! /bin/sh -e
+
+if [ $# -eq 3 -a "$2" = '-d' ]; then
+    pdir="-d $3"
+elif [ $# -ne 1 ]; then
+    echo >&2 "`basename $0`: script expects -patch|-unpatch as argument"
+    exit 1
+fi
+case "$1" in
+    -patch) patch $pdir -f --no-backup-if-mismatch -p1 < $0;;
+    -unpatch) patch $pdir -f --no-backup-if-mismatch -R -p1 < $0;;
+    *)
+	echo >&2 "`basename $0`: script expects -patch|-unpatch as argument"
+	exit 1
+esac
+exit 0
+
+# DP: Fix what ???
+
+--- bash-2.02.1.orig/lib/readline/shell.c
++++ bash-2.02.1/lib/readline/shell.c
+@@ -70,7 +70,7 @@
+   register int c;
+   char *result, *r, *s;
+ 
+-  result = (char *)xmalloc (3 + (3 * strlen (string)));
++  result = (char *)xmalloc (3 + (4 * strlen (string)));
+   r = result;
+   *r++ = '\'';
+ 
+

@@ -1,0 +1,167 @@
+#! /bin/sh -e
+
+if [ $# -eq 3 -a "$2" = '-d' ]; then
+    pdir="-d $3"
+elif [ $# -ne 1 ]; then
+    echo >&2 "`basename $0`: script expects -patch|-unpatch as argument"
+    exit 1
+fi
+case "$1" in
+    -patch) patch $pdir -f --no-backup-if-mismatch -p1 < $0;;
+    -unpatch) patch $pdir -f --no-backup-if-mismatch -R -p1 < $0;;
+    *)
+	echo >&2 "`basename $0`: script expects -patch|-unpatch as argument"
+	exit 1
+esac
+exit 0
+
+# When job control is enabled, a variable is being assigned with
+# redirection(either `` or $()), and a trap'd signal is caught during
+# the redirection, bash would segfault on the command after the
+# assignment.
+
+# Thanks to Eric Weigel <ericw@bestnet.org> for this patch, and
+# Adam Heath <doogie@debian.org> for discovering it.
+
+diff -ur bash-2.03/jobs.c bash-2.03-emw/jobs.c
+--- bash-2.03/jobs.c Thu Dec 10 14:01:15 1998
++++ bash-2.03-emw/jobs.c Sat Jan 22 05:47:32 2000
+@@ -99,6 +99,7 @@
+ #include "jobs.h"
+ #include "flags.h"
+ #include "error.h"
++#include "subst.h"
+ 
+ #include "builtins/builtext.h"
+ #include "builtins/common.h"
+@@ -2452,6 +2453,7 @@
+       unwind_protect_int (interrupt_immediately);
+       unwind_protect_int (jobs_list_frozen);
+       unwind_protect_pointer (the_pipeline);
++      unwind_protect_pointer (subst_varlist);
+ 
+       /* We have to add the commands this way because they will be run
+ 	 in reverse order of adding.  We don't want maybe_set_sigchld_trap ()
+@@ -2459,6 +2461,7 @@
+       add_unwind_protect ((Function *)xfree, trap_command);
+       add_unwind_protect ((Function *)maybe_set_sigchld_trap, trap_command);
+ 
++      subst_varlist = (WORD_LIST*)NULL;
+       the_pipeline = (PROCESS *)NULL;
+       restore_default_signal (SIGCHLD);
+       jobs_list_frozen = 1;
+diff -ur bash-2.03/subst.c bash-2.03-emw/subst.c
+--- bash-2.03/subst.c Wed Jan 20 12:13:52 1999
++++ bash-2.03-emw/subst.c Sat Jan 22 06:15:49 2000
+@@ -5457,7 +5457,7 @@
+ #define PREPEND_LIST(nlist, elist) \
+ 	do { nlist->next = elist; elist = nlist; } while (0)
+ 
+-static WORD_LIST *varlist = (WORD_LIST *)NULL;
++WORD_LIST *subst_varlist = (WORD_LIST *)NULL;
+ 
+ /* Separate out any initial variable assignments from TLIST.  If set -k has
+    been executed, remove all assignment statements from TLIST.  Initial
+@@ -5472,10 +5472,10 @@
+   if (!tlist)
+     return ((WORD_LIST *)NULL);
+ 
+-  if (varlist)
+-    dispose_words (varlist);	/* Clean up after previous error */
++  if (subst_varlist)
++    dispose_words (subst_varlist);	/* Clean up after previous error */
+ 
+-  varlist = (WORD_LIST *)NULL;
++  subst_varlist = (WORD_LIST *)NULL;
+   vp = lp = tlist;
+ 
+   /* Separate out variable assignments at the start of the command.
+@@ -5495,7 +5495,7 @@
+      TLIST point to the remaining words.  */
+   if (lp != tlist)
+     {
+-      varlist = tlist;
++      subst_varlist = tlist;
+       /* ASSERT(vp->next == lp); */
+       vp->next = (WORD_LIST *)NULL;	/* terminate variable list */
+       tlist = lp;			/* remainder of word list */
+@@ -5526,9 +5526,9 @@
+ 	  if (lp->word->flags & W_ASSIGNMENT)
+ 	    {
+ 	      /* Found an assignment statement, add this word to end of
+-		 varlist (vp). */
+-	      if (!varlist)
+-		varlist = vp = lp;
++		 subst_varlist (vp). */
++	      if (!subst_varlist)
++		subst_varlist = vp = lp;
+ 	      else
+ 		{
+ 		  vp->next = lp;
+@@ -5872,11 +5872,11 @@
+       new_list = separate_out_assignments (new_list);
+       if (new_list == 0)
+ 	{
+-	  if (varlist)
++	  if (subst_varlist)
+ 	    {
+ 	      /* All the words were variable assignments, so they are placed
+ 		 into the shell's environment. */
+-	      for (temp_list = varlist; temp_list; temp_list = temp_list->next)
++	      for (temp_list = subst_varlist; temp_list; temp_list = temp_list->next)
+ 		{
+ 		  this_command_name = (char *)NULL;	/* no arithmetic errors */
+ 		  tint = do_assignment (temp_list->word->word);
+@@ -5888,8 +5888,8 @@
+ 		      jump_to_top_level (FORCE_EOF);
+ 		    }
+ 		}
+-	      dispose_words (varlist);
+-	      varlist = (WORD_LIST *)NULL;
++	      dispose_words (subst_varlist);
++	      subst_varlist = (WORD_LIST *)NULL;
+ 	    }
+ 	  return ((WORD_LIST *)NULL);
+ 	}
+@@ -5922,7 +5922,7 @@
+ 	new_list = dequote_list (new_list);
+     }
+ 
+-  if ((eflags & WEXP_VARASSIGN) && varlist)
++  if ((eflags & WEXP_VARASSIGN) && subst_varlist)
+     {
+       Function *assign_func;
+ 
+@@ -5931,7 +5931,7 @@
+ 	 environment. */
+       assign_func = new_list ? assign_in_env : do_assignment;
+ 
+-      for (temp_list = varlist; temp_list; temp_list = temp_list->next)
++      for (temp_list = subst_varlist; temp_list; temp_list = temp_list->next)
+ 	{
+ 	  this_command_name = (char *)NULL;
+ 	  tint = (*assign_func) (temp_list->word->word);
+@@ -5945,8 +5945,8 @@
+ 	    }
+ 	}
+ 
+-      dispose_words (varlist);
+-      varlist = (WORD_LIST *)NULL;
++      dispose_words (subst_varlist);
++      subst_varlist = (WORD_LIST *)NULL;
+     }
+ 
+ #if 0
+diff -ur bash-2.03/subst.h bash-2.03-emw/subst.h
+--- bash-2.03/subst.h Fri Sep 12 16:54:32 1997
++++ bash-2.03-emw/subst.h Sat Jan 22 05:45:16 2000
+@@ -23,6 +23,8 @@
+ 
+ #include "stdc.h"
+ 
++WORD_LIST *subst_varlist;
++
+ /* Cons a new string from STRING starting at START and ending at END,
+    not including END. */
+ extern char *substring __P((char *, int, int));
+

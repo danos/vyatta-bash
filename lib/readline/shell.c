@@ -26,6 +26,8 @@
 #  include <config.h>
 #endif
 
+#include <sys/types.h>
+
 #if defined (HAVE_UNISTD_H)
 #  include <unistd.h>
 #endif /* HAVE_UNISTD_H */
@@ -36,22 +38,22 @@
 #  include "ansi_stdlib.h"
 #endif /* HAVE_STDLIB_H */
 
-extern char *xmalloc (), *xrealloc ();
+#if defined (HAVE_STRING_H)
+#  include <string.h>
+#else
+#  include <strings.h>
+#endif /* !HAVE_STRING_H */
 
-extern int history_shell;
+#include <pwd.h>
 
-#ifdef savestring
-#undef savestring
-#endif
+#if !defined (HAVE_GETPW_DECLS)
+extern struct passwd *getpwuid ();
+#endif /* !HAVE_GETPW_DECLS */
 
-/* Backwards compatibility, now that savestring has been removed from
-   all `public' readline header files. */
-char *
-savestring (s)
-     char *s;
-{
-  return ((char *)strcpy (xmalloc (1 + (int)strlen (s)), (s)));
-}
+extern char *xmalloc ();
+
+/* All of these functions are resolved from bash if we are linking readline
+   as part of bash. */
 
 /* Does shell-like quoting using single quotes. */
 char *
@@ -86,7 +88,7 @@ single_quote (string)
 /* Set the environment variables LINES and COLUMNS to lines and cols,
    respectively. */
 void
-rl_set_lines_and_columns (lines, cols)
+set_lines_and_columns (lines, cols)
      int lines, cols;
 {
   char *b;
@@ -110,13 +112,22 @@ rl_set_lines_and_columns (lines, cols)
 #endif /* !HAVE_PUTENV */
 }
 
-extern char* (*history_get_string_value_hook)();
-
 char *
-history_get_env_value (varname)
+get_env_value (varname)
      char *varname;
 {
-  return (history_shell ?
-	  (history_get_string_value_hook)(varname) :
-	  ((char *)getenv (varname)));
+  return ((char *)getenv (varname));
+}
+
+char *
+get_home_dir ()
+{
+  char *home_dir;
+  struct passwd *entry;
+
+  home_dir = (char *)NULL;
+  entry = getpwuid (getuid ());
+  if (entry)
+    home_dir = entry->pw_dir;
+  return (home_dir);
 }

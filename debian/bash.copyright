@@ -2,7 +2,7 @@ This is Debian/GNU Linux's prepackaged version of the FSF's GNU Bash,
 the Bourne Again SHell.
 
 This package was put together by me, Guy Maor <maor@debian.org>, from
-the GNU sources at ftp.cc.gatech.edu:/pub/gnu/bash_2.01.1.tar.gz
+the GNU sources at ftp.gnu.org:/pub/gnu/bash/bash-2.03.tar.gz
 
 Bash is free software; you can redistribute it and/or modify it under
 the terms of the GNU General Public License as published by the Free
@@ -15,8 +15,8 @@ FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
 for more details.
 
 You should have received a copy of the GNU General Public License with
-your Debian GNU/Linux system, in /usr/doc/copyright/GPL, or with the
-Debian GNU/Linux bash source package as the file COPYING.  If not,
+your Debian GNU/Linux system, in /usr/share/common-licenses/GPL, or with
+the Debian GNU/Linux bash source package as the file COPYING.  If not,
 write to the Free Software Foundation, Inc., 59 Temple Place - Suite
 330, Boston, MA 02111-1307, USA.
 

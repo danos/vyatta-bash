@@ -43,7 +43,6 @@
 
 /* The final, last-ditch effort file name for an init file. */
 #define DEFAULT_INPUTRC "~/.inputrc"
-#define SYSTEM_INPUTRC "/etc/inputrc"
 
 /* If defined, expand tabs to spaces. */
 #define DISPLAY_TABS
@@ -57,6 +56,6 @@
 
 /* Define this if you want code that allows readline to be used in an
    X `callback' style. */
-#  define READLINE_CALLBACKS
+#define READLINE_CALLBACKS
 
 #endif /* _RLCONF_H_ */

@@ -1,0 +1,332 @@
+#! /bin/sh -e
+
+if [ $# -eq 3 -a "$2" = '-d' ]; then
+    pdir="-d $3"
+elif [ $# -ne 1 ]; then
+    echo >&2 "`basename $0`: script expects -patch|-unpatch as argument"
+    exit 1
+fi
+case "$1" in
+    -patch) patch $pdir -f --no-backup-if-mismatch -p1 < $0;;
+    -unpatch) patch $pdir -f --no-backup-if-mismatch -R -p1 < $0;;
+    *)
+	echo >&2 "`basename $0`: script expects -patch|-unpatch as argument"
+	exit 1
+esac
+exit 0
+
+# DP: readline patches which need inspection
+
+--- bash-2.02.1.orig/lib/readline/histfile.c
++++ bash-2.02.1/lib/readline/histfile.c
+@@ -73,7 +73,7 @@
+ #include "histlib.h"
+ 
+ /* Functions imported from shell.c */
+-extern char *get_env_value ();
++extern char *history_get_env_value ();
+ 
+ extern char *xmalloc (), *xrealloc ();
+ 
+@@ -92,7 +92,7 @@
+   if (return_val)
+     return (return_val);
+   
+-  home = get_env_value ("HOME");
++  home = history_get_env_value ("HOME");
+ 
+   if (home == 0)
+     {
+--- bash-2.02.1.orig/lib/readline/terminal.c
++++ bash-2.02.1/lib/readline/terminal.c
+@@ -74,7 +74,7 @@
+ extern void _rl_bind_if_unbound ();
+ 
+ /* Functions imported from shell.c */
+-extern void set_lines_and_columns ();
++extern void rl_set_lines_and_columns ();
+ extern char *get_env_value ();
+ 
+ /* **************************************************************** */
+@@ -211,7 +214,7 @@
+   /* If we're being compiled as part of bash, set the environment
+      variables $LINES and $COLUMNS to new values.  Otherwise, just
+      do a pair of putenv () or setenv () calls. */
+-  set_lines_and_columns (screenheight, screenwidth);
++  rl_set_lines_and_columns (screenheight, screenwidth);
+ 
+   if (!_rl_term_autowrap)
+     screenwidth--;
+--- bash-2.02.1.orig/lib/readline/rltty.c
++++ bash-2.02.1/lib/readline/rltty.c
+@@ -37,9 +37,9 @@
+ 
+ #include "rldefs.h"
+ 
+-#if !defined (SHELL) && defined (GWINSZ_IN_SYS_IOCTL)
++#if defined (GWINSZ_IN_SYS_IOCTL)
+ #  include <sys/ioctl.h>
+-#endif /* !SHELL && GWINSZ_IN_SYS_IOCTL */
++#endif /* GWINSZ_IN_SYS_IOCTL */
+ 
+ #include "rltty.h"
+ #include "readline.h"
+@@ -53,6 +53,8 @@
+ 
+ extern int _rl_enable_keypad, _rl_enable_meta;
+ 
++extern int rl_shell;
++
+ extern void _rl_control_keypad ();
+ 
+ #if defined (__GO32__)
+@@ -144,7 +146,7 @@
+ static int ksrflow;
+ #endif
+ 
+-#if !defined (SHELL) && defined (TIOCGWINSZ)
++#if defined (TIOCGWINSZ)
+ /* Dummy call to force a backgrounded readline to stop before it tries
+    to get the tty settings. */
+ static void
+@@ -153,12 +155,10 @@
+ {
+   struct winsize w;
+ 
+-  if (ioctl (tty, TIOCGWINSZ, &w) == 0)
++  if (!rl_shell && ioctl (tty, TIOCGWINSZ, &w) == 0)
+       (void) ioctl (tty, TIOCSWINSZ, &w);
+ }
+-#else /* SHELL || !TIOCGWINSZ */
+-#  define set_winsize(tty)
+-#endif /* SHELL || !TIOCGWINSZ */
++#endif /* TIOCGWINSZ */
+ 
+ #if defined (NEW_TTY_DRIVER)
+ 
+--- bash-2.02.1.orig/lib/readline/display.c
++++ bash-2.02.1/lib/readline/display.c
+@@ -307,6 +307,20 @@
+     }
+ }
+ 
++static void
++_rl_extend_buffers (int max_size)
++{
++  if (max_size >= line_size)
++    {
++      while (max_size >= line_size)
++       {
++         line_size *= 2;
++       }
++      visible_line = xrealloc (visible_line, line_size);
++      invisible_line = xrealloc (invisible_line, line_size);
++    }
++}
++
+ /* Basic redisplay algorithm. */
+ void
+ rl_redisplay ()
+@@ -373,6 +387,8 @@
+ 
+       if (local_len > 0)
+ 	{
++         _rl_extend_buffers(out + local_len);
++         line = invisible_line;
+ 	  strncpy (line + out, local_prompt, local_len);
+ 	  out += local_len;
+ 	}
+@@ -399,6 +415,8 @@
+ 	}
+ 
+       pmtlen = strlen (prompt_this_line);
++      _rl_extend_buffers(out + pmtlen);
++      line = invisible_line;
+       strncpy (line + out,  prompt_this_line, pmtlen);
+       out += pmtlen;
+       line[out] = '\0';
+@@ -440,13 +458,8 @@
+     {
+       c = (unsigned char)rl_line_buffer[in];
+ 
+-      if (out + 8 >= line_size)		/* XXX - 8 for \t */
+-	{
+-	  line_size *= 2;
+-	  visible_line = xrealloc (visible_line, line_size);
+-	  invisible_line = xrealloc (invisible_line, line_size);
+-	  line = invisible_line;
+-	}
++      _rl_extend_buffers(out + 8);     /* XXX - 8 for \t */
++      line = invisible_line;
+ 
+       if (in == rl_point)
+ 	{
+--- bash-2.02.1.orig/lib/readline/signals.c
++++ bash-2.02.1/lib/readline/signals.c
+@@ -61,6 +61,8 @@
+ extern void _rl_init_argument ();
+ extern void rl_deprep_terminal (), rl_prep_terminal ();
+ 
++extern int rl_shell;
++
+ #if !defined (RETSIGTYPE)
+ #  if defined (VOID_SIGHANDLER)
+ #    define RETSIGTYPE void
+@@ -87,13 +89,9 @@
+ /*								    */
+ /* **************************************************************** */
+ 
+-/* If we're not being compiled as part of bash, initialize handlers for
+-   and catch the job control signals (SIGTTIN, SIGTTOU, SIGTSTP) and
+-   SIGTERM. */
+-#if !defined (SHELL)
++/* always on, but we only handle it when rl_shell == 0 */
+ #  define HANDLE_JOB_SIGNALS
+ #  define HANDLE_SIGTERM
+-#endif /* !SHELL */
+ 
+ #if defined (HAVE_POSIX_SIGNALS)
+ typedef struct sigaction sighandler_cxt;
+@@ -106,11 +104,11 @@
+ static sighandler_cxt old_int, old_alrm;
+ 
+ #if defined (HANDLE_JOB_SIGNALS)
+-static sighandler_cxt old_tstp, old_ttou, old_ttin;
++static sighandler_cxt rl_old_tstp, rl_old_ttou, rl_old_ttin;
+ #endif /* HANDLE_JOB_SIGNALS */
+ 
+ #if defined (HANDLE_SIGTERM)
+-static sighandler_cxt old_term;
++static sighandler_cxt rl_old_term;
+ #endif
+ 
+ #if defined (SIGWINCH)
+@@ -289,19 +287,20 @@
+     rl_sigaction (SIGALRM, &old_alrm, &dummy);
+ #endif /* HAVE_POSIX_SIGNALS */
+ 
++  if (!rl_shell) {
+ #if defined (HANDLE_JOB_SIGNALS)
+ 
+ #if defined (SIGTSTP)
+-  oh = rl_set_sighandler (SIGTSTP, rl_signal_handler, &old_tstp);
++  oh = rl_set_sighandler (SIGTSTP, rl_signal_handler, &rl_old_tstp);
+   if (oh == (SigHandler *)SIG_IGN)
+-    rl_sigaction (SIGTSTP, &old_tstp, &dummy);
++  rl_sigaction (SIGTSTP, &rl_old_tstp, &dummy);
+ #else
+   oh = (SigHandler *)NULL;
+ #endif /* SIGTSTP */
+ 
+ #if defined (SIGTTOU)
+-  rl_set_sighandler (SIGTTOU, rl_signal_handler, &old_ttou);
+-  rl_set_sighandler (SIGTTIN, rl_signal_handler, &old_ttin);
++  rl_set_sighandler (SIGTTOU, rl_signal_handler, &rl_old_ttou);
++  rl_set_sighandler (SIGTTIN, rl_signal_handler, &rl_old_ttin);
+ 
+   if (oh == (SigHandler *)SIG_IGN)
+     {
+@@ -314,8 +313,9 @@
+ 
+ #if defined (HANDLE_SIGTERM)
+   /* Handle SIGTERM if we're not being compiled as part of bash. */
+-  rl_set_sighandler (SIGTERM, rl_signal_handler, &old_term);
++  rl_set_sighandler (SIGTERM, rl_signal_handler, &rl_old_term);
+ #endif /* HANDLE_SIGTERM */
++  } /* if (!rl_shell) */
+ 
+ #if defined (SIGWINCH)
+   rl_set_sighandler (SIGWINCH, rl_handle_sigwinch, &old_winch);
+@@ -336,22 +336,24 @@
+   rl_sigaction (SIGINT, &old_int, &dummy);
+   rl_sigaction (SIGALRM, &old_alrm, &dummy);
+ 
++  if (!rl_shell) {
+ #if defined (HANDLE_JOB_SIGNALS)
+ 
+ #if defined (SIGTSTP)
+-  rl_sigaction (SIGTSTP, &old_tstp, &dummy);
++  rl_sigaction (SIGTSTP, &rl_old_tstp, &dummy);
+ #endif
+ 
+ #if defined (SIGTTOU)
+-  rl_sigaction (SIGTTOU, &old_ttou, &dummy);
+-  rl_sigaction (SIGTTIN, &old_ttin, &dummy);
++  rl_sigaction (SIGTTOU, &rl_old_ttou, &dummy);
++  rl_sigaction (SIGTTIN, &rl_old_ttin, &dummy);
+ #endif /* SIGTTOU */
+ 
+ #endif /* HANDLE_JOB_SIGNALS */
+ 
+ #if defined (HANDLE_SIGTERM)
+-  rl_sigaction (SIGTERM, &old_term, &dummy);
++  rl_sigaction (SIGTERM, &rl_old_term, &dummy);
+ #endif /* HANDLE_SIGTERM */
++  } /* if (!rl_shell) */
+ 
+ #if defined (SIGWINCH)
+   sigemptyset (&dummy.sa_mask);
+--- bash-2.02.1.orig/lib/readline/shell.c
++++ bash-2.02.1/lib/readline/shell.c
+@@ -47,7 +47,7 @@
+ 
+ extern char *xmalloc (), *xrealloc ();
+ 
+-#if !defined (SHELL)
++extern int history_shell;
+ 
+ #ifdef savestring
+ #undef savestring
+@@ -95,7 +95,7 @@
+ /* Set the environment variables LINES and COLUMNS to lines and cols,
+    respectively. */
+ void
+-set_lines_and_columns (lines, cols)
++rl_set_lines_and_columns (lines, cols)
+      int lines, cols;
+ {
+   char *b;
+@@ -119,20 +119,13 @@
+ #endif /* !HAVE_PUTENV */
+ }
+ 
+-char *
+-get_env_value (varname)
+-     char *varname;
+-{
+-  return ((char *)getenv (varname));
+-}
+-
+-#else /* SHELL */
+-extern char *get_string_value ();
++extern char* (*history_get_string_value_hook)();
+ 
+ char *
+-get_env_value (varname)
++history_get_env_value (varname)
+      char *varname;
+ {
+-  return get_string_value (varname);
+-}	
+-#endif /* SHELL */
++  return (history_shell ?
++	  (history_get_string_value_hook)(varname) :
++	  ((char *)getenv (varname)));
++}
+--- bash-2.02.1.orig/lib/readline/shellrl.c
++++ bash-2.02.1/lib/readline/shellrl.c
+@@ -0,0 +1,13 @@
++#include <stdlib.h>
++
++extern int rl_shell;
++extern char* (*rl_get_string_value_hook)();
++
++char *
++get_env_value (varname)
++     char *varname;
++{
++  return (rl_shell ?
++	  (rl_get_string_value_hook)(varname) :
++	  ((char *)getenv (varname)));
++}
+

@@ -53,8 +53,6 @@ extern int _rl_eof_char;
 
 extern int _rl_enable_keypad, _rl_enable_meta;
 
-extern int rl_shell;
-
 extern void _rl_control_keypad ();
 
 #if defined (__GO32__)
@@ -155,7 +153,7 @@ set_winsize (tty)
 {
   struct winsize w;
 
-  if (!rl_shell && ioctl (tty, TIOCGWINSZ, &w) == 0)
+  if (ioctl (tty, TIOCGWINSZ, &w) == 0)
       (void) ioctl (tty, TIOCSWINSZ, &w);
 }
 #endif /* TIOCGWINSZ */
@@ -389,6 +387,7 @@ get_tty_settings (tty, tiop)
      TIOTYPE *tiop;
 {
   int ioctl_ret;
+
   set_winsize (tty);
 
   while (1)

@@ -1,12 +1,14 @@
 Source: bash
 Section: base
 Priority: required
-Maintainer: Guy Maor <maor@debian.org>
-Standards-Version: 2.4.0.0
+Maintainer: Matthias Klose <doko@debian.org>
+Standards-Version: 3.1.0
+Build-Depends: autoconf, patch, libncurses5-dev
 
 Package: bash
 Architecture: any
-Pre-Depends: ${shlibs:Depends}, libreadlineg2 (>=2.1-8)
+Pre-Depends: ${shlibs:Pre-Depends}
+Depends: base-files (>= 2.1.12)
 Essential: yes
 Section: base
 Priority: required
@@ -20,82 +22,22 @@ Description: The GNU Bourne Again SHell
 
 Package: bash-builtins
 Architecture: any
-Depends: bash (>=2.01)
+Depends: bash (= ${Source-Version})
 Section: utils
 Priority: optional
 Description: Bash loadable builtins - headers & examples
  Bash 2 can dynamically load new builtin commands.  Included are the
  necessary headers to compile your own builtins and lots of examples.
 
-Package: libreadlineg2
-Architecture: any
-Depends: ${shlibs:Depends}
-Conflicts: libreadline2 (<<2.1-2.1)
-Section: base
-Priority: required
-Description: GNU readline and history libraries, run-time libraries. [libc6]
- The GNU readline library aids in the consistency of user interface
- across discrete programs that need to provide a command line
- interface.
- .
- The GNU history library provides a consistent user interface for
- recalling lines of previously typed input.
-
-Package: libreadlineg2-dev
-Architecture: any
-Depends: ${rlversion:Depends}, ${shlibs:Depends}, ${libcso:Depends}
-Conflicts: libreadline-dev
-Provides: libreadline-dev
-Section: devel
-Priority: standard
-Description: GNU readline and history libraries, development files. [libc6]
- The GNU readline library aids in the consistency of user interface
- across discrete programs that need to provide a command line
- interface.
- .
- The GNU history library provides a consistent user interface for
- recalling lines of previously typed input.
-
-Package: libreadlineg2-dbg
-Architecture: any
-Depends: ${rlversion:Depends}
-Conflicts: libreadline-dbg
-Provides: libreadline-dbg
-Section: devel
+Package: bash-doc
+Architecture: all
+Section: doc
 Priority: optional
-Description: GNU readline and history libraries, debugging libraries. [libc6]
- The GNU readline library aids in the consistency of user interface
- across discrete programs that need to provide a command line
- interface.
+Replaces: bash (<< 2.03-1)
+Description: Documentation and examples for the The GNU Bourne Again SHell
+ Bash is an sh-compatible command language interpreter that executes
+ commands read from the standard input or from a file.  Bash also
+ incorporates useful features from the Korn and C shells (ksh and csh).
  .
- The GNU history library provides a consistent user interface for
- recalling lines of previously typed input.
- 
-Package: libreadline2
-Architecture: any
-Pre-Depends: ldso (>=1.9.0-1)
-Depends: ${shlibs:Depends}
-Section: libs
-Priority: optional
-Description: GNU readline and history libraries, run-time libraries. [libc5]
- The GNU readline library aids in the consistency of user interface
- across discrete programs that need to provide a command line
- interface.
- .
- The GNU history library provides a consistent user interface for
- recalling lines of previously typed input.
-
-Package: libreadline2-altdev
-Architecture: any
-Depends: ${rlversion:Depends}, ${shlibs:Depends}, libc5-altdev
-Conflicts: libreadline2-dev
-Section: devel
-Priority: optional
-Description: GNU readline and history libraries, development files. [libc5]
- The GNU readline library aids in the consistency of user interface
- across discrete programs that need to provide a command line
- interface.
- .
- The GNU history library provides a consistent user interface for
- recalling lines of previously typed input.
-
+ This package contains the documentation in info format, all the
+ examples and the main changelog.

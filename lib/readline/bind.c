@@ -70,6 +70,8 @@ extern int _rl_convert_meta_chars_to_ascii;
 extern int _rl_output_meta_chars;
 extern int _rl_complete_show_all;
 extern int _rl_complete_mark_directories;
+extern int _rl_print_completions_horizontally;
+extern int _rl_completion_case_fold;
 extern int _rl_enable_keypad;
 #if defined (PAREN_MATCHING)
 extern int rl_blink_matching_paren;
@@ -81,6 +83,7 @@ extern int rl_complete_with_tilde_expansion;
 extern int rl_completion_query_items;
 extern int rl_inhibit_completion;
 extern char *_rl_comment_begin;
+extern unsigned char *_rl_isearch_terminators;
 
 extern int rl_explicit_arg;
 extern int rl_editing_mode;
@@ -105,6 +108,7 @@ Keymap rl_binding_keymap;
 /* Forward declarations */
 void rl_set_keymap_from_edit_mode ();
 
+static int _rl_read_init_file ();
 static int glean_key_from_name ();
 static int substring_member_of_array ();
 
@@ -196,6 +200,38 @@ rl_unbind_key_in_map (key, map)
      Keymap map;
 {
   return (rl_bind_key_in_map (key, (Function *)NULL, map));
+}
+
+/* Unbind all keys bound to FUNCTION in MAP. */
+int
+rl_unbind_function_in_map (func, map)
+     Function *func;
+     Keymap map;
+{
+  register int i, rval;
+
+  for (i = rval = 0; i < KEYMAP_SIZE; i++)
+    {
+      if (map[i].type == ISFUNC && map[i].function == func)
+	{
+	  map[i].function = (Function *)NULL;
+	  rval = 1;
+	}
+    }
+  return rval;
+}
+
+int
+rl_unbind_command_in_map (command, map)
+     char *command;
+     Keymap map;
+{
+  Function *func;
+
+  func = rl_named_function (command);
+  if (func == 0)
+    return 0;
+  return (rl_unbind_function_in_map (func, map));
 }
 
 /* Bind the key sequence represented by the string KEYSEQ to
@@ -313,7 +349,7 @@ rl_translate_keyseq (seq, array, len)
      char *seq, *array;
      int *len;
 {
-  register int i, c, l;
+  register int i, c, l, temp;
 
   for (i = l = 0; c = seq[i]; i++)
     {
@@ -324,7 +360,8 @@ rl_translate_keyseq (seq, array, len)
 	  if (c == 0)
 	    break;
 
-	  if (((c == 'C' || c == 'M') && seq[i + 1] == '-') || (c == 'e'))
+	  /* Handle \C- and \M- prefixes. */
+	  if ((c == 'C' || c == 'M') && seq[i + 1] == '-')
 	    {
 	      /* Handle special case of backwards define. */
 	      if (strncmp (&seq[i], "C-\\M-", 5) == 0)
@@ -332,31 +369,83 @@ rl_translate_keyseq (seq, array, len)
 		  array[l++] = ESC;
 		  i += 5;
 		  array[l++] = CTRL (_rl_to_upper (seq[i]));
-		  if (!seq[i])
+		  if (seq[i] == '\0')
 		    i--;
-		  continue;
 		}
-
-	      switch (c)
+	      else if (c == 'M')
 		{
-		case 'M':
 		  i++;
 		  array[l++] = ESC;	/* XXX */
-		  break;
-
-		case 'C':
+		}
+	      else if (c == 'C')
+		{
 		  i += 2;
 		  /* Special hack for C-?... */
 		  array[l++] = (seq[i] == '?') ? RUBOUT : CTRL (_rl_to_upper (seq[i]));
-		  break;
-
-		case 'e':
-		  array[l++] = ESC;
 		}
-
 	      continue;
+	    }	      
+
+	  /* Translate other backslash-escaped characters.  These are the
+	     same escape sequences that bash's `echo' and `printf' builtins
+	     handle, with the addition of \d -> RUBOUT.  A backslash
+	     preceding a character that is not special is stripped. */
+	  switch (c)
+	    {
+	    case 'a':
+	      array[l++] = '\007';
+	      break;
+	    case 'b':
+	      array[l++] = '\b';
+	      break;
+	    case 'd':
+	      array[l++] = RUBOUT;	/* readline-specific */
+	      break;
+	    case 'e':
+	      array[l++] = ESC;
+	      break;
+	    case 'f':
+	      array[l++] = '\f';
+	      break;
+	    case 'n':
+	      array[l++] = NEWLINE;
+	      break;
+	    case 'r':
+	      array[l++] = RETURN;
+	      break;
+	    case 't':
+	      array[l++] = TAB;
+	      break;
+	    case 'v':
+	      array[l++] = 0x0B;
+	      break;
+	    case '\\':
+	      array[l++] = '\\';
+	      break;
+	    case '0': case '1': case '2': case '3':
+	    case '4': case '5': case '6': case '7':
+	      i++;
+	      for (temp = 2, c -= '0'; ISOCTAL (seq[i]) && temp--; i++)
+	        c = (c * 8) + OCTVALUE (seq[i]);
+	      i--;	/* auto-increment in for loop */
+	      array[l++] = c % (largest_char + 1);
+	      break;
+	    case 'x':
+	      i++;
+	      for (temp = 3, c = 0; isxdigit (seq[i]) && temp--; i++)
+	        c = (c * 16) + HEXVALUE (seq[i]);
+	      if (temp == 3)
+	        c = 'x';
+	      i--;	/* auto-increment in for loop */
+	      array[l++] = c % (largest_char + 1);
+	      break;
+	    default:	/* backslashes before non-special chars just add the char */
+	      array[l++] = c;
+	      break;	/* the backslash is stripped */
 	    }
+	  continue;
 	}
+
       array[l++] = c;
     }
 
@@ -539,12 +628,60 @@ rl_function_of_keyseq (keyseq, map, type)
 /* The last key bindings file read. */
 static char *last_readline_init_file = (char *)NULL;
 
-/* Flag to read system init file */
-static int read_system_init_file = 0;
-
 /* The file we're currently reading key bindings from. */
 static char *current_readline_init_file;
+static int current_readline_init_include_level;
 static int current_readline_init_lineno;
+
+/* Read FILENAME into a locally-allocated buffer and return the buffer.
+   The size of the buffer is returned in *SIZEP.  Returns NULL if any
+   errors were encountered. */
+static char *
+_rl_read_file (filename, sizep)
+     char *filename;
+     size_t *sizep;
+{
+  struct stat finfo;
+  size_t file_size;
+  char *buffer;
+  int i, file;
+
+  if ((stat (filename, &finfo) < 0) || (file = open (filename, O_RDONLY, 0666)) < 0)
+    return ((char *)NULL);
+
+  file_size = (size_t)finfo.st_size;
+
+  /* check for overflow on very large files */
+  if (file_size != finfo.st_size || file_size + 1 < file_size)
+    {
+      if (file >= 0)
+	close (file);
+#if defined (EFBIG)
+      errno = EFBIG;
+#endif
+      return ((char *)NULL);
+    }
+
+  /* Read the file into BUFFER. */
+  buffer = (char *)xmalloc (file_size + 1);
+  i = read (file, buffer, file_size);
+  close (file);
+
+#if 0
+  if (i < file_size)
+#else
+  if (i < 0)
+#endif
+    {
+      free (buffer);
+      return ((char *)NULL);
+    }
+
+  buffer[file_size] = '\0';
+  if (sizep)
+    *sizep = file_size;
+  return (buffer);
+}
 
 /* Re-read the current keybindings file. */
 int
@@ -561,86 +698,59 @@ rl_re_read_init_file (count, ignore)
    to the first non-null filename from this list:
      1. the filename used for the previous call
      2. the value of the shell variable `INPUTRC'
-     3. /etc/inputrc and ~/.inputrc
+     3. ~/.inputrc
    If the file existed and could be opened and read, 0 is returned,
    otherwise errno is returned. */
 int
 rl_read_init_file (filename)
      char *filename;
 {
-  int ret;
-
   /* Default the filename. */
   if (filename == 0)
     {
       filename = last_readline_init_file;
-      if (filename == 0) {
+      if (filename == 0)
         filename = get_env_value ("INPUTRC");
-	read_system_init_file = 0;
-      }
-      if (filename == 0) {
+      if (filename == 0)
 	filename = DEFAULT_INPUTRC;
-	read_system_init_file = 1;
-      }
     }
 
-  if (*filename == 0) {
+  if (*filename == 0)
     filename = DEFAULT_INPUTRC;
-    read_system_init_file = 1;
-  }
 
-  if (read_system_init_file)
-    rl_actual_read_init_file (SYSTEM_INPUTRC);
-
-  if (ret=rl_actual_read_init_file (filename))
-    return ret;
-
-  if (filename != last_readline_init_file)
-    {
-      if (last_readline_init_file)
-	free (last_readline_init_file);
-      
-      last_readline_init_file = savestring (filename);
-    }
-
-  return 0;
+  return (_rl_read_init_file (filename, 0));
 }
 
-/* Read the filenames in from fd file */
-int
-rl_actual_read_init_file (filename)
+static int
+_rl_read_init_file (filename, include_level)
      char *filename;
+     int include_level;
 {
   register int i;
   char *buffer, *openname, *line, *end;
-  struct stat finfo;
-  int file;
+  size_t file_size;
 
   current_readline_init_file = filename;
+  current_readline_init_include_level = include_level;
+
   openname = tilde_expand (filename);
+  buffer = _rl_read_file (openname, &file_size);
+  free (openname);
 
-  if ((stat (openname, &finfo) < 0) ||
-      (file = open (openname, O_RDONLY, 0666)) < 0)
-    {
-      free (openname);
-      return (errno);
-    }
-  else
-    free (openname);
-
-  /* Read the file into BUFFER. */
-  buffer = (char *)xmalloc ((int)finfo.st_size + 1);
-  i = read (file, buffer, finfo.st_size);
-  close (file);
-
-  if (i != finfo.st_size)
+  if (buffer == 0)
     return (errno);
+  
+  if (include_level == 0 && filename != last_readline_init_file)
+    {
+      FREE (last_readline_init_file);
+      last_readline_init_file = savestring (filename);
+    }
 
   /* Loop over the lines in the file.  Lines that start with `#' are
      comments; all other lines are commands for readline initialization. */
   current_readline_init_lineno = 1;
   line = buffer;
-  end = buffer + finfo.st_size;
+  end = buffer + file_size;
   while (line < end)
     {
       /* Find the end of this line. */
@@ -664,6 +774,7 @@ rl_actual_read_init_file (filename)
       line += i + 1;
       current_readline_init_lineno++;
     }
+
   free (buffer);
   return (0);
 }
@@ -722,7 +833,7 @@ parser_if (args)
   if (args[i])
     args[i++] = '\0';
 
-  /* Handle "if term=foo" and "if mode=emacs" constructs.  If this
+  /* Handle "$if term=foo" and "$if mode=emacs" constructs.  If this
      isn't term=foo, or mode=emacs, then check to see if the first
      word in ARGS is the same as the value stored in rl_readline_name. */
   if (rl_terminal_name && _rl_strnicmp (args, "term=", 5) == 0)
@@ -774,9 +885,9 @@ parser_else (args)
 {
   register int i;
 
-  if (!if_stack_depth)
+  if (if_stack_depth == 0)
     {
-      /* Error message? */
+      _rl_init_file_error ("$else found without matching $if");
       return 0;
     }
 
@@ -800,12 +911,36 @@ parser_endif (args)
   if (if_stack_depth)
     _rl_parsing_conditionalized_out = if_stack[--if_stack_depth];
   else
-    {
-      /* *** What, no error message? *** */
-    }
+    _rl_init_file_error ("$endif without matching $if");
   return 0;
 }
 
+static int
+parser_include (args)
+     char *args;
+{
+  char *old_init_file, *e;
+  int old_line_number, old_include_level, r;
+
+  if (_rl_parsing_conditionalized_out)
+    return (0);
+
+  old_init_file = current_readline_init_file;
+  old_line_number = current_readline_init_lineno;
+  old_include_level = current_readline_init_include_level;
+
+  e = strchr (args, '\n');
+  if (e)
+    *e = '\0';
+  r = _rl_read_init_file (args, old_include_level + 1);
+
+  current_readline_init_file = old_init_file;
+  current_readline_init_lineno = old_line_number;
+  current_readline_init_include_level = old_include_level;
+
+  return r;
+}
+  
 /* Associate textual names with actual functions. */
 static struct {
   char *name;
@@ -814,6 +949,7 @@ static struct {
   { "if", parser_if },
   { "endif", parser_endif },
   { "else", parser_else },
+  { "include", parser_include },
   { (char *)0x0, (Function *)0x0 }
 };
 
@@ -850,7 +986,8 @@ handle_parser_directive (statement)
 	return (0);
       }
 
-  /* *** Should an error message be output? */
+  /* display an error message about the unknown parser directive */
+  _rl_init_file_error ("unknown parser directive");
   return (1);
 }
 
@@ -965,10 +1102,9 @@ rl_parse_and_bind (string)
      the quoted string delimiter, like the shell. */
   if (*funname == '\'' || *funname == '"')
     {
-      int delimiter = string[i++];
-      int passc = 0;
+      int delimiter = string[i++], passc;
 
-      for (; c = string[i]; i++)
+      for (passc = 0; c = string[i]; i++)
 	{
 	  if (passc)
 	    {
@@ -1006,11 +1142,11 @@ rl_parse_and_bind (string)
      rl_set_key ().  Otherwise, let the older code deal with it. */
   if (*string == '"')
     {
-      char *seq = xmalloc (1 + strlen (string));
-      register int j, k = 0;
-      int passc = 0;
+      char *seq;
+      register int j, k, passc;
 
-      for (j = 1; string[j]; j++)
+      seq = xmalloc (1 + strlen (string));
+      for (j = 1, k = passc = 0; string[j]; j++)
 	{
 	  /* Allow backslash to quote characters, but leave them in place.
 	     This allows a string to end with a backslash quoting another
@@ -1103,6 +1239,7 @@ static struct {
 #if defined (PAREN_MATCHING)
   { "blink-matching-paren",	&rl_blink_matching_paren },
 #endif
+  { "completion-ignore-case",	&_rl_completion_case_fold },
   { "convert-meta",		&_rl_convert_meta_chars_to_ascii },
   { "disable-completion",	&rl_inhibit_completion },
   { "enable-keypad",		&_rl_enable_keypad },
@@ -1113,6 +1250,7 @@ static struct {
   { "mark-modified-lines",	&_rl_mark_modified_lines },
   { "meta-flag",		&_rl_meta_flag },
   { "output-meta",		&_rl_output_meta_chars },
+  { "print-completions-horizontally", &_rl_print_completions_horizontally },
   { "show-all-if-ambiguous",	&_rl_complete_show_all },
 #if defined (VISIBLE_STATS)
   { "visible-stats",		&rl_visible_stats },
@@ -1210,7 +1348,35 @@ rl_variable_bind (name, value)
       else
         _rl_bell_preference = AUDIBLE_BELL;
     }
+  else if (_rl_stricmp (name, "isearch-terminators") == 0)
+    {
+      /* Isolate the value and translate it into a character string. */
+      int beg, end;
+      char *v;
 
+      v = savestring (value);
+      FREE (_rl_isearch_terminators);
+      if (v[0] == '"' || v[0] == '\'')
+	{
+	  int delim = v[0];
+	  for (beg = end = 1; v[end] && v[end] != delim; end++)
+	    ;
+	}
+      else
+	{
+	  for (beg = end = 0; whitespace (v[end]) == 0; end++)
+	    ;
+	}
+
+      v[end] = '\0';
+      /* The value starts at v + beg.  Translate it into a character string. */
+      _rl_isearch_terminators = (unsigned char *)xmalloc (2 * strlen (v) + 1);
+      rl_translate_keyseq (v + beg, _rl_isearch_terminators, &end);
+      _rl_isearch_terminators[end] = '\0';
+      free (v);
+    }
+      
+  /* For the time being, unknown variable names are simply ignored. */
   return 0;
 }
 
@@ -1406,6 +1572,18 @@ _rl_get_keyname (key)
       keyname[i++] = 'C';
       keyname[i++] = '-';
       c = _rl_to_lower (UNCTRL (c));
+    }
+
+  /* XXX experimental code.  Turn the characters that are not ASCII or
+     ISO Latin 1 (128 - 159) into octal escape sequences (\200 - \237).
+     This changes C. */
+  if (c >= 128 && c <= 159)
+    {
+      keyname[i++] = '\\';
+      keyname[i++] = '2';
+      c -= 128;
+      keyname[i++] = (c / 8) + '0';
+      c = (c % 8) + '0';
     }
 
   /* Now, if the character needs to be quoted with a backslash, do that. */
@@ -1717,10 +1895,13 @@ rl_variable_dumper (print_readably)
   /* bell-style */
   switch (_rl_bell_preference)
     {
-    case NO_BELL: kname = "none"; break;
-    case VISIBLE_BELL: kname = "visible"; break;
+    case NO_BELL:
+      kname = "none"; break;
+    case VISIBLE_BELL:
+      kname = "visible"; break;
     case AUDIBLE_BELL:
-    default: kname = "audible"; break;
+    default:
+      kname = "audible"; break;
     }
   if (print_readably)
     fprintf (rl_outstream, "set bell-style %s\n", kname);
@@ -1753,6 +1934,21 @@ rl_variable_dumper (print_readably)
     fprintf (rl_outstream, "set keymap %s\n", kname ? kname : "none");
   else
     fprintf (rl_outstream, "keymap is set to `%s'\n", kname ? kname : "none");
+
+  /* isearch-terminators */
+  if (_rl_isearch_terminators)
+    {
+      char *disp;
+
+      disp = _rl_untranslate_macro_value (_rl_isearch_terminators);
+
+      if (print_readably)
+	fprintf (rl_outstream, "set isearch-terminators \"%s\"\n", disp);
+      else
+	fprintf (rl_outstream, "isearch-terminators is set to \"%s\"\n", disp);
+
+      free (disp);
+    }
 }
 
 /* Print all of the current variables and their values to

@@ -163,10 +163,5 @@ just_echo:
   if (display_return)
     putchar ('\n');
   fflush (stdout);
-  if (ferror(stdout))
-    {
-      clearerr(stdout);
-      return (EXECUTION_FAILURE);
-    }
   return (EXECUTION_SUCCESS);
 }

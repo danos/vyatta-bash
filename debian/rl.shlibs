@@ -1,2 +1,2 @@
-libreadline	2	libreadlineg2 (>= 2.1-12)
-libhistory	2	libreadlineg2 (>= 2.1-12)
+libreadline    2       libreadlineg2 (>= 2.1-12)
+libhistory     2       libreadlineg2 (>= 2.1-12)

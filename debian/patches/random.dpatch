@@ -1,0 +1,73 @@
+#! /bin/sh -e
+
+if [ $# -eq 3 -a "$2" = '-d' ]; then
+    pdir="-d $3"
+elif [ $# -ne 1 ]; then
+    echo >&2 "`basename $0`: script expects -patch|-unpatch as argument"
+    exit 1
+fi
+case "$1" in
+    -patch) patch $pdir -f --no-backup-if-mismatch -p1 < $0;;
+    -unpatch) patch $pdir -f --no-backup-if-mismatch -R -p1 < $0;;
+    *)
+	echo >&2 "`basename $0`: script expects -patch|-unpatch as argument"
+	exit 1
+esac
+exit 0
+
+# DP: use the system random functions
+
+--- bash-2.02.1.orig/variables.c
++++ bash-2.02.1/variables.c
+@@ -906,6 +906,7 @@
+   return (var);
+ }
+ 
++#if 0
+ /* The random number seed.  You can change this by setting RANDOM. */
+ static unsigned long rseed = 1;
+ static unsigned long last_random_value;
+@@ -931,6 +932,22 @@
+   last_random_value = 0;
+ }
+ 
++#else
++
++static int
++brand ()
++{
++  return random();
++}
++
++static void
++sbrand (int seed)
++{
++  srandom(seed);
++}
++
++#endif
++
+ static SHELL_VAR *
+ assign_random (self, value)
+      SHELL_VAR *self;
+@@ -947,6 +964,7 @@
+   int rv;
+   char *p;
+ 
++#if 0
+   /* Reset for command and process substitution. */
+   if (subshell_environment)
+     sbrand (rseed + (int)(getpid() + NOW));
+@@ -956,6 +974,12 @@
+   while (rv == (int)last_random_value);
+ 
+   last_random_value = rv;
++#else
++  if (subshell_environment)
++    sbrand ((int)(getpid() + NOW));
++  rv = brand();
++#endif
++  
+   p = itos ((int)rv);
+ 
+   FREE (var->value);

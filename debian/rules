@@ -1,208 +1,202 @@
-#!/usr/bin/make -f
+#! /usr/bin/make -f
+# -*- makefile -*-
 
-package = bash
+# architecture dependent variables
+ARCH			:= $(shell dpkg --print-gnu-build-architecture)
+DEB_HOST_ARCH		:= $(shell dpkg-architecture -qDEB_HOST_ARCH)
+DEB_HOST_GNU_CPU	:= $(shell dpkg-architecture -qDEB_HOST_GNU_CPU)
+DEB_HOST_GNU_SYSTEM	:= $(shell dpkg-architecture -qDEB_HOST_GNU_SYSTEM)
+DEB_HOST_GNU_TYPE	:= $(shell dpkg-architecture -qDEB_HOST_GNU_TYPE)
 
-soversion = 2
-libversion = $(soversion).1
-rlversion = $(libversion)-12
+CCLIBC1	= $(ARCH)-linuxlibc1-gcc
+STRIP	= strip
+SHELL	= bash
+IX	= install -o 0 -g 0
+ID	= install -o 0 -g 0 -m 644
 
-ARCH = $(shell dpkg --print-gnu-build-architecture)
-CCLIBC1  = $(ARCH)-linuxlibc1-gcc
-STRIP = strip
-SHELL = bash
+# build a statically linked bash?
+with_static = yes
 
-BINARY-ARCH-TARGETS = binary-bash binary-rl binary-rld binary-rlg binary-b
-ifneq ($(ARCH),alpha)
-ifneq ($(ARCH),powerpc)
-BUILDLIBC5=1
-BINARY-ARCH-TARGETS += binary-rl-libc5 binary-rld-libc5
+# built with installed libreadline4 and do not build readline packages?
+#with_installed_rl = yes
+with_installed_rl = no
+
+#ifneq ($(with_installed_rl),yes)
+#  BINARY_ARCH_TARGETS	+= binary-rl binary-rld binary-rlg
+#  BUILD_TARGETS		+= build-rl-stamp
+#endif
+
+#ifeq ($(filter $(ARCH),i486 m68k),$(ARCH))
+#  BINARY_ARCH_TARGETS += binary-rl-libc5 binary-rld-libc5
+#  BINARY_BUILD_TARGETS = build-libc5
+#endif
+
+debflags =
+#ifeq ($(with_installed_rl),yes)
+#  debflags = \
+#	READLINE_LDFLAGS= \
+#	HISTORY_LDFLAGS=
+#endif
+#ifeq ($(with_static),yes)
+#  debflags = \
+#	READLINE_LIBRARY=$(builddir)/lib/readline/static/libreadline.a \
+#	READLINE_LDFLAGS="-L$(builddir)/lib/readline/static" \
+#	READLINE_LIB="-Wl,-Bstatic -lreadline -Wl,-Bdynamic" \
+#	HISTORY_LIBRARY=$(builddir)/lib/readline/static/libhistory.a \
+#	HISTORY_LDFLAGS="-L$(builddir)/lib/readline/static" \
+#	HISTORY_LIB="-Wl,-Bstatic -lhistory -Wl,-Bdynamic"
+#endif
+ifeq ($(with_static),yes)
+  debflags = \
+	READLINE_LIBRARY=$(builddir)/lib/readline/static/libreadline.a \
+	READLINE_LDFLAGS="-L$(builddir)/lib/readline/static" \
+	READLINE_LIB="-Wl,-Bstatic -lreadline -Wl,-Bdynamic" \
+	HISTORY_LIBRARY=$(builddir)/lib/readline/static/libhistory.a \
+	HISTORY_LDFLAGS="-L$(builddir)/lib/readline/static" \
+	HISTORY_LIB="-Wl,-Bstatic -lhistory -Wl,-Bdynamic"
 endif
-endif
 
+PWD	:= $(shell pwd)
+p	= bash
+p_bins	= bash-builtins
+p_doc	= bash-doc
 
-build:
-	$(checkdir) 
-	./configure --host="$(ARCH)-linux" --with-curses
-	$(MAKE) SOVERSION=$(soversion) "CFLAGS=-g"
-	cd debian; $(CC) -O2 -s -o rl-libc6.postinst rl.postinst.c
-ifdef BUILDLIBC5
-	CONFIG_SITE="" CC=$(CCLIBC1) ./configure --cache-file=configc1.cache --host="$(ARCH)-linux"  --with-curses
-	test -d lib/readline/libc5 || mkdir lib/readline/libc5
-	$(MAKE) -C lib/readline/libc5 SOVERSION=$(soversion) CFLAGS="-g -O2" -f ../Makefile srcdir=..
-	cd debian; $(CCLIBC1) -O2 -s -o rl-libc5.postinst rl.postinst.c
+d	= debian/tmp
+#d_bash	= debian/tmp
+d_bins	= debian/tmp-b
+d_doc	= debian/tmp-doc
+
+srcdir		= $(PWD)
+builddir	= $(PWD)/build
+
+default: build
+
+configure: configure-stamp
+configure-stamp: patch-stamp
+	$(checkdir)
+	rm -rf $(builddir)
+	mkdir $(builddir)
+ifeq ($(with_installed_rl),yes)
+	cd $(builddir) && $(srcdir)/configure --host=$(DEB_HOST_GNU_TYPE) \
+		--with-curses --with-installed-readline --prefix=/usr
+else
+	cd $(builddir) && $(srcdir)/configure --host=$(DEB_HOST_GNU_TYPE) \
+		--with-curses --prefix=/usr
 endif
-	touch build
+	touch configure-stamp
+
+build: build-stamp
+build-stamp: configure-stamp
+	$(checkdir)
+	$(MAKE) -C $(builddir) SOVERSION=$(soversion) \
+		CFLAGS='-g -O2' \
+		deb_builddir=$(builddir)/ $(debflags)
+	cd debian; $(CC) -O2 -s -o bash.preinst bash.preinst.c
+	touch build-stamp
 
 clean:
 	$(checkdir)
-	rm -f build
-	-$(MAKE) -i distclean
-	rm -f configc1.cache
-	rm -rf debian/{tmp*,files*,substvars,rl-libc[56].postinst}
-	find . -name '*~' -print0 | xargs -0 rm -f
+	rm -f configure*-stamp build*-stamp
+	rm -rf $(builddir) $(builddir_libc5)
+	rm -rf $(d) $(d_doc) $(d_bins) \
+		$(d_rl) $(d_rld) $(d_rlg) $(d_rl5) $(d_rl5d)
+	rm -f debian/{bash.preinst,rl.postinst}
+	$(MAKE) -f debian/rules unpatch
+	rm -rf debian/{files*,substvars,rl-libc[56].postinst}
+	find . \( -name '*~' -o -name '*.rej' -o -name '*.orig' \) \
+		-print0 | xargs -0 rm -f
 
-binary-indep:	checkroot build
-
-binary-arch:	$(BINARY-ARCH-TARGETS)
-
-binary-bash:	checkroot build
+install: checkroot install-stamp
+install-stamp: build-stamp
 	$(checkdir)
-	-rm -rf debian/tmp
-	install -d debian/tmp/{DEBIAN,bin,etc/skel,usr/{bin,doc/bash,info,man/man1}}
-	install -s bash debian/tmp/bin
-	ln -s bash debian/tmp/bin/rbash
-	ln -s bash debian/tmp/bin/sh
-	ln -s bash.1.gz debian/tmp/usr/man/man1/sh.1.gz
-	install bashbug debian/tmp/usr/bin
-	install -m 644 debian/etc.profile debian/tmp/etc/profile
-	install -m 644 debian/skel.bashrc debian/tmp/etc/skel/.bashrc
-	install -m 644 debian/skel.bash_profile debian/tmp/etc/skel/.bash_profile
-	install -m 644 doc/bashref.info debian/tmp/usr/info/bash.info
-	install -m 644 NEWS COMPAT CHANGES doc/{FAQ,INTRO} CWRU/POSIX.NOTES debian/tmp/usr/doc/bash
-	install -m 644 doc/{bash.1,builtins.1,bashbug.1,rbash.1} debian/tmp/usr/man/man1
-	find examples -type d | xargs -i install -d 'debian/tmp/usr/doc/bash/{}'
-	find examples -type f | xargs -i install -m 644 '{}' 'debian/tmp/usr/doc/bash/{}'
-	rm -rf debian/tmp/usr/doc/bash/examples/loadables
-	install -m 644 debian/changelog debian/tmp/usr/doc/bash/changelog.Debian
-	install -m 644 CWRU/changelog debian/tmp/usr/doc/bash/changelog
-	find debian/tmp/usr/{info,doc,man} -type f | xargs gzip -9f
-	install -m 644 debian/bash.copyright debian/tmp/usr/doc/bash/copyright
-	install debian/bash.preinst debian/tmp/DEBIAN/preinst
-	install debian/bash.postinst debian/tmp/DEBIAN/postinst
-	install debian/bash.prerm debian/tmp/DEBIAN/prerm
-	install -m 644 debian/bash.conffiles debian/tmp/DEBIAN/conffiles
-# this will prevent libreadline from showing up in shlibs
-	LD_PRELOAD=lib/readline/libreadline.so dpkg-shlibdeps bash
-	dpkg-gencontrol -isp -pbash
-	dpkg --build debian/tmp ..
+	rm -rf $(d)
+	rm -rf $(d) $(d_doc) $(d_bins) \
+		$(d_rl) $(d_rld) $(d_rlg) $(d_rl5) $(d_rl5d)
+	mkdir -p $(d)/{bin,usr}
+	$(MAKE) -C $(builddir) install \
+		prefix=$(PWD)/$(d)/usr \
+		mandir=$(PWD)/$(d)/usr/share/man \
+		infodir=$(PWD)/$(d)/usr/share/info \
+		$(debflags)
+	mv $(d)/usr/bin/bash $(d)/bin/.
+	mkdir -p $(d_doc)/usr/share/info
+	mv $(d)/usr/share/info/bash.info $(d_doc)/usr/share/info/.
+	touch install-stamp
 
-binary-rl:	checkroot build
-	$(checkdir)
-	-rm -rf debian/tmp-rl
-	install -d debian/tmp-rl/{DEBIAN,etc,lib,usr/{lib,doc/libreadlineg2}}
-	install -m 644 lib/readline/libreadline.so debian/tmp-rl/lib/libreadline.so.$(libversion)
-	ln -s libreadline.so.$(libversion) debian/tmp-rl/lib/libreadline.so.$(soversion)
-	install -m 644 lib/readline/libhistory.so debian/tmp-rl/usr/lib/libhistory.so.$(libversion)
-	ln -s libhistory.so.$(libversion) debian/tmp-rl/usr/lib/libhistory.so.$(soversion)
-	$(STRIP) --strip-unneeded debian/tmp-rl/lib/libreadline.so.$(libversion) \
-	  debian/tmp-rl/usr/lib/libhistory.so.$(libversion)
-	install -m 644 debian/changelog debian/tmp-rl/usr/doc/libreadlineg2/changelog.Debian
-	gzip -9f debian/tmp-rl/usr/doc/libreadlineg2/changelog.Debian 
-	install -m 644 debian/rl.copyright debian/tmp-rl/usr/doc/libreadlineg2/copyright
-	install -m 644 debian/etc.inputrc debian/tmp-rl/etc/inputrc
-	install -m 644 debian/rl.shlibs debian/tmp-rl/DEBIAN/shlibs
-	install debian/rl-libc6.postinst debian/tmp-rl/DEBIAN/postinst
-	install -m 644 debian/rl.conffiles debian/tmp-rl/DEBIAN/conffiles
-	dpkg-shlibdeps lib/readline/lib{readline,history}.so
-	dpkg-gencontrol -isp -plibreadlineg2 -Pdebian/tmp-rl -v$(rlversion)
-	dpkg --build debian/tmp-rl ..
+binary-indep: checkroot build install
+	$(IX) -d $(d_doc)/DEBIAN \
+		$(d_doc)/usr/share/doc/{$(p_doc),$(p)/examples/loadables}
+	$(ID) CWRU/changelog $(d_doc)/usr/share/doc/$(p)
+	find examples -type d \
+		| xargs -i $(IX) -d '$(d_doc)/usr/share/doc/$(p)/{}'
+	find examples -type f \
+		| xargs -i $(ID) '{}' '$(d_doc)/usr/share/doc/$(p)/{}'
+	rm -rf $(d_doc)/usr/share/doc/$(p)/examples/loadables
+	ln -sf ../$(p)/examples $(d_doc)/usr/share/doc/$(p_doc)/examples
+	$(ID) debian/changelog $(d_doc)/usr/share/doc/$(p_doc)/changelog.Debian
+	find $(d_doc)/usr/share/{info,doc} ! -name '*.gz' -type f \
+		| xargs gzip -9f
+	ln -sf ../$(p)/changelog.gz \
+		$(d_doc)/usr/share/doc/$(p_doc)/changelog.gz
+	$(ID) debian/bash.copyright $(d_doc)/usr/share/doc/$(p_doc)/copyright
+	$(IX) debian/bash-doc.postinst $(d_doc)/DEBIAN/postinst
+	$(IX) debian/bash-doc.prerm $(d_doc)/DEBIAN/prerm
+	dpkg-gencontrol -isp -p$(p_doc) -P$(d_doc)
+	dpkg --build $(d_doc) ..
 
-IP = ../../../../lib/readline/doc
-binary-rld:	checkroot build
-	$(checkdir)
-	-rm -rf debian/tmp-rld
-	install -d debian/tmp-rld/{DEBIAN,usr/{man/man3,info,lib,include/readline,doc/libreadlineg2/examples}}
-	install -m 644 lib/readline/static/lib{readline,history}.a debian/tmp-rld/usr/lib
-	$(STRIP) --strip-debug debian/tmp-rld/usr/lib/*
-	ln -s /lib/libreadline.so.$(libversion) debian/tmp-rld/usr/lib/libreadline.so
-	ln -s libhistory.so.$(libversion) debian/tmp-rld/usr/lib/libhistory.so
-	install -m 644 lib/readline/{readline.h,keymaps.h,chardefs.h,history.h,tilde.h} \
-	  debian/tmp-rld/usr/include/readline/.
-	cd debian/tmp-rld/usr/info && makeinfo -I$(IP) $(IP)/rlman.texinfo \
-	  && makeinfo -I$(IP) $(IP)/hist.texinfo
-	install -m 644 doc/readline.3 debian/tmp-rld/usr/man/man3/readline.3readline
-	install -m 644 lib/readline/examples/Inputrc debian/tmp-rld/usr/doc/libreadlineg2/.
-	install -m 644 lib/readline/examples/{Makefile,*.c} \
-	  debian/tmp-rld/usr/doc/libreadlineg2/examples/.
-	ln -s libreadlineg2 debian/tmp-rld/usr/doc/libreadlineg2-dev
-	find debian/tmp-rld/usr/{info,doc,man} -type f | xargs gzip -9f
-	install debian/rld.postinst debian/tmp-rld/DEBIAN/postinst
-	install debian/rld.prerm debian/tmp-rld/DEBIAN/prerm
-	echo "rlversion:Depends=libreadlineg2 (= $(rlversion))" > debian/substvars
-ifneq ($(ARCH),alpha)
-	echo "libcso:Depends=libc6-dev" >> debian/substvars
-else
-	echo "libcso:Depends=libc6.1-dev" >> debian/substvars
-endif
-	dpkg-shlibdeps lib/readline/lib{readline,history}.so
-	dpkg-gencontrol -isp -plibreadlineg2-dev -Pdebian/tmp-rld -v$(rlversion)
-	dpkg --build debian/tmp-rld ..
+binary-arch: binary-bash binary-b
 
-binary-rlg:	checkroot build
+binary-bash: checkroot build install
 	$(checkdir)
-	-rm -rf debian/tmp-rlg
-	install -d debian/tmp-rlg/{DEBIAN,usr/{lib,doc}}
-	install -m 644 lib/readline/static/libreadline.a debian/tmp-rlg/usr/lib/libreadline_g.a
-	install -m 644 lib/readline/static/libhistory.a debian/tmp-rlg/usr/lib/libhistory_g.a
-	ln -s libreadlineg2 debian/tmp-rlg/usr/doc/libreadlineg2-dbg
-	echo "rlversion:Depends=libreadlineg2 (= $(rlversion))" > debian/substvars
-	dpkg-gencontrol -isp -plibreadlineg2-dbg -Pdebian/tmp-rlg -v$(rlversion)
-	dpkg --build debian/tmp-rlg ..
+#	rm -rf $(d)
+	$(IX) -d $(d)/DEBIAN $(d)/{etc/skel,usr/share/doc/$(p)}
+	ln -sf bash $(d)/bin/rbash
+	$(STRIP) --strip-unneeded $(d)/bin/bash
+	ln -sf bash $(d)/bin/sh
+	ln -sf bash.1.gz $(d)/usr/share/man/man1/sh.1.gz
+#	$(ID) debian/etc.profile $(d)/etc/profile
+	$(ID) debian/etc.bash.bashrc $(d)/etc/bash.bashrc
+	$(ID) debian/skel.bashrc $(d)/etc/skel/.bashrc
+	$(ID) debian/skel.bash_profile $(d)/etc/skel/.bash_profile
+	$(ID) debian/skel.bash_logout $(d)/etc/skel/.bash_logout
+	$(ID) NEWS COMPAT CHANGES doc/{FAQ,INTRO} CWRU/POSIX.NOTES \
+		$(d)/usr/share/doc/$(p)
+	$(ID) debian/README.Debian $(d)/usr/share/doc/bash/.
+	$(ID) doc/{builtins.1,rbash.1} $(d)/usr/share/man/man1
+	$(ID) debian/changelog $(d)/usr/share/doc/$(p)/changelog.Debian
+	find $(d)/usr/share/{doc,man} ! -name '*.gz' -type f | xargs gzip -9f
+	$(ID) debian/bash.copyright $(d)/usr/share/doc/$(p)/copyright
+	$(IX) debian/bash.preinst $(d)/DEBIAN/preinst
+	$(IX) debian/bash.postinst $(d)/DEBIAN/postinst
+	$(IX) debian/bash.prerm $(d)/DEBIAN/prerm
+	$(ID) debian/bash.conffiles $(d)/DEBIAN/conffiles
+	dpkg-shlibdeps -dPre-Depends $(d)/bin/bash debian/bash.preinst
+	dpkg-gencontrol -isp -p$(p)
+	dpkg --build $(d) ..
 
 # Even though it contains only headers and example files,
 # bash-builtins is NOT arch-independent because the config.h* files
 # differ on different archs.
-binary-b:	checkroot build
+binary-b: checkroot build install
 	$(checkdir)
-	-rm -rf debian/tmp-b
-	install -d debian/tmp-b/{DEBIAN,usr/{include/bash/{builtins,lib/{glob,tilde}},doc/bash/examples/loadables}}
-	install -m 644 *.h config.h.top config.h.bot debian/tmp-b/usr/include/bash/
-	install -m 644 builtins/*.h debian/tmp-b/usr/include/bash/builtins/
-	install -m 644 lib/glob/*.h debian/tmp-b/usr/include/bash/lib/glob/
-	install -m 644 lib/tilde/*.h debian/tmp-b/usr/include/bash/lib/tilde/
-	install -m 644 examples/loadables/{Makefile,README,*.c} \
-	   debian/tmp-b/usr/doc/bash/examples/loadables
-	ln -s bash debian/tmp-b/usr/doc/bash-builtins
-	find debian/tmp-b/usr/doc -type f | xargs gzip -9f
-	dpkg-gencontrol -isp -pbash-builtins -Pdebian/tmp-b
-	dpkg --build debian/tmp-b ..
+	rm -rf $(d_bins)
+	$(IX) -d $(d_bins)/{DEBIAN,usr/share/doc/$(p)/examples/loadables} \
+		$(d_bins)/{usr/{include/bash/{builtins,lib/{glob,tilde}}}}
+	$(ID) *.h config-top.h config-bot.h $(d_bins)/usr/include/bash/
+	$(ID) builtins/*.h $(d_bins)/usr/include/bash/builtins/
+	$(ID) lib/glob/*.h $(d_bins)/usr/include/bash/lib/glob/
+	$(ID) lib/tilde/*.h $(d_bins)/usr/include/bash/lib/tilde/
+	$(ID) examples/loadables/{README,*.c} \
+		$(d_bins)/usr/share/doc/$(p)/examples/loadables
+	$(ID) $(builddir)/examples/loadables/Makefile \
+		$(d_bins)/usr/share/doc/$(p)/examples/loadables
+	ln -sf bash $(d_bins)/usr/share/doc/$(p_bins)
+	find $(d_bins)/usr/share/doc ! -name '*.gz' -type f | xargs gzip -9f
+	$(IX) debian/bins.postinst $(d_bins)/DEBIAN/postinst
+	$(IX) debian/bins.prerm $(d_bins)/DEBIAN/prerm
+	dpkg-gencontrol -isp -p$(p_bins) -P$(d_bins)
+	dpkg --build $(d_bins) ..
 
-binary-rl-libc5:	checkroot build
-	$(checkdir)
-	-rm -rf debian/tmp-rl-libc5
-	install -d debian/tmp-rl-libc5/{DEBIAN,lib/libc5-compat,usr/{lib/libc5-compat/,doc/libreadline2}}
-	install -m 644 lib/readline/libc5/libreadline.so \
-	  debian/tmp-rl-libc5/lib/libc5-compat/libreadline.so.$(libversion)
-	ln -s libreadline.so.$(libversion) \
-	  debian/tmp-rl-libc5/lib/libc5-compat/libreadline.so.$(soversion)
-# this link is for old package that were using soname "readline2.0"
-	ln -s libreadline.so.$(libversion) \
-	  debian/tmp-rl-libc5/lib/libc5-compat/libreadline.so.2.0
-	install -m 644 lib/readline/libc5/libhistory.so \
-	  debian/tmp-rl-libc5/usr/lib/libc5-compat/libhistory.so.$(libversion)
-	ln -s libhistory.so.$(libversion) \
-	  debian/tmp-rl-libc5/usr/lib/libc5-compat/libhistory.so.$(soversion)
-	$(STRIP) --strip-unneeded debian/tmp-rl-libc5/lib/libc5-compat/libreadline.so.$(libversion) \
-	  debian/tmp-rl-libc5/usr/lib/libc5-compat/libhistory.so.$(libversion)
-	install -m 644 debian/changelog debian/tmp-rl-libc5/usr/doc/libreadline2/changelog.Debian
-	gzip -9f debian/tmp-rl-libc5/usr/doc/libreadline2/changelog.Debian 
-	install -m 644 debian/rl.copyright debian/tmp-rl-libc5/usr/doc/libreadline2/copyright
-	install -m 644 debian/rl-libc5.shlibs debian/tmp-rl-libc5/DEBIAN/shlibs
-	install debian/rl-libc5.postinst debian/tmp-rl-libc5/DEBIAN/postinst
-	install debian/rl-libc5.preinst debian/tmp-rl-libc5/DEBIAN/preinst
-	LD_PRELOAD="" dpkg-shlibdeps lib/readline/libc5/lib{readline,history}.so
-	dpkg-gencontrol -isp -plibreadline2 -Pdebian/tmp-rl-libc5 -v$(rlversion)
-	dpkg --build debian/tmp-rl-libc5 ..
-
-binary-rld-libc5:	checkroot build
-	$(checkdir)
-	-rm -rf debian/tmp-rld-libc5
-	umask 000
-	install -d debian/tmp-rld-libc5/{DEBIAN,usr/{doc,$(ARCH)-linuxlibc1/{lib,include/readline}}}
-	install -m 644 lib/readline/libc5/static/lib{readline,history}.a \
-	  debian/tmp-rld-libc5/usr/$(ARCH)-linuxlibc1/lib
-	$(STRIP) --strip-debug debian/tmp-rld-libc5/usr/$(ARCH)-linuxlibc1/lib/*
-	ln -s /lib/libc5-compat/libreadline.so.$(libversion) \
-	  debian/tmp-rld-libc5/usr/$(ARCH)-linuxlibc1/lib/libreadline.so
-	ln -s ../../lib/libc5-compat/libhistory.so.$(libversion) debian/tmp-rld-libc5/usr/$(ARCH)-linuxlibc1/lib/libhistory.so
-	install -m 644 lib/readline/{readline.h,keymaps.h,chardefs.h,history.h,tilde.h} \
-	  debian/tmp-rld-libc5/usr/$(ARCH)-linuxlibc1/include/readline/.
-	ln -s libreadline2 debian/tmp-rld-libc5/usr/doc/libreadline2-altdev
-	echo "rlversion:Depends=libreadline2 (= $(rlversion))" > \
-	  debian/substvars
-	LD_PRELOAD="" dpkg-shlibdeps lib/readline/libc5/lib{readline,history}.so
-	dpkg-gencontrol -isp -plibreadline2-altdev -Pdebian/tmp-rld-libc5 -v$(rlversion)
-	dpkg --build debian/tmp-rld-libc5 ..
 
 define checkdir
 	test -f bashline.c -a -f debian/rules
@@ -217,6 +211,86 @@ source diff:
 checkroot:
 	$(checkdir)
 	test root = "`whoami`"
+
+
+# rules to patch the unpacked files in the source directory
+# ---------------------------------------------------------------------------
+# various rules to unpack addons and (un)apply patches.
+# 	- patch / apply-patches
+#	- unpatch / reverse-patches
+
+patchdir	= debian/patches
+
+# which patches should be applied?
+debian_patches = \
+	builtin-echo \
+	bashbug-editor \
+	conf-update \
+	deb-build \
+	deb-defpath \
+	dont-report-sigpipe \
+	examples \
+	jobs-segfault \
+	mailcheck \
+	manpages \
+	man-vx-opts \
+	privmode \
+	random \
+	system-bashrc \
+	tempnam \
+	various \
+	rl-inputrc \
+	rl-ctrl-char \
+	rl-deb-build \
+	rl-examples \
+	rl-del-backspace-policy \
+	rl-paren-matching \
+	rl-shell-unknown-bug \
+	secure-build \
+	job-control-segfault
+
+#	privmode # see comment from upstream author in patch
+# 	applied-upstream
+#	rl-todo
+#	todo
+
+patch: patch-stamp
+apply-patches: patch-stamp
+
+patch-stamp: $(foreach p,$(debian_patches),patch-stamp-$(p))
+	echo -e "\nPatches applied in this version:" > pxxx
+	for i in $(debian_patches); do \
+	  echo -e "\n$$i:" >> pxxx; \
+	  sed -n 's/^# *DP: */  /p' $(patchdir)/$$i.dpatch >> pxxx; \
+	done
+	mv -f pxxx $@
+
+reverse-patches: unpatch
+unpatch:
+	for stamp in none `ls -1t patch-stamp-* 2>/dev/null`; do \
+	  case "$$stamp" in none|patched-stamp|patched-\*) continue; esac; \
+	  patch=`echo $$stamp | sed -e 's,patch-stamp-,,'`; \
+	  echo "trying to revert patch $$patch ..."; \
+	  if [ -x $(patchdir)/$$patch.dpatch ]; then true; else \
+	    chmod +x $(patchdir)/$$patch.dpatch; fi; \
+	  if $(patchdir)/$$patch.dpatch -unpatch -d $(srcdir); then \
+	    echo "reverted $$patch patch."; \
+	    rm -f $$stamp; \
+	  else \
+	    echo "error in reverting $$patch patch."; \
+	    exit 1; \
+	  fi; \
+	done
+	rm -f patched-stamp
+
+patch-stamp-%: $(patchdir)/%.dpatch
+	if [ -x $< ]; then true; else chmod +x $<; fi
+	if [ -f $@ ]; then \
+	  echo "$* patches already applied."; exit 1; \
+	fi
+	$< -patch -d $(srcdir)
+	echo "$* patches applied." > $@
+
 
 .PHONY: binary binary-arch binary-indep clean checkroot
 

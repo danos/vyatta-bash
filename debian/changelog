@@ -1,3 +1,282 @@
+bash (2.03-6) frozen unstable; urgency=medium
+
+  * debian/bash.preinst.c: Evil kludge, deal with arbitrary name lengths
+    (fixes #54876).
+  * Apply NMU (fixes #55887).
+  * debian/rules: Install debian/bash.conffiles (fixes #57963, #58541).
+
+ -- Matthias Klose <doko@debian.org>  Sun, 20 Feb 2000 19:50:48 +0100
+
+bash (2.03-5.1) unstable; urgency=low
+
+  * debian/patches/job-control-segfault.dpatch: Patch from Eric Weigel
+    <ericw@bestnet.org>.  Closes: #55887
+
+ -- Adam Heath <doogie@debian.org>  Sat, 22 Jan 2000 15:10:50 -0600
+
+bash (2.03-5) unstable; urgency=low
+
+  * Update rl.ctrl-char patch from Dan Jacobowitz.
+    Fixes #54805, #54639, #54612.
+  * Add autoconf to Build-Depends (finally, Roman ...)
+
+ -- Matthias Klose <doko@debian.org>  Tue, 11 Jan 2000 20:50:31 +0100
+
+bash (2.03-4) unstable; urgency=low
+
+  * debian/control: Fix build dependencies (fixes #52777).
+  * debian/rules: Cleanup.
+  * debian/patches/rl-ctrl-char.dpatch: Don't assume char is signed by
+    default (fixes #53252).
+  * Build with libncurses5-dev (fixes #54165).
+  * Fix changelog symlink in bash-doc package (fixes #54240).
+  * debian/README.Debian: Add paragraph for writing prompts.
+  * debian/README.Debian: Add paragraph about hashing of moved commands
+    (and closing #36877).
+  * Install more verbose skeleton files (closes #39728).
+  * The `-l' option to test is not included by intent (fixes #13645).
+    Comment from upstream: "The `-l' option should never have been documented,
+    and it was a mistake to include it in the first place -- it screws up the
+    grammar. Old Bourne shells and test commands had it because there was no
+    other way to find the length of a variable's value.  Since bash has 
+    ${#variable}, there's no need for it.  POSIX.2 says, in the rationale, 
+    that implementation is irregular and that the shell supports it directly.
+  * Report #26720: perl -e 'print ":;" x 100000' > foo; . ./foo   dumps core.
+    Comment from upstream: This is not a bash bug; it is a process resource
+    problem.  The default resource limit for stack size is 8M on my version of
+    Linux. The call tree created by the parser for the script (100000 calls
+    to `:') is 99999 nodes deep, and requires that many recursive calls to the 
+    command execution routines.  This overflows the stack, and bash segfaults.
+    I couldn't reproduce it anywhere but Linux, because the machines I tested 
+    on all have reasonable default stack sizes.  Raising the limit to 16M is
+    sufficient to cause the script to run successfully (I didn't try anything
+    between 8M and 16M).
+  * Report #30460: redirection is different from standard: bash --posix
+    $ mkdir foo; cd foo; echo anything goes > "this file"
+    $ for f in *; do tr ay \ o < $f | cat; done
+    sh: $f: ambiguous redirect
+    This is POSIX.2 behaviour.
+  * debian/bash.preinst.c: Check if /bin/sh points to something other than
+    bash and is not diverted and point to README.Debian how to divert
+    a file (fixes #34717, #45656).
+
+ -- Matthias Klose <doko@debian.org>  Fri,  7 Jan 2000 07:19:00 +0100
+
+bash (2.03-3) unstable; urgency=low
+
+  * Moved /etc/profile to base-files package (closes #52987).
+  * debian/skel.bash_profile: Use umask 022 as in debian/etc.profile
+    (closes #53020).
+  * debian/patches/secure-build.dpatch: Build bash without using guessable
+    file names in /tmp (closes #36027).
+  * debian/patches/bashbug-editor.dpatch: Use editor command, not emacs
+    (closes #32576, #32577).
+  * Fixed in 2.03 or before: #16013, #20455, #30803 (according to upstream
+    author, bug submitter does not respond).
+  * #44015 not a bug. Bash is more liberal than POSIX specifies, but function
+    names that are not identifiers is something that may go away in the future.
+  * #40242 not a bug: Non-interactive bash shells have always unset PS1,
+    so scripts and so on can test for it.
+  * Report #21645: */text* completion doesn't work anymore. According to the
+    upstream author, this feature was removed in bash-2.01.1.  The TAB
+    completion only succeeds with globbing characters if there is a single
+    completion.  It caused too many problems otherwise.
+  * Define DONT_REPORT_SIGPIPE: We don't want to see `Broken pipe' messages
+    when a job like `cat jobs.c | exit 1' is executed. Fixes part of #7047,
+    #10259, #10433 and #10494. Comment from the upstream author: "The default
+    bash behavior with respect to the exit status of a pipeline will not
+    change.  Changing it as suggested in the discussion of #10494 would render
+    bash incompatible with every other shell out there.". Closed these reports.
+  * debian/etc.bash.bashrc: Set checkwinsize.
+
+ -- Matthias Klose <doko@debian.org>  Sun, 19 Dec 1999 15:58:43 +0100
+
+bash (2.03-2) unstable; urgency=low
+
+  * Apply privmode patch (do not drop privileges, if called as /sh.
+    Closes #52586).
+
+ -- Matthias Klose <doko@debian.org>  Mon, 13 Dec 1999 22:25:22 +0100
+
+bash (2.03-1) unstable; urgency=low
+
+  * New maintainer.
+  * New upstream version (closes: #34077, #35642, #46916). For a terse
+    description of new features and bug fixes see /usr/share/doc/bash/NEWS.gz.
+  * Fixed in upstream release (closes: #14229, #16856, #21363, #22498, #28849,
+    #29863, #37971, #38411, #40930, #49702). #37971 either here or in libc6.
+    #30803.
+  * Separate out documentation and examples to bash-doc package.
+  * Do not build shared readline libs from this source. According to the
+    upstream author: "It's not appropriate to build shared libraries from
+    the readline shipped with bash.  That is designed to be linked directly
+    into bash."
+  * Link statically with included libreadline. It's intended, because
+    potato does not have a libreadline4 yet. Wait for bash-2.04 and
+    it's version of libreadline.
+  * debian/README.Debian: Sort of FAQ suggested by Guy Maor.
+  * debian/copyright: Updated URL.
+  * debian/rules: Introduced some variables for packages and directories.
+  * debian/control: Updated package names. Add Build-Depends.
+  * Point to /usr/doc/share in man pages (rbash.1, builtins.1).
+  * Make /usr/doc compatibility links (all but libreadline.postinst, which
+    is a C file).
+  * debian/patches/conf-update.dpatch: New config files from automake
+    (closes #33745).
+  * debian/patches/bashbug-editor.dpatch: Use EDITOR variable
+    (closes #32576, #32577).
+  * debian/etc.profile: Fixed comment that /etc/profile is used for Bourne
+    shell and Bourne compatible shells (closes: #3459).
+  * debian/patches/tempnam.dpatch: Applied patch from report #35975
+    (closes: #35975).
+  * bash is not responsible for setting $USER in login shells (closes: #36103).
+  * Compile with -DSYS_BASHRC defined. /etc/bash.bashrc is empty by default
+    (closes #27055).
+  * Fixed with boot-floppies 2.1.3 (closes: #22517).
+  * debian/patches/mailcheck.dpatch: Add maildir support. Patch from
+    Miquel van Smoorenburg <miquels@cistron.nl> (closes #38794).
+  * Patches from NMU are applied (should close #43096).
+  * debian/control: Make builtins depend on source version of bash.
+  * Build for i386, not i486.
+  * Report #28811: "dpkg segfaults trying to install bash. Logging in then
+    produces segfault. Still having to run 2.00.0(1)". Not reproducable.
+  * Report #15165: "If the last command in the pipeline is killed by a signal,
+    bash does not report it even though $? contains the correct value".
+    Not reproducable.
+  * Report #21645: "If you type `rm */text*<TAB>', previous versions would
+    complete text given that they're under the same directory. 2.01.1-1
+    doesn't do that anymore.". Not documented anywhere. It seems, this was
+    a bug disguised as a feature ;-)
+  * Report #36027: "During compiling bash package, files with hardcoded names
+    are created in /tmp. In a malicious multi-user environment, this allows
+    attacks to the user's files and possibly allow creating trojan packages.
+    If the compiling user is root...".
+    Submitter cannot be reached. autoconf/automake issues? Reassign to general?
+  * Report #16700: "bash terminated when I asked it "mailq -v", while in an
+    xterm, with a sysload of approx 1"; not reproducable. Submitter offers
+    core file.
+  * Report #37637: Not reproduceable (should close #37637).
+  * Report #37275: A dpkg error? Or just another reason to completely link
+    bash statically?
+  * Report #34978, #42858: The prerm now is a binary pragram.
+    #34977 as well? #36016 (patch)?
+  * Report #43737: Non bug. Behaviour changed from 1.4 to 2.0 (closes: #43737).
+  * Report #36459: Non bug (closes #36459).
+  * Report #19211: Wanted behaviour?
+  * Report #11938: The included patch is applied upstream (closes: #11938).
+  * Report #10699, #45656: Todo: See #34717 ...
+  * Report #35127: Apply included patch. TODO: test and forward upstream.
+  * Report #41082: Obsoleted patches (closes: #35130, #41802).
+  * Reports tested and still in this version (should be forwarded ...):
+    #2301, #21901, #26619, #26720, #27090, #30460, #33900, #34833,
+    #36877
+    #38804, #41916 (update docs?),
+    #46901, #47990.
+  * Report #47849: You *must* reset OPTIND to 1 before reusing getopts.
+  * Report #45841: This is a POSIX.2/XPG5 requirement.
+  * Report #35979, #45379: set -e works on simple commands only.
+    (command) is not a simple command.
+  * Report #38244: -x and -v and all of the rest of the options are documented
+    in the `set' builtin section.  The OPTIONS section of the man page refers
+    to `set'.
+  * Report #37654: When in a pipeline, `tty' prints `not a tty'.  This is why
+    grep is looking for `not' in file `a'.  Try `w | echo $(tty)'.
+  * Report #33822: This is a locale problem.  The de_DE locale gives lower case
+    and upper case letters the same collating weight.  POSIX.2 warns that
+    range expressions are not portable across locales.
+  * Report #28789, #22291: resizing xterm bash doesn' t update window limits.
+    Use `shopt -s checkwinsize'. (closes: #28789, #22291).
+  * Report #39728: Suggestion to add something to /etc/skel files. A matter
+    of taste. Added comments where to find `fancy' startup files.
+
+  * Work needed: #33822 (huh?), #42916 and #44015 (update docs, dashs in
+    identifiers).
+
+  * Not tested: (#7047, #10259, #10433, #10494), #14287 (how to test?),
+    #14658 (how to test?), #16013, #16797, #20455 (alpha arch), #20821,
+    #22632, #26571, #29610, #35994 (powerpc arch),
+    #36652, #40242, #47179.
+
+ -- Matthias Klose <doko@debian.org>  Sat,  4 Dec 1999 17:03:47 +0100
+
+bash (2.02.1-1.8) unstable; urgency=low
+
+  * Applied Anthonies patch and recompiled as the libc5 version did
+    not compile for him (closes: #34717, #43050, #43096, #10699).
+  * Bumped the version number of libreadline and recompiled,
+    hopefully in time before the dinstall run ;)
+
+ -- Torsten Landschoff <torsten@debian.org>  Sat, 18 Sep 1999 19:26:20 +0200
+
+bash (2.02.1-1.7) unstable; urgency=low
+
+  * Non-maintainer release.
+  * Make bash not Pre-Depend on itself. That is, make bash's preinst
+    something other than a /bin/sh script; in this case a reasonably
+    simple binary.
+  * Remove /bin/sh from the .deb, and reinstate it in the postinst if
+    it's not already present. Hence make the postinst a /bin/bash script
+    instead of a /bin/sh script.
+
+ -- Anthony Towns <ajt@debian.org>  Sat, 28 Aug 1999 01:09:08 +1000
+
+bash (2.02.1-1.6) unstable; urgency=low
+
+  * Non-maintainer release.
+  * Link bash statically with libreadline. Closes: #42858.
+
+ -- Thomas Quinot <thomas@debian.org>  Fri, 13 Aug 1999 21:47:35 +0200
+
+bash (2.02.1-1.5) unstable; urgency=low
+
+  * Non-maintainer release.
+  * Updated to standards version 3.0.0.
+  * Fixed dependency on libreadlineg2. Closes: #35130, #39280, #41802.
+
+ -- Thomas Quinot <thomas@debian.org>  Thu, 29 Jul 1999 13:05:26 +0200
+
+bash (2.02.1-1.4) unstable; urgency=low
+
+  * Non-maintainer release.
+  * Make libreadlineg2 conflict with bash (<< 2.02.1-1.2)
+
+ -- Joel Klecker <espy@debian.org>  Thu, 25 Mar 1999 09:40:39 -0800
+
+bash (2.02.1-1.3) unstable; urgency=low
+
+  * Non-maintainer release.
+  * Recompile against ncurses 4.2-3.2 for versioned dependency.
+  * Add (>= 2.1-13.1) depend to readline shlibs.
+
+ -- Joel Klecker <espy@debian.org>  Thu, 18 Mar 1999 12:33:28 -0800
+
+bash (2.02.1-1.2) unstable; urgency=low
+
+  * Non-maintainer release.
+  * Recompile against glibc 2.1 for libreadline.
+
+ -- Joel Klecker <espy@debian.org>  Fri,  5 Mar 1999 09:36:54 -0800
+
+bash (2.02.1-1.1) unstable; urgency=low
+
+  * Non-maintainer upload.
+  * Replaced config.{sub,guess} with newer ones for ARM.
+
+ -- Jim Pick <jim@jimpick.com>  Mon, 22 Feb 1999 23:57:53 -0800
+
+bash (2.02.1-1) unstable; urgency=low
+
+  * libreadline 2.1-13
+  * Upstream upgrade, closes: #26582
+  * Bugs fixed upstream: closes: #21511, #24004.
+  * Rules, control fixes for hurd, powerpc, alpha closes: #29123, #29395,
+    #24931, #31289.
+  * Included paren-matching feature in readline, closes: #27707.
+  * Removed convert-meta comment from etc/inputrc, closes: #23035.
+  * Use system random instead of lousy builtin one, closes: #22104.
+
+ -- Guy Maor <maor@debian.org>  Mon, 15 Feb 1999 12:57:53 -0800
+
 bash (2.01.1-4.1) unstable; urgency=low
 
   * Non-maintainer upload.
@@ -10,14 +289,6 @@ bash (2.01.1-4.1) unstable; urgency=low
     termcap; reported by, ehm, Guy Maor <maor@debian.org>. [#25118]
 
  -- James Troup <james@nocrew.org>  Tue, 20 Oct 1998 03:24:03 +0100
-
-bash (2.01.1-4) stable unstable; urgency=high
-
-  * libreadline 2.1-11
-  * Correct buffer overflow with long prompts.  A root exploit is possible
-    if \w is in root's PS1.
-
- -- Guy Maor <maor@debian.org>  Mon,  7 Sep 1998 10:59:44 -0700
 
 bash (2.01.1-3.1) frozen unstable; urgency=low
 
@@ -116,9 +387,9 @@ bash (2.01-1) unstable; urgency=low
  -- Guy Maor <maor@ece.utexas.edu>  Thu, 14 Aug 1997 15:35:23 -0500
 
 bash (2.01-0.1) unstable; urgency=high
-  
+
   * libreadline 2.1-2.2
-  * libreadline2 now has a preinst script which ensures that ld.so.1 
+  * libreadline2 now has a preinst script which ensures that ld.so.1
     knows about /lib/libc5-compat and /usr/lib/libc5-compat.  Before this
     change, trying to install with a libc (< 5.4.23-4) broke bash.
   * libreadlineg2 no longer has version dependant shlibs file [#10742].
@@ -135,7 +406,7 @@ bash (2.01-0) unstable; urgency=medium
   * Not all of Guy's changes are implemented, noticeably a security
     improvement in execute-cmds.c and his alteration of libreadline's
     compile time dependance on -DSHELL to run time dependance.
-    
+
  -- James Troup <jjtroup@comp.brad.ac.uk>  Thur, 19 June 1997 19:13:34 +0100
 
 bash (2.0-3) unstable; urgency=medium
@@ -171,7 +442,7 @@ bash (1.14.7-2) frozen unstable; urgency=low
  -- Guy Maor <maor@ece.utexas.edu>  Sat, 16 Nov 1996 11:07:08 -0600
 
 bash (1.14.7-1) frozen unstable; urgency=low
-  
+
   * New upstream version converted to new source format.
     libreadline2, libreadline2-dev produced from bash source.
   * Made libreadline SHELL define into a runtime check with rl_shell,

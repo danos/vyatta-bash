@@ -1,0 +1,31 @@
+#! /bin/sh -e
+
+if [ $# -eq 3 -a "$2" = '-d' ]; then
+    pdir="-d $3"
+elif [ $# -ne 1 ]; then
+    echo >&2 "`basename $0`: script expects -patch|-unpatch as argument"
+    exit 1
+fi
+case "$1" in
+    -patch) patch $pdir -f --no-backup-if-mismatch -p1 < $0;;
+    -unpatch) patch $pdir -f --no-backup-if-mismatch -R -p1 < $0;;
+    *)
+	echo >&2 "`basename $0`: script expects -patch|-unpatch as argument"
+	exit 1
+esac
+exit 0
+
+# DP: CTRL_CHAR macro: Don't assume character is signed by default
+
+--- ./lib/readline/chardefs.h~	Thu Sep 25 16:59:00 1997
++++ ./lib/readline/chardefs.h	Thu Dec 23 11:18:17 1999
+@@ -51,7 +51,7 @@
+ #define meta_character_bit 0x080	    /* x0000000, must be on. */
+ #define largest_char 255		    /* Largest character value. */
+ 
+-#define CTRL_CHAR(c) ((c) < control_character_threshold && (c) >= 0)
++#define CTRL_CHAR(c) ((c) < control_character_threshold && ((signed char)(c)) >= 0)
+ #define META_CHAR(c) ((c) > meta_character_threshold && (c) <= largest_char)
+ 
+ #define CTRL(c) ((c) & control_character_mask)
+

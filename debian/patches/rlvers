@@ -1,0 +1,11 @@
+--- ./support/rlvers.sh~	Thu May 21 18:43:21 1998
++++ ./support/rlvers.sh	Sat Nov 20 14:23:44 1999
+@@ -52,7 +52,7 @@
+ }
+ EOF
+ 
+-if eval ${CC} -L${RL_LIBDIR} -o /tmp/rlvers /tmp/rlvers.c -lreadline -ltermcap -lcurses;
++if eval ${CC} -L${RL_LIBDIR} -o /tmp/rlvers /tmp/rlvers.c -lreadline -lcurses;
+ then
+ 	v=`/tmp/rlvers`
+ else

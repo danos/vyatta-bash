@@ -74,7 +74,7 @@ extern Keymap _rl_keymap;
 extern void _rl_bind_if_unbound ();
 
 /* Functions imported from shell.c */
-extern void rl_set_lines_and_columns ();
+extern void set_lines_and_columns ();
 extern char *get_env_value ();
 
 /* **************************************************************** */
@@ -138,10 +138,7 @@ static char *term_ku, *term_kd, *term_kr, *term_kl;
 static char *term_ks, *term_ke;
 
 /* The key sequences sent by the Home and End keys, if any. */
-static char *term_kh, *term_kend;
-
-/* The key sequence sent by the Delete key, if any. */
-static char *term_kD;
+static char *term_kh, *term_kH;
 
 /* Variables that hold the screen dimensions, used by the display code. */
 int screenwidth, screenheight, screenchars;
@@ -214,7 +211,7 @@ _rl_get_screen_size (tty, ignore_env)
   /* If we're being compiled as part of bash, set the environment
      variables $LINES and $COLUMNS to new values.  Otherwise, just
      do a pair of putenv () or setenv () calls. */
-  rl_set_lines_and_columns (screenheight, screenwidth);
+  set_lines_and_columns (screenheight, screenwidth);
 
   if (!_rl_term_autowrap)
     screenwidth--;
@@ -233,6 +230,16 @@ _rl_set_screen_size (rows, cols)
     screenwidth--;
 
   screenchars = screenwidth * screenheight;
+}
+
+void
+rl_resize_terminal ()
+{
+  if (readline_echoing_p)
+    {
+      _rl_get_screen_size (fileno (rl_instream), 1);
+      _rl_redisplay_after_sigwinch ();
+    }
 }
 
 struct _tc_string {
@@ -255,8 +262,7 @@ static struct _tc_string tc_strings[] =
   "im", &term_im,
   "kd", &term_kd,
   "kh", &term_kh,	/* home */
-  "@7", &term_kend,	/* end */
-  "kD", &term_kD,	/* delete */
+  "kH", &term_kH,	/* end */
   "kl", &term_kl,
   "kr", &term_kr,
   "ku", &term_ku,
@@ -392,8 +398,7 @@ _rl_init_terminal_io (terminal_name)
   _rl_bind_if_unbound (term_kl, rl_backward);
 
   _rl_bind_if_unbound (term_kh, rl_beg_of_line);	/* Home */
-  _rl_bind_if_unbound (term_kend, rl_end_of_line);	/* End */
-  _rl_bind_if_unbound (term_kD, rl_delete);	        /* Delete */
+  _rl_bind_if_unbound (term_kH, rl_end_of_line);	/* End */
 
 #if defined (VI_MODE)
   _rl_keymap = vi_movement_keymap;
@@ -403,8 +408,7 @@ _rl_init_terminal_io (terminal_name)
   _rl_bind_if_unbound (term_kl, rl_backward);
 
   _rl_bind_if_unbound (term_kh, rl_beg_of_line);	/* Home */
-  _rl_bind_if_unbound (term_kend, rl_end_of_line);	/* End */
-  _rl_bind_if_unbound (term_kD, rl_delete);	        /* Delete */
+  _rl_bind_if_unbound (term_kH, rl_end_of_line);	/* End */
 #endif /* VI_MODE */
 
   _rl_keymap = xkeymap;
@@ -440,13 +444,21 @@ rl_reset_terminal (terminal_name)
 }
 
 /* A function for the use of tputs () */
+#ifdef _MINIX
+void
+_rl_output_character_function (c)
+     int c;
+{
+  putc (c, _rl_out_stream);
+}
+#else /* !_MINIX */
 int
 _rl_output_character_function (c)
      int c;
 {
   return putc (c, _rl_out_stream);
 }
-
+#endif /* !_MINIX */
 /* Write COUNT characters from STRING to the output stream. */
 void
 _rl_output_some_chars (string, count)
@@ -525,18 +537,11 @@ ding ()
 /*								    */
 /* **************************************************************** */
 
-static int
-outchar (c)
-     int c;
-{
-  return putc (c, rl_outstream);
-}
-
 void
 _rl_enable_meta_key ()
 {
   if (term_has_meta && term_mm)
-    tputs (term_mm, 1, outchar);
+    tputs (term_mm, 1, _rl_output_character_function);
 }
 
 void
@@ -544,7 +549,7 @@ _rl_control_keypad (on)
      int on;
 {
   if (on && term_ks)
-    tputs (term_ks, 1, outchar);
+    tputs (term_ks, 1, _rl_output_character_function);
   else if (!on && term_ke)
-    tputs (term_ke, 1, outchar);
+    tputs (term_ke, 1, _rl_output_character_function);
 }
