@@ -1,3 +1,16 @@
+bash (2.01.1-4.1) unstable; urgency=low
+
+  * Non-maintainer upload.
+  * libreadline 2.1-12
+  * Rebuild with ncurses4.0 to avoid packages linked with libreadline
+    depending on two versions of ncurses; reported by Martin Mitchell
+    <martin@debian.org>. [#27762]
+  * debian/rl.shlibs: bump versioned dependency to >= 2.1-12.
+  * debian/rules (build): add --with-curses to avoid ever linking with
+    termcap; reported by, ehm, Guy Maor <maor@debian.org>. [#25118]
+
+ -- James Troup <james@nocrew.org>  Tue, 20 Oct 1998 03:24:03 +0100
+
 bash (2.01.1-4) stable unstable; urgency=high
 
   * libreadline 2.1-11

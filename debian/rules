@@ -4,7 +4,7 @@ package = bash
 
 soversion = 2
 libversion = $(soversion).1
-rlversion = $(libversion)-11
+rlversion = $(libversion)-12
 
 ARCH = $(shell dpkg --print-gnu-build-architecture)
 CCLIBC1  = $(ARCH)-linuxlibc1-gcc
@@ -22,11 +22,11 @@ endif
 
 build:
 	$(checkdir) 
-	./configure --host="$(ARCH)-linux"
+	./configure --host="$(ARCH)-linux" --with-curses
 	$(MAKE) SOVERSION=$(soversion) "CFLAGS=-g"
 	cd debian; $(CC) -O2 -s -o rl-libc6.postinst rl.postinst.c
 ifdef BUILDLIBC5
-	CONFIG_SITE="" CC=$(CCLIBC1) ./configure --cache-file=configc1.cache --host="$(ARCH)-linux"
+	CONFIG_SITE="" CC=$(CCLIBC1) ./configure --cache-file=configc1.cache --host="$(ARCH)-linux"  --with-curses
 	test -d lib/readline/libc5 || mkdir lib/readline/libc5
 	$(MAKE) -C lib/readline/libc5 SOVERSION=$(soversion) CFLAGS="-g -O2" -f ../Makefile srcdir=..
 	cd debian; $(CCLIBC1) -O2 -s -o rl-libc5.postinst rl.postinst.c
