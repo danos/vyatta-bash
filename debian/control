@@ -2,11 +2,11 @@ Source: bash
 Section: base
 Priority: required
 Maintainer: Guy Maor <maor@debian.org>
-Standards-Version: 2.2.0.0
+Standards-Version: 2.4.0.0
 
 Package: bash
 Architecture: any
-Pre-Depends: ${shlibs:Depends}, libreadline2 (>=2.1-2bo4)
+Pre-Depends: ${shlibs:Depends}, libreadlineg2 (>=2.1-8)
 Essential: yes
 Section: base
 Priority: required
@@ -27,12 +27,13 @@ Description: Bash loadable builtins - headers & examples
  Bash 2 can dynamically load new builtin commands.  Included are the
  necessary headers to compile your own builtins and lots of examples.
 
-Package: libreadline2
+Package: libreadlineg2
 Architecture: any
 Depends: ${shlibs:Depends}
+Conflicts: libreadline2 (<<2.1-2.1)
 Section: base
 Priority: required
-Description: GNU readline and history libraries, run-time libraries.
+Description: GNU readline and history libraries, run-time libraries. [libc6]
  The GNU readline library aids in the consistency of user interface
  across discrete programs that need to provide a command line
  interface.
@@ -40,14 +41,14 @@ Description: GNU readline and history libraries, run-time libraries.
  The GNU history library provides a consistent user interface for
  recalling lines of previously typed input.
 
-Package: libreadline2-dev
+Package: libreadlineg2-dev
 Architecture: any
-Depends: ${rlversion:Depends}, ${shlibs:Depends}, libc5-dev
+Depends: ${rlversion:Depends}, ${shlibs:Depends}, ${libcso:Depends}
 Conflicts: libreadline-dev
 Provides: libreadline-dev
 Section: devel
 Priority: standard
-Description: GNU readline and history libraries, development files.
+Description: GNU readline and history libraries, development files. [libc6]
  The GNU readline library aids in the consistency of user interface
  across discrete programs that need to provide a command line
  interface.
@@ -55,17 +56,46 @@ Description: GNU readline and history libraries, development files.
  The GNU history library provides a consistent user interface for
  recalling lines of previously typed input.
 
-Package: libreadline2-dbg
+Package: libreadlineg2-dbg
 Architecture: any
 Depends: ${rlversion:Depends}
 Conflicts: libreadline-dbg
 Provides: libreadline-dbg
 Section: devel
 Priority: optional
-Description: GNU readline and history libraries, debugging libraries.
+Description: GNU readline and history libraries, debugging libraries. [libc6]
  The GNU readline library aids in the consistency of user interface
  across discrete programs that need to provide a command line
  interface.
  .
  The GNU history library provides a consistent user interface for
  recalling lines of previously typed input.
+ 
+Package: libreadline2
+Architecture: any
+Pre-Depends: ldso (>=1.9.0-1)
+Depends: ${shlibs:Depends}
+Section: libs
+Priority: optional
+Description: GNU readline and history libraries, run-time libraries. [libc5]
+ The GNU readline library aids in the consistency of user interface
+ across discrete programs that need to provide a command line
+ interface.
+ .
+ The GNU history library provides a consistent user interface for
+ recalling lines of previously typed input.
+
+Package: libreadline2-altdev
+Architecture: any
+Depends: ${rlversion:Depends}, ${shlibs:Depends}, libc5-altdev
+Conflicts: libreadline2-dev
+Section: devel
+Priority: optional
+Description: GNU readline and history libraries, development files. [libc5]
+ The GNU readline library aids in the consistency of user interface
+ across discrete programs that need to provide a command line
+ interface.
+ .
+ The GNU history library provides a consistent user interface for
+ recalling lines of previously typed input.
+

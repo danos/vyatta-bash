@@ -157,7 +157,7 @@ fc_builtin (list)
   REPL *rlist, *rl;
   char *ename, *command, *newcom, *line;
   HIST_ENTRY **hlist;
-  char *fn;
+  char *fn = 0;
 
   numbering = 1;
   reverse = listing = execute = 0;

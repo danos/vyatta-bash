@@ -2,7 +2,7 @@ This is Debian/GNU Linux's prepackaged version of the FSF's GNU
 Readline library.
 
 This package was put together by me, Guy Maor <maor@debian.org>, from
-the GNU sources at ftp.cc.gatech.edu:/pub/gnu/bash-2.01.tar.gz.  The
+the GNU sources at ftp.cc.gatech.edu:/pub/gnu/bash-2.01.1.tar.gz.  The
 version of readline in bash has many bug fixes over the version
 contained in readline-2.0.tar.gz.
 
@@ -19,5 +19,5 @@ General Public License for more details.
 You should have received a copy of the GNU General Public License with
 your Debian GNU/Linux system, in /usr/doc/copyright/GPL, or with the
 Debian GNU/Linux bash source package as the file COPYING.  If not,
-write to the Free Software Foundation, Inc., 675 Mass Ave, Cambridge,
-MA 02139, USA.
+write to the Free Software Foundation, Inc., 59 Temple Place - Suite
+330, Boston, MA 02111-1307, USA.

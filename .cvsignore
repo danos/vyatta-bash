@@ -1,0 +1,15 @@
+config.log
+config.h
+config.cache
+config.status
+stamp-h
+Makefile
+.build
+version.h
+mksignames
+signames.h
+bash
+bashbug
+.made
+build
+configc1.cache

@@ -20,12 +20,16 @@
 #include <unistd.h>
 #include <string.h>
 #include <errno.h>
+#include <string.h>
 
 int
 main (int argc, char **argv)
 {
-  execlp("ldconfig", "ldconfig", 0);
-  fprintf(stderr, "Error: exec ldconfig : %s\n", strerror (errno));
-  fprintf(stderr, "Run ldconfig by hand, or bash might be unusable !\n");
-  return(1);
+  if (argv[1] && !strcmp(argv[1], "configure")) {
+    execlp("ldconfig", "ldconfig", 0);
+    fprintf(stderr, "Error: exec ldconfig: %s\n", strerror (errno));
+    fprintf(stderr, "Run ldconfig by hand, or bash might be unusable !\n");
+    exit(1);
+  }
+  exit(0);
 }

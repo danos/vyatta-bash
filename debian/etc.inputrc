@@ -1,26 +1,10 @@
 # /etc/inputrc - global inputrc for libreadline
 # See readline(3readline) and `info readline' for more information.
 
-# Allow iso-latin1 characters to be inserted.
-set convert-meta off
+# This allows iso-latin1 characters to be inserted directly, but requires
+# you to use Esc-<char> instead of M-<char>.
+# set convert-meta off
 
-# Don't strip high bit when reading or displaying.
+# Be 8 bit clean.
 set input-meta on
 set output-meta on
-
-# Make the Home, End, and Delete keys work on common terminals.
-$if term=linux
-"\e[1~": beginning-of-line
-"\e[3~": delete-char
-"\e[4~": end-of-line
-$endif
-$if term=rxvt
-"\e[1~": beginning-of-line
-"\e[3~": delete-char
-"\e[4~": end-of-line
-$endif
-$if term=xterm
-"\e[H": beginning-of-line
-"\e[F": end-of-line
-"\C-?": delete-char
-$endif

@@ -303,6 +303,20 @@ rl_expand_prompt (prompt)
     }
 }
 
+static void
+_rl_extend_buffers (int max_size)
+{
+  if (max_size >= line_size)
+    {
+      while (max_size >= line_size)
+       {
+         line_size *= 2;
+       }
+      visible_line = xrealloc (visible_line, line_size);
+      invisible_line = xrealloc (invisible_line, line_size);
+    }
+}
+
 /* Basic redisplay algorithm. */
 void
 rl_redisplay ()
@@ -369,6 +383,8 @@ rl_redisplay ()
 
       if (local_len > 0)
 	{
+         _rl_extend_buffers(out + local_len);
+         line = invisible_line;
 	  strncpy (line + out, local_prompt, local_len);
 	  out += local_len;
 	}
@@ -395,6 +411,8 @@ rl_redisplay ()
 	}
 
       pmtlen = strlen (prompt_this_line);
+      _rl_extend_buffers(out + pmtlen);
+      line = invisible_line;
       strncpy (line + out,  prompt_this_line, pmtlen);
       out += pmtlen;
       line[out] = '\0';
@@ -429,13 +447,8 @@ rl_redisplay ()
     {
       c = (unsigned char)rl_line_buffer[in];
 
-      if (out + 8 >= line_size)		/* XXX - 8 for \t */
-	{
-	  line_size *= 2;
-	  visible_line = xrealloc (visible_line, line_size);
-	  invisible_line = xrealloc (invisible_line, line_size);
-	  line = invisible_line;
-	}
+      _rl_extend_buffers(out + 8);     /* XXX - 8 for \t */
+      line = invisible_line;
 
       if (in == rl_point)
 	{
@@ -1482,7 +1495,7 @@ cr ()
 void
 _rl_redisplay_after_sigwinch ()
 {
-  char *t, *oldp;
+  char *t, *oldp, *oldl, *oldlprefix;
 
   /* Clear the current line and put the cursor at column 0.  Make sure
      the right thing happens if we have wrapped to a new screen line. */
@@ -1508,9 +1521,14 @@ _rl_redisplay_after_sigwinch ()
   if (t)
     {
       oldp = rl_display_prompt;
+      oldl = local_prompt;
+      oldlprefix = local_prompt_prefix;
       rl_display_prompt = ++t;
+      local_prompt = local_prompt_prefix = (char *)NULL;
       rl_forced_update_display ();
       rl_display_prompt = oldp;
+      local_prompt = oldl;
+      local_prompt_prefix = oldlprefix;
     }
   else
     rl_forced_update_display ();

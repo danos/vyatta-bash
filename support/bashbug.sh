@@ -21,7 +21,7 @@ MACHTYPE="!MACHTYPE!"
 PATH=/bin:/usr/bin:/usr/local/bin:$PATH
 export PATH
 
-TEMP=/tmp/bbug.$$
+TEMP=$(tempfile --prefix bbug --mode 600) || exit 1
 
 # Figure out how to echo a string without a trailing newline
 N=`echo 'hi there\c'`

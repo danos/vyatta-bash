@@ -1,1 +1,2 @@
-libreadline	2	libreadline2 (>= 2.1-2bo4)
+libreadline	2	libreadlineg2 (>= 2.1-4)
+libhistory	2	libreadlineg2 (>= 2.1-4)

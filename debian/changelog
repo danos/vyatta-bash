@@ -1,23 +1,51 @@
-bash (2.01-0bo5.3) bo-unstable; urgency=low
+bash (2.01.1-4) stable unstable; urgency=high
 
-  * Non-maintainer release for bo-unstable
-  * Let's hope I got it right
+  * libreadline 2.1-11
+  * Correct buffer overflow with long prompts.  A root exploit is possible
+    if \w is in root's PS1.
 
- -- David N. Welton <davidw@efn.org>  Tue, 24 Feb 1998 19:44:01 -0900
+ -- Guy Maor <maor@debian.org>  Mon,  7 Sep 1998 10:59:44 -0700
 
-bash (2.01-0bo5.2) bo-unstable; urgency=low
+bash (2.01.1-3.1) frozen unstable; urgency=low
 
-  * Non-maintainer release for bo-unstable
-    (slightly modified from Daniel Martin's effort))
+  * Non-maintainer release.
+  * Build with ncurses3.0-altdev, so libreadline2 doesn't depend on libc6.
+  * Use <architecture>-linux instead of <arch>-debian-linux.
 
- -- Joel Klecker <jk@espy.org>  Sat, 21 Feb 1998 12:14:23 -0800
+ -- Joel Klecker <jk@espy.org>  Tue, 14 July 1998 16:26:43 -0700
 
-bash (2.01-0bo5.1) unstable; urgency=low
+bash (2.01.1-3) unstable frozen; urgency=medium
 
-  * libreadline 2.1-2bo7.1
-  * a hack of bash 2.01-5 from hamm for bo
+  * libreadline 2.1-10
+  * Make libreadlineg2's postinst a c program, like libreadline2.
+  * Check return code from tempfile in bashbug, closes: #22349.
+  * glibc 2.1 patch, closes #22532.
+  * remove . from /etc/profile PATH, closes #22738.
 
- -- Daniel Martin <dtm12@jhunix.hcf.jhu.edu>  Fri, 20 Feb 1998 11:36:51 -0500
+ -- Guy Maor <maor@ece.utexas.edu>  Mon, 25 May 1998 22:41:06 -0700
+
+bash (2.01.1-2) unstable frozen; urgency=high
+
+  * libreadline 2.1-9.
+  * Predepend on libreadlineg2 >= 2.1-8, closes: #20572.
+
+ -- Guy Maor <maor@ece.utexas.edu>  Wed,  8 Apr 1998 01:07:10 -0700
+
+bash (2.01.1-1) frozen unstable; urgency=low
+
+  * libreadline 2.1-8.
+  * Upstream upgrade, closes: #13762, #14446, #18296.
+  * Fixed /etc/inputrc, closes: #19745, #19075, #13643, #18004, #17256,
+    #15345, #14672, #15213, #15345, #15638, #18004, #16797, #15638, #19241.
+  * Applied patch to read End, Delete, closes: #20053.
+  * Don't build libc5 packages on alpha & powerpc, closes: #13761, #15538,
+    #15829.
+  * Add sh(1) - symlink to bash(1), close: #15659.
+  * Fix unsafe requests in rbash(1), builtins(1), closes: #19086.
+  * bashbug uses tempfile, closes: #19781.
+  * fixed fc -l segfault, closes: #13726.
+
+ -- Guy Maor <maor@ece.utexas.edu>  Sat, 28 Mar 1998 19:34:15 -0800
 
 bash (2.01-5) unstable; urgency=low
 

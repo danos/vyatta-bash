@@ -573,7 +573,7 @@ static const short yycheck[] = {     6,
     -1,    -1,    -1,    -1,    -1,    40,    41
 };
 /* -*-C-*-  Note some compilers choke on comments on `#line' lines.  */
-#line 3 "/usr/local/lib/bison.simple"
+#line 3 "/usr/share/bison.simple"
 
 /* Skeleton output parser for bison,
    Copyright (C) 1984, 1989, 1990 Free Software Foundation, Inc.
@@ -766,7 +766,7 @@ __yy_memcpy (char *to, char *from, int count)
 #endif
 #endif
 
-#line 196 "/usr/local/lib/bison.simple"
+#line 196 "/usr/share/bison.simple"
 
 /* The user can define YYPARSE_PARAM as the name of an argument to be passed
    into yyparse.  The argument should have type void *.
@@ -1732,7 +1732,7 @@ case 122:
     break;}
 }
    /* the action file gets copied in in place of this dollarsign */
-#line 498 "/usr/local/lib/bison.simple"
+#line 498 "/usr/share/bison.simple"
 
   yyvsp -= yylen;
   yyssp -= yylen;
@@ -3722,7 +3722,7 @@ read_token_word (character)
 
 #if defined (ARRAY_VARS)
       /* Identify possible compound array variable assignment. */
-      else if (character == '=')
+      else if (character == '=' && token_index > 0)
 	{
 	  peek_char = shell_getc (1);
 	  if (peek_char == '(')		/* ) */
@@ -4270,6 +4270,7 @@ decode_prompt_string (string)
 	      {
 		/* Use the value of PWD because it is much more efficient. */
 		char t_string[PATH_MAX];
+		int tlen;
 
 		temp = get_string_value ("PWD");
 
@@ -4278,11 +4279,17 @@ decode_prompt_string (string)
 		    if (getcwd (t_string, sizeof(t_string)) == 0)
 		      {
 		        t_string[0] = '.';
-		        t_string[1] = '\0';
+			tlen = 1;
 		      }
+		    else
+		      tlen = strlen (t_string);
 		  }
 		else
-		  strcpy (t_string, temp);
+		  {
+		    tlen = sizeof (t_string) - 1;
+		    strncpy (t_string, temp, tlen);
+		  }
+		t_string[tlen] = '\0';
 
 		if (c == 'W')
 		  {
@@ -4291,6 +4298,8 @@ decode_prompt_string (string)
 		      strcpy (t_string, t + 1);
 		  }
 		else
+		  /* polite_directory_format is guaranteed to return a string
+		     no longer than PATH_MAX - 1 characters. */
 		  strcpy (t_string, polite_directory_format (t_string));
 
 		/* If we're going to be expanding the prompt string later,

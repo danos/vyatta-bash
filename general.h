@@ -216,7 +216,7 @@ extern char *extract_colon_unit __P((char *, int *));
 extern void tilde_initialize __P((void));
 extern char *bash_tilde_expand __P((char *));
 
-#if defined (__STDC__) && defined (gid_t)
+#if defined (__STDC__) && defined (gid_t) && (!defined(__GLIBC__) || __GLIBC_MINOR__ < 1)
 extern int group_member __P((int));
 #else
 extern int group_member __P((gid_t));

@@ -317,7 +317,7 @@ maybe_save_shell_history ()
 	  if (stat (hf, &buf) == -1)
 	    {
 	      int file;
-	      file = open (hf, O_CREAT | O_TRUNC | O_WRONLY, 0666);
+	      file = open (hf, O_CREAT | O_TRUNC | O_WRONLY, 0600);
 	      if (file != -1)
 		close (file);
 	    }

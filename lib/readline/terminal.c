@@ -138,7 +138,10 @@ static char *term_ku, *term_kd, *term_kr, *term_kl;
 static char *term_ks, *term_ke;
 
 /* The key sequences sent by the Home and End keys, if any. */
-static char *term_kh, *term_kH;
+static char *term_kh, *term_kend;
+
+/* The key sequence sent by the Delete key, if any. */
+static char *term_kD;
 
 /* Variables that hold the screen dimensions, used by the display code. */
 int screenwidth, screenheight, screenchars;
@@ -252,7 +255,8 @@ static struct _tc_string tc_strings[] =
   "im", &term_im,
   "kd", &term_kd,
   "kh", &term_kh,	/* home */
-  "kH", &term_kH,	/* end */
+  "@7", &term_kend,	/* end */
+  "kD", &term_kD,	/* delete */
   "kl", &term_kl,
   "kr", &term_kr,
   "ku", &term_ku,
@@ -388,7 +392,8 @@ _rl_init_terminal_io (terminal_name)
   _rl_bind_if_unbound (term_kl, rl_backward);
 
   _rl_bind_if_unbound (term_kh, rl_beg_of_line);	/* Home */
-  _rl_bind_if_unbound (term_kH, rl_end_of_line);	/* End */
+  _rl_bind_if_unbound (term_kend, rl_end_of_line);	/* End */
+  _rl_bind_if_unbound (term_kD, rl_delete);	        /* Delete */
 
 #if defined (VI_MODE)
   _rl_keymap = vi_movement_keymap;
@@ -398,7 +403,8 @@ _rl_init_terminal_io (terminal_name)
   _rl_bind_if_unbound (term_kl, rl_backward);
 
   _rl_bind_if_unbound (term_kh, rl_beg_of_line);	/* Home */
-  _rl_bind_if_unbound (term_kH, rl_end_of_line);	/* End */
+  _rl_bind_if_unbound (term_kend, rl_end_of_line);	/* End */
+  _rl_bind_if_unbound (term_kD, rl_delete);	        /* Delete */
 #endif /* VI_MODE */
 
   _rl_keymap = xkeymap;
