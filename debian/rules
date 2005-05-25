@@ -60,6 +60,7 @@ endif
 
 static_conf_args := $(conf_args) \
 	--enable-static-link \
+	--without-bash-malloc \
 	--host=$(DEB_HOST_GNU_TYPE)
 
 conf_args += --host=$(DEB_HOST_GNU_TYPE)
@@ -479,6 +480,7 @@ debian_patches = \
 	bash30-014 \
 	bash30-015 \
 	bash30-016 \
+	wcontinued \
 	rl-del-backspace-policy \
 	rl-examples \
 	rl-inputrc \
@@ -503,6 +505,7 @@ debian_patches = \
 	command-not-found \
 	update-multibyte-ifs \
 	speling \
+	bad-interp \
 
 # all debian_patches, without bash205b-*
 # patches integrated in bashdb: builtins-shift, execute-cmd, man-arithmetic,

@@ -1,0 +1,61 @@
+#! /bin/sh -e
+
+if [ $# -eq 3 -a "$2" = '-d' ]; then
+    pdir="-d $3"
+elif [ $# -ne 1 ]; then
+    echo >&2 "`basename $0`: script expects -patch|-unpatch as argument"
+    exit 1
+fi
+case "$1" in
+    -patch) patch $pdir -f --no-backup-if-mismatch -p1 < $0;;
+    -unpatch) patch $pdir -f --no-backup-if-mismatch -R -p1 < $0;;
+    *)
+	echo >&2 "`basename $0`: script expects -patch|-unpatch as argument"
+	exit 1
+esac
+exit 0
+
+# DP: Avoid WCONTINUED if invalid
+
+From: 	Tim Waugh
+Subject: 	[patch] bash-3.0: avoid WCONTINUED if invalid
+Date: 	Wed, 8 Sep 2004 16:52:38 +0100
+User-agent: 	Mutt/1.4.1i
+
+Hi,
+
+GNU libc defines WCONTINUED, but (at least on Linux 2.4.x kernels)
+waitpid() returns -1 with errno set to EINVAL if WCONTINUED is
+supplied in options.
+
+Here is a patch to retry without WCONTINUED set in that case.
+
+Tim.
+*/
+
+--- ./jobs.c.orig	2005-05-25 14:51:04.994140196 +0200
++++ ./jobs.c	2005-05-25 14:53:25.110410422 +0200
+@@ -2476,6 +2476,7 @@
+   PROCESS *child;
+   pid_t pid;
+   int call_set_current, last_stopped_job, job, children_exited, waitpid_flags;
++  static int wcontinued_not_supported = 0;
+ 
+   call_set_current = children_exited = 0;
+   last_stopped_job = NO_JOB;
+@@ -2489,7 +2490,15 @@
+ 			: 0;
+       if (sigchld || block == 0)
+ 	waitpid_flags |= WNOHANG;
++      retry:
++        if (wcontinued_not_supported)
++	  waitpid_flags &= ~WCONTINUED;
+       pid = WAITPID (-1, &status, waitpid_flags);
++      if (errno == EINVAL)
++        {
++          wcontinued_not_supported = 1;
++          goto retry;
++        }
+ 
+       /* The check for WNOHANG is to make sure we decrement sigchld only
+ 	 if it was non-zero before we called waitpid. */

@@ -1,3 +1,25 @@
+bash (3.0-15) unstable; urgency=low
+
+  * glibc-2.3.5 defines WCONTINUED, which is available only since
+    Linux 2.6.10.  On older kernels waitpid() returns -1 with errno
+    set to EINVAL if WCONTINUED is supplied in options. Retry without
+    WCONTINUED set in that case.
+
+ -- Matthias Klose <doko@debian.org>  Wed, 25 May 2005 12:38:09 +0000
+
+bash (3.0-14ubuntu1) breezy; urgency=low
+
+  * Configure the static build --without-bash-malloc.
+
+ -- Matthias Klose <doko@ubuntu.com>  Sat, 21 May 2005 07:28:25 +0000
+
+bash (3.0-15) unstable; urgency=low
+
+  * Print out bad interpreter names with trailing ^M (DOS line endings).
+    Closes: #282762.
+
+ -- Matthias Klose <doko@debian.org>  Sun, 23 Jan 2005 20:24:58 +0100
+
 bash (3.0-14) unstable; urgency=low
 
   * Fix re-read-init-file (C-xC-r) not to read /etc/inputrc twice,
