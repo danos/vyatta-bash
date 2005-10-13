@@ -2,8 +2,8 @@ Source: bash
 Section: base
 Priority: required
 Maintainer: Matthias Klose <doko@debian.org>
-Standards-Version: 3.6.1
-Build-Depends: autoconf, automake1.8, patch, bison, libncurses5-dev, texinfo, autotools-dev, debhelper (>= 4.1), texi2html
+Standards-Version: 3.6.2
+Build-Depends: autoconf, automake1.8, patch, bison, libncurses5-dev, texinfo (>= 4.8), autotools-dev, debhelper (>= 4.1), texi2html
 Build-Depends-Indep: tetex-bin
 
 Package: bash

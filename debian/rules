@@ -74,7 +74,11 @@ min_conf_args += --host=$(DEB_HOST_GNU_TYPE)
 
 
 #build: bash-build minimal-build static-build preinst-build all-bashdb-build check
-build: bash-build minimal-build static-build preinst-build check
+build: before-build bash-build minimal-build static-build preinst-build check
+
+before-build:
+	: # see #327477, needed to have HAVE_DEV_STDIN defined
+	test -c /dev/stdin
 
 # ---------------------------------------------------------------------------
 # build standard bash
@@ -459,6 +463,10 @@ stamps/stamp-configure-$(build): stamps/stamp-patch-$(bash_src)
 	cd build-$(build) && \
 	    CC="$(CC)" CFLAGS="$(CFLAGS)" YACC="$(YACC)" \
 		../$(bash_src)/configure $(configure_args)
+	if ! grep -q '#define HAVE_DEV_STDIN 1' build-$(build)/config.h; then \
+	  echo "HAVE_DEV_STDIN not defined, abortig build"; \
+	  exit 1; \
+	fi
 	touch stamps/stamp-configure-$(build)
 
 patchdir	= debian/patches
@@ -505,6 +513,7 @@ debian_patches = \
 	update-multibyte-ifs \
 	speling \
 	bad-interp \
+	volatile-command \
 
 # all debian_patches, without bash205b-*
 # patches integrated in bashdb: builtins-shift, execute-cmd, man-arithmetic,

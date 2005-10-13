@@ -78,16 +78,17 @@ complete -d pushd
 #
 # START exclude -- do NOT remove this line
 complete -f -X '!*.?(t)bz?(2)' bunzip2 bzcat bzcmp bzdiff bzegrep bzfgrep bzgrep
-complete -f -X '!*.@(zip|ZIP|jar|JAR|exe|EXE|pk3|war|wsz|ear|zargo|xpi|sxw)' unzip zipinfo
+complete -f -X '!*.@(zip|ZIP|jar|JAR|exe|EXE|pk3|war|wsz|ear|zargo|xpi|sxw|ott)' unzip zipinfo
 complete -f -X '*.Z' compress znew
 complete -f -X '!*.@(Z|gz|tgz|Gz|dz)' gunzip zcmp zdiff zcat zegrep zfgrep zgrep zless zmore
 complete -f -X '!*.Z' uncompress
 complete -f -X '!*.@(gif|jp?(e)g|miff|tif?(f)|pn[gm]|p[bgp]m|bmp|xpm|ico|xwd|tga|pcx|GIF|JP?(E)G|MIFF|TIF?(F)|PN[GM]|P[BGP]M|BMP|XPM|ICO|XWD|TGA|PCX)' ee display
 complete -f -X '!*.@(gif|jp?(e)g|tif?(f)|png|p[bgp]m|bmp|x[bp]m|rle|rgb|pcx|fits|pm|GIF|JPG|JP?(E)G|TIF?(F)|PNG|P[BGP]M|BMP|X[BP]M|RLE|RGB|PCX|FITS|PM)' xv qiv
 complete -f -X '!*.@(@(?(e)ps|?(E)PS|pdf|PDF)?(.gz|.GZ|.bz2|.BZ2|.Z))' gv ggv kghostview
+complete -f -X '!*.@(@(?(e)ps|?(E)PS)?(.gz|.GZ|.bz2|.BZ2|.Z)|pdf|PDF|dvi|DVI)' evince
 complete -f -X '!*.@(dvi|DVI)?(.@(gz|Z|bz2))' xdvi
-complete -f -X '!*.@(dvi|DVI)' dvips dviselect dvitype
-complete -f -X '!*.@(pdf|PDF)' acroread gpdf xpdf kpdf evince
+complete -f -X '!*.@(dvi|DVI)' dvips dviselect dvitype dvipdf
+complete -f -X '!*.@(pdf|PDF)' acroread gpdf xpdf kpdf
 complete -f -X '!*.@(?(e)ps|?(E)PS)' ps2pdf
 complete -f -X '!*.texi*' makeinfo texi2html
 complete -f -X '!*.@(?(la)tex|?(LA)TEX|texi|TEXI|dtx|DTX|ins|INS)' tex latex slitex jadetex pdfjadetex pdftex pdflatex texi2dvi
@@ -2165,7 +2166,7 @@ _aptitude()
 		     -Z -v --verbose'
 
 	for (( i=0; i < ${#COMP_WORDS[@]}-1; i++ )); do
-	    if [[ ${COMP_WORDS[i]} == @(install|reinstall|hold|unhold|markauto|unmarkauto|dist-upgrade|download|forbid-version|purge|remove) ]]; then
+	    if [[ ${COMP_WORDS[i]} == @(install|reinstall|hold|unhold|markauto|unmarkauto|dist-upgrade|download|forbid-version|purge|remove|show) ]]; then
 		special=${COMP_WORDS[i]}
 	    fi
 	    #exclude some mutually exclusive options
@@ -2175,7 +2176,7 @@ _aptitude()
 
 	if [[ -n "$special" ]]; then
 	   case $special in
-	       @(install|hold|markauto|unmarkauto|dist-upgrade|download))
+	       @(install|hold|markauto|unmarkauto|dist-upgrade|download|show))
 		   COMPREPLY=( $( apt-cache pkgnames $cur 2> /dev/null ) )
 		   return 0
 		   ;;
@@ -5713,7 +5714,7 @@ _mplayer()
 					-xvidencopts -of --verbose' -- $cur) )
 			;;
 		*)
-			_filedir '@(mp?(e)g|MP?(E)G|wm[av]|WM[AV]|avi|AVI|asf|ASF|vob|VOB|bin|BIN|dat|DAT|vcd|VCD|ps|PS|pes|PES|fli|FLI|viv|VIV|rm?(j)|RM?(J)|ra?(m)|RA?(M)|yuv|YUV|mov|MOV|qt|QT|mp[34]|MP[34]|og[gm]|OG[GM]|wav|WAV|dump|DUMP|mkv|MKV|m4a|M4A|aac|AAC|m2v|M2V|dv|DV|rmvb|RMVB|mid|MID|ts|TS)'
+			_filedir '@(mp?(e)g|MP?(E)G|wm[av]|WM[AV]|avi|AVI|asf|ASF|vob|VOB|bin|BIN|dat|DAT|vcd|VCD|ps|PS|pes|PES|fli|FLI|viv|VIV|rm?(j)|RM?(J)|ra?(m)|RA?(M)|yuv|YUV|mov|MOV|qt|QT|mp[34]|MP[34]|og[gm]|OG[GM]|wav|WAV|dump|DUMP|mkv|MKV|m4a|M4A|aac|AAC|m2v|M2V|dv|DV|rmvb|RMVB|mid|MID|ts|TS|fla?(c)|FLA?(C))'
 			;;
 	esac
 

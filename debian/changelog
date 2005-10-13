@@ -1,3 +1,46 @@
+bash (3.0-17) unstable; urgency=low
+
+  * Check that the device files /dev/std{in,out,err} are present at
+    build time. Closes: #327477.
+  * Remove html completion for w3m, users claim w3m to be a general viewer.
+  * /etc/bash.bashrc: Avoid stat on /etc/debian_chroot, if not necessary.
+    Closes: #303712.
+  * debian/patches/wcontinued.dpatch: Update, fixing hangs in
+    bash_completion (Junichi Uekawa). Closes: #318301.
+  * Build-depend on texinfo (>= 4.8). Closes: #316066.
+
+ -- Matthias Klose <doko@debian.org>  Thu, 13 Oct 2005 11:24:21 +0000
+
+bash (3.0-16ubuntu3) breezy; urgency=low
+
+  * Don't install .bash_logout again, doesn't clear the buffer and
+    ps is not in required.
+
+ -- Matthias Klose <doko@ubuntu.com>  Wed,  5 Oct 2005 13:29:22 +0200
+
+bash (3.0-16ubuntu2) breezy; urgency=low
+
+  * Fix segmentation fault due to gcc optimization and longjmp. Patch
+    by Jim Paris. Debian #293667.
+  * Don't overwrite PROMPT_COMMAND in /etc/bash.bashrc. Ubuntu #15122.
+    Closes #330889.
+  * Install skeleton .bash_logout to clear the screen, when logging out
+    from the console. Ubuntu #10149.
+
+ -- Matthias Klose <doko@ubuntu.com>  Tue,  4 Oct 2005 18:01:26 +0200
+
+bash (3.0-16ubuntu1) breezy; urgency=low
+
+  * bash_completion changes:
+    - Add completion for evince.
+    - Fix completion for aptitude (Ubuntu 12549).
+      Closes: #293979, #325045, #327413.
+    - Add completion for *.flac files in mplayer (closes: #304778).
+    - Add completion for *.ott files for unzip and zipinfo (closes: #322481).
+    - Add html completion for w3m.
+
+ -- Matthias Klose <doko@ubuntu.com>  Fri,  9 Sep 2005 20:33:31 +0200
+
 bash (3.0-16) unstable; urgency=low
 
   * Update to bash_completion 20050721 (v1.827).

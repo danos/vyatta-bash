@@ -1,0 +1,33 @@
+#! /bin/sh -e
+
+if [ $# -eq 3 -a "$2" = '-d' ]; then
+    pdir="-d $3"
+elif [ $# -ne 1 ]; then
+    echo >&2 "`basename $0`: script expects -patch|-unpatch as argument"
+    exit 1
+fi
+case "$1" in
+    -patch) patch $pdir -f --no-backup-if-mismatch -p0 < $0;;
+    -unpatch) patch $pdir -f --no-backup-if-mismatch -R -p0 < $0;;
+    *)
+	echo >&2 "`basename $0`: script expects -patch|-unpatch as argument"
+	exit 1
+esac
+exit 0
+
+# DP: current_command must be declared volatile to prevent assignments from
+#     being optimized away as dead code.  In reality, the use of setjmp/longjmp
+#     makes it not dead code at all.
+
+Define PGRP_PIPE to avoid race condition.
+
+--- eval.old	2003-12-18 23:44:15.000000000 -0500
++++ eval.c	2005-10-03 01:59:31.000000000 -0400
+@@ -63,7 +63,7 @@
+ reader_loop ()
+ {
+   int our_indirection_level;
+-  COMMAND *current_command = (COMMAND *)NULL;
++  COMMAND * volatile current_command = (COMMAND *)NULL;
+ 
+   USE_VAR(current_command);

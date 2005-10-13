@@ -2,6 +2,8 @@
 
 # when leaving the console clear the screen to increase privacy
 
-case "`tty`" in
-    /dev/tty[0-9]*) clear
-esac
+# Are we a login shell?
+if [ "X`ps --pid $PPID -o comm=`" = "Xlogin" ]; then
+    # Just clean the screen, requires ncurses-bin being installed
+    [ -x /usr/bin/clear ] && /usr/bin/clear
+fi
