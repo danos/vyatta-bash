@@ -3,13 +3,13 @@ Section: base
 Priority: required
 Maintainer: Matthias Klose <doko@debian.org>
 Standards-Version: 3.6.2
-Build-Depends: autoconf, automake1.8, patch, bison, libncurses5-dev, texinfo (>= 4.8), autotools-dev, debhelper (>= 4.1), texi2html
+Build-Depends: autoconf, patch, bison, libncurses5-dev, texinfo, autotools-dev, debhelper (>= 4.1), texi2html, locales
 Build-Depends-Indep: tetex-bin
 
 Package: bash
 Architecture: any
 Pre-Depends: ${shlibs:Pre-Depends}
-Depends: base-files (>= 2.1.12), passwd (>= 1:4.0.3-10)
+Depends: base-files (>= 2.1.12), debianutils (>= 2.15)
 Conflicts: bash-completion
 Replaces: bash-doc (<= 2.05-1), bash-completion
 Suggests: bash-doc

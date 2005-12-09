@@ -19,16 +19,9 @@ exit 0
 # DP: 
 # DP: - Set the default path to comply with Debian policy
 # DP: 
-# DP: - Define DONT_REPORT_SIGPIPE: We don't want to see `Broken pipe' messages
-# DP:   when a job like `cat jobs.c | exit 1' is executed. Fixes part of #7047,
-# DP:   #10259, #10433 and #10494. Comment from the upstream author: "The
-# DP:   default bash behavior with respect to the exit status of a pipeline
-# DP:   will not change.  Changing it as suggested in the discussion of #10494
-# DP:   would render bash incompatible with every other shell out there.".
-# DP: 
 # DP: - Enable System-wide .bashrc file for interactive shells.
 # DP: 
-# DP: - Enable System-wide .bash_logout  file for interactive shells.
+# DP: - Enable System-wide .bash.logout  file for interactive shells.
 # DP: 
 # DP: - make non-interactive shells begun with argv[0][0] == '-'
 # DP:   run the startup files when not in posix mode.
@@ -39,16 +32,17 @@ exit 0
 # DP: - don't define a default DEFAULT_MAIL_DIRECTORY, because it
 # DP:   can cause a timeout on NFS mounts.
 
-diff -urb bash.orig/config-top.h bash/config-top.h
---- bash.orig/config-top.h	2003-08-05 16:36:12.000000000 +0200
-+++ bash/config-top.h	2003-09-28 00:20:03.000000000 +0200
-@@ -47,19 +47,19 @@
+--- bash/config-bot.h~	2003-09-19 21:57:38.000000000 +0200
++++ bash/config-bot.h	2003-10-09 21:06:01.000000000 +0200
+@@ -178,4 +178,4 @@
+ /******************************************************************/
  
- /* Define DONT_REPORT_SIGPIPE if you don't want to see `Broken pipe' messages
-    when a job like `cat jobs.c | exit 1' is executed. */
--/* #define DONT_REPORT_SIGPIPE */
-+#define DONT_REPORT_SIGPIPE
- 
+ /* If you don't want bash to provide a default mail file to check. */
+-/* #undef DEFAULT_MAIL_DIRECTORY */
++#undef DEFAULT_MAIL_DIRECTORY
+--- bash-3.1-alpha1/config-top.h	2005-04-29 20:36:34.000000000 +0000
++++ bash/config-top.h	2005-09-09 19:26:41.923569456 +0000
+@@ -52,14 +52,14 @@
  /* The default value of the PATH variable. */
  #ifndef DEFAULT_PATH_VALUE
  #define DEFAULT_PATH_VALUE \
@@ -85,12 +79,3 @@ diff -urb bash.orig/config-top.h bash/config-top.h
     sshd and source the .bashrc if so (like the rshd behavior). */
 -/* #define SSH_SOURCE_BASHRC */
 +#define SSH_SOURCE_BASHRC
-
---- bash/config-bot.h~	2003-09-19 21:57:38.000000000 +0200
-+++ bash/config-bot.h	2003-10-09 21:06:01.000000000 +0200
-@@ -178,4 +178,4 @@
- /******************************************************************/
- 
- /* If you don't want bash to provide a default mail file to check. */
--/* #undef DEFAULT_MAIL_DIRECTORY */
-+#undef DEFAULT_MAIL_DIRECTORY

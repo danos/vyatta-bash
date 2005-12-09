@@ -2,7 +2,6 @@
 # -*- makefile -*-
 
 #export DH_VERBOSE=1
-export DH_COMPAT=4
 
 # architecture dependent variables
 DEB_BUILD_GNU_TYPE	:= $(shell dpkg-architecture -qDEB_BUILD_GNU_TYPE)
@@ -11,7 +10,7 @@ DEB_HOST_GNU_CPU	:= $(shell dpkg-architecture -qDEB_HOST_GNU_CPU)
 DEB_HOST_GNU_SYSTEM	:= $(shell dpkg-architecture -qDEB_HOST_GNU_SYSTEM)
 DEB_HOST_GNU_TYPE	:= $(shell dpkg-architecture -qDEB_HOST_GNU_TYPE)
 
-VERSION		:= 3.0
+VERSION		:= 3.1
 #PKGVERSION	:= $(shell dpkg-parsechangelog \
 #			| sed -n '/Version:/s/\(.* \)\(.*\)-2\(.*\)/\2\3/p')
 #PKGVERSION	:= 3.0
@@ -21,7 +20,7 @@ VERSION		:= 3.0
 CC	= gcc
 CFLAGS	= -g -O2
 SHELL	= bash
-YACC	= bison-1.35 -y
+YACC	= bison -y
 
 IX	= install -o 0 -g 0
 ID	= install -o 0 -g 0 -m 644
@@ -78,7 +77,8 @@ build: before-build bash-build minimal-build static-build preinst-build check
 
 before-build:
 	: # see #327477, needed to have HAVE_DEV_STDIN defined
-	test -c /dev/stdin
+	(test -d /dev/fd && test -r /dev/stdin < /dev/null) \
+	  || (test -d /proc/self/fd && test -r /dev/stdin < /dev/null)
 
 # ---------------------------------------------------------------------------
 # build standard bash
@@ -169,7 +169,9 @@ check: stamps/stamp-check
 stamps/stamp-check: bash-build
 	@echo BEGIN test
 ifeq ($(DEB_BUILD_GNU_TYPE),$(DEB_HOST_GNU_TYPE))
-	$(MAKE) -C build-bash test 2>&1 | tee build-bash/test-protocol
+	-sh debian/locale-gen
+	LOCPATH=$(PWD)/locales \
+		$(MAKE) -C build-bash test 2>&1 | tee build-bash/test-protocol
 else
 	@echo Suppress 'make' test, because this is cross build
 endif
@@ -184,6 +186,7 @@ clean:
 	rm -rf stamps build-* bash bashdb
 	rm -f debian/bash.preinst
 	rm -f debian/README.Debian
+	rm -rf locales
 	dh_clean
 
 preinst-build: debian/bash.preinst
@@ -471,29 +474,7 @@ stamps/stamp-configure-$(build): stamps/stamp-patch-$(bash_src)
 
 patchdir	= debian/patches
 debian_patches = \
-	bash30-001 \
-	bash30-002 \
-	bash30-003 \
-	bash30-004 \
-	bash30-005 \
-	bash30-006 \
-	bash30-007 \
-	bash30-008 \
-	bash30-009 \
-	bash30-010 \
-	bash30-011 \
-	bash30-012 \
-	bash30-013 \
-	bash30-014 \
-	bash30-015 \
-	bash30-016 \
-	wcontinued \
-	rl-del-backspace-policy \
-	rl-examples \
 	rl-inputrc \
-	rl-setenv \
-	rl-display \
-	rl-self-insert \
 	bashbug-editor \
 	deb-bash-config \
 	deb-examples \
@@ -503,17 +484,14 @@ debian_patches = \
 	man-bashlogout \
 	man-substring-exp \
 	man-nocaseglob \
-	man-cdpath \
 	man-test \
 	man-test2 \
+	man-net-redirections \
 	privmode \
 	rbash-manpage \
-	histtimeformat \
 	command-not-found \
-	update-multibyte-ifs \
-	speling \
-	bad-interp \
-	volatile-command \
+	bash-default-editor \
+	bash-minimal \
 
 # all debian_patches, without bash205b-*
 # patches integrated in bashdb: builtins-shift, execute-cmd, man-arithmetic,
@@ -524,7 +502,6 @@ debian_patches = \
 
 bashdb_patches = \
 	bashdb \
-	rl-del-backspace-policy \
 	rl-examples-bdb \
 	rl-inputrc \
 	bashbug-editor \

@@ -17,32 +17,6 @@ exit 0
 
 # DP: Doucment handling of paramters of the test builtin.
 
---- doc/bash.1~	2004-10-17 17:04:56.000000000 +0200
-+++ doc/bash.1	2004-10-17 17:14:12.000000000 +0200
-@@ -3487,6 +3487,10 @@
- All expressions taking a \fIfile\fP argument except \fB-h\fP and \fB-L\fP
- are acting on the target of the symbolic link, not on the symlink
- itself, if \fIfile\fP is a symbolic link.
-+.PP
-+See the description of the \fItest\fP builtin command (section SHELL
-+BUILTIN COMMANDS below) for the handling of parameters (i.e.
-+missing paramters).
- .sp 1
- .PD 0
- .TP
---- doc/bashref.texi~	2004-10-17 17:04:56.000000000 +0200
-+++ doc/bashref.texi	2004-10-17 17:16:46.000000000 +0200
-@@ -5214,6 +5214,10 @@
- are acting on the target of the symbolic link, not on the symlink
- itself, if @var{file} is a symbolic link.
- 
-+See the description of the @code{test} builtin command (section
-+@pxref{Bash Builtins} below) for the handling of parameters
-+(i.e. missing paramters).
-+
- @table @code
- @item -a @var{file}
- True if @var{file} exists.
 --- builtins/test.def~	2004-10-17 17:04:56.000000000 +0200
 +++ builtins/test.def	2004-10-17 17:19:38.000000000 +0200
 @@ -92,6 +92,9 @@
@@ -51,7 +25,33 @@ exit 0
  than ARG2.
 +
 +See the bash manual page bash(1) for the handling of parameters (i.e.
-+missing paramters).
++missing parameters).
  $END
  
  $BUILTIN [
+--- doc/bash.1~	2005-09-09 19:43:43.298296896 +0000
++++ doc/bash.1	2005-09-09 19:46:26.359507824 +0000
+@@ -3551,6 +3551,10 @@
+ .PP
+ Unless otherwise specified, primaries that operate on files follow symbolic
+ links and operate on the target of the link, rather than the link itself.
++.PP
++See the description of the \fItest\fP builtin command (section SHELL
++BUILTIN COMMANDS below) for the handling of parameters (i.e.
++missing parameters).
+ .sp 1
+ .PD 0
+ .TP
+--- doc/bashref.texi~	2005-09-09 19:51:31.150172600 +0000
++++ doc/bashref.texi	2005-09-09 19:52:12.693857000 +0000
+@@ -5264,6 +5264,10 @@
+ Unless otherwise specified, primaries that operate on files follow symbolic
+ links and operate on the target of the link, rather than the link itself.
+ 
++See the description of the @code{test} builtin command (section
++@pxref{Bash Builtins} below) for the handling of parameters
++(i.e. missing parameters).
++
+ @table @code
+ @item -a @var{file}
+ True if @var{file} exists.

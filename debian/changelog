@@ -1,3 +1,76 @@
+bash (3.1-1) unstable; urgency=low
+
+  * New upstream version (final 3.1 release).
+    - Fixed a small memory leak in the programmable completion code.
+      Closes: #338822.
+  * Generate the locales needed for the testsuite, build-depend on locales.
+  * Improve check for existance of /dev/stdin during build. Closes: #333935.
+  * Fix bash_completion, sudo completion does not protect empty arguments.
+    Closes: #329148.
+  * /etc/bash.bashrc: Don't change the xterm title by default, keep the
+    default for /etc/skel/.bashrc. Closes: #313617, #314614.
+
+ -- Matthias Klose <doko@debian.org>  Sat, 10 Dec 2005 00:56:28 +0100
+
+bash (3.0+3.1rc1-1) unstable; urgency=low
+
+  * New upstream version (3.1-rc1).
+  * Remove patches applied upstream: rl-del-backspace-policy, bad-interp.
+
+ -- Matthias Klose <doko@debian.org>  Fri, 11 Nov 2005 12:59:32 +0000
+
+bash (3.0+3.1b1-1) unstable; urgency=low
+
+  * New upstream version (3.1-beta1).
+  * Remove bash's dependency on passwd, add one to debianutils (>= 2.15).
+
+ -- Matthias Klose <doko@debian.org>  Thu, 13 Oct 2005 15:49:49 +0200
+
+bash (3.0+3.1a1-1) unstable; urgency=low
+
+  * New upstream version (3.1-alpha1).
+    - Fix "cd -P" hanging (closes: #316407).
+    - Fixed exit status code so that a suspended job returns 128+signal as its
+      exit status (preventing commands after it in `&&' lists from being
+      executed). Closes: #288319.
+    - The globbing code now uses malloc, with its better failure properties,
+      rather than alloca(). Closes: #238226.
+    - In POSIX mode, if `xpg_echo' option is enabled, the `echo' builtin
+      doesn't try to interpret any options at all, as POSIX requires.
+      Closes: #303649.
+    - Some changes to the display code to improve display and redisplay of
+      multibyte characters. Closes: #309654.
+    - Fixed a bug that caused bash to close fd 2 if an `exec' failed and the
+      shell didn't exit. Closes: #310308.
+    - Fix segmentation fault if execve'd with NULL argv. Closes: #316206.
+    - Fix segfault, if free is called with already freed block argument.
+      Closes: #317324.
+    - Fix garbage in bash(1), section SIGNALS. Closes: #327035.
+    - Fixed vi-mode searching so that failure preserves the current line rather
+      than the last line in the history list. Closes: #297330.
+    - Fix segfault on variable assignment. Closes: #291840.
+    - Fixed parser to generate an error when the pipeline `argument'
+      to `!' or `time' is NULL. Closes: #273324, #342228.
+    - A bare `%' once again expands to the current job when used as a job
+      specifier, updated the help for `%'. Closes: #262095.
+    - Fix tilde expansion for some cases where it was performed
+      inappropriately. Closes: #263023.
+    - Replicate first character of $PS4, not only the first byte.
+      Closes: #288125.
+    - bashref.texi: Remove blank lines from contents. Closes: #307264.
+  * Remove patches applied upstream:
+    - bash30*, wcontinued, man-cdpath, update-multibyte-ifs, histtimeformat,
+      spelingm.
+    - rl-examples, rl-setenv, rl-display, rl-self-insert.
+  * Update patches:
+    - deb-bash-config, man-test, man-test2.
+  * bash(1): Fix /etc/bash.logout file name (closes: #289355).
+  * Document, that bash is configured using --disable-net-redirections.
+    Closes: #313538.
+  * Use `command -v editor`, as an editor, if available. Closes: #296603.
+
+ -- Matthias Klose <doko@debian.org>  Fri,  9 Sep 2005 21:09:46 +0200
+
 bash (3.0-17) unstable; urgency=low
 
   * Check that the device files /dev/std{in,out,err} are present at
@@ -21,7 +94,7 @@ bash (3.0-16ubuntu3) breezy; urgency=low
 bash (3.0-16ubuntu2) breezy; urgency=low
 
   * Fix segmentation fault due to gcc optimization and longjmp. Patch
-    by Jim Paris. Debian #293667.
+    by Jim Paris. Debian #331381.
   * Don't overwrite PROMPT_COMMAND in /etc/bash.bashrc. Ubuntu #15122.
     Closes #330889.
   * Install skeleton .bash_logout to clear the screen, when logging out

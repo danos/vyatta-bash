@@ -23,7 +23,7 @@ exit 0
  .FN /etc/bash.bashrc
  The systemwide per-interactive-shell startup file
  .TP
-+.FN /etc/bash_logout
++.FN /etc/bash.logout
 +The systemwide login shell cleanup file, executed when a login shell exits
 +.TP
  .FN ~/.bash_profile
