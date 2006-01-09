@@ -14,7 +14,7 @@ Conflicts: bash-completion
 Replaces: bash-doc (<= 2.05-1), bash-completion
 Suggests: bash-doc
 Essential: yes
-Section: base
+Section: shells
 Priority: required
 Description: The GNU Bourne Again SHell
  Bash is an sh-compatible command language interpreter that executes

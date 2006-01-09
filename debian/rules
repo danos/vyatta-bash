@@ -272,8 +272,9 @@ stamps/stamp-install-bash: stamps/stamp-build-bash
 		scripts/bcsh.sh scripts/krand.bash
 
 	: # files for the bash-builtins package
-	$(ID) bash/include/*.h bash/*.h build-bash/*.h \
-		$(d_bins)/usr/include/bash/
+	$(ID) bash/include/*.h bash/*.h  $(d_bins)/usr/include/bash/
+	$(ID) build-bash/*.h $(d_bins)/usr/include/bash/
+	rm -f $(d_bins)/usr/include/bash/y.tab.h
 	$(ID) bash/builtins/*.h $(d_bins)/usr/include/bash/builtins/
 	$(ID) bash/lib/glob/*.h $(d_bins)/usr/include/bash/lib/glob/
 	$(ID) bash/lib/tilde/*.h $(d_bins)/usr/include/bash/lib/tilde/
@@ -474,6 +475,12 @@ stamps/stamp-configure-$(build): stamps/stamp-patch-$(bash_src)
 
 patchdir	= debian/patches
 debian_patches = \
+	bash31-001 \
+	bash31-002 \
+	bash31-003 \
+	bash31-004 \
+	bash31-005 \
+	readline51-001 \
 	rl-inputrc \
 	bashbug-editor \
 	deb-bash-config \
@@ -491,7 +498,6 @@ debian_patches = \
 	rbash-manpage \
 	command-not-found \
 	bash-default-editor \
-	bash-minimal \
 
 # all debian_patches, without bash205b-*
 # patches integrated in bashdb: builtins-shift, execute-cmd, man-arithmetic,

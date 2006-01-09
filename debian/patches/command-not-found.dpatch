@@ -19,7 +19,7 @@ exit 0
 
 --- bash/execute_cmd.c~	2004-08-28 14:43:04.000000000 +0200
 +++ bash/execute_cmd.c	2004-08-28 14:54:57.000000000 +0200
-@@ -3615,8 +3615,24 @@
+@@ -3615,8 +3615,26 @@
  
        if (command == 0)
  	{
@@ -42,6 +42,8 @@ exit 0
 +	  cmdlist->next = make_word_list(w, (WORD_LIST*)NULL);
 +	   
 +	  fval = execute_shell_function (f, cmdlist);
++	  if (fval == EX_NOTFOUND)
++	    internal_error (_("%s: command not found"), pathname);
 +	  exit(fval);
  	}
  
