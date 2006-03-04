@@ -3,6 +3,8 @@
 
 #export DH_VERBOSE=1
 
+unexport LANG LC_ALL LC_CTYPE LC_COLLATE LC_TIME LC_NUMERIC LC_MESSAGES
+
 # architecture dependent variables
 DEB_BUILD_GNU_TYPE	:= $(shell dpkg-architecture -qDEB_BUILD_GNU_TYPE)
 DEB_HOST_ARCH		:= $(shell dpkg-architecture -qDEB_HOST_ARCH)
@@ -79,6 +81,7 @@ before-build:
 	: # see #327477, needed to have HAVE_DEV_STDIN defined
 	(test -d /dev/fd && test -r /dev/stdin < /dev/null) \
 	  || (test -d /proc/self/fd && test -r /dev/stdin < /dev/null)
+	$(CC) $(CFLAGS) -o clear_console debian/clear_console.c -lncurses
 
 # ---------------------------------------------------------------------------
 # build standard bash
@@ -187,6 +190,7 @@ clean:
 	rm -f debian/bash.preinst
 	rm -f debian/README.Debian
 	rm -rf locales
+	rm -f clear_console
 	dh_clean
 
 preinst-build: debian/bash.preinst
@@ -235,7 +239,11 @@ stamps/stamp-install-bash: stamps/stamp-build-bash
 	$(ID) debian/etc.bash.bashrc $(d)/etc/bash.bashrc
 	$(ID) debian/skel.bashrc $(d)/etc/skel/.bashrc
 	$(ID) debian/skel.bash_profile $(d)/etc/skel/.bash_profile
-#	$(ID) debian/skel.bash_logout $(d)/etc/skel/.bash_logout
+	$(ID) debian/skel.bash_logout $(d)/etc/skel/.bash_logout
+
+	: # clean_console
+	$(IX) clear_console $(d)/usr/bin/
+	$(ID) debian/clear_console.1 $(d)/usr/share/man/man1/
 
 	: # install bash-completion
 	$(ID) debian/bash_completion/bash_completion $(d)/etc/.
@@ -480,6 +488,12 @@ debian_patches = \
 	bash31-003 \
 	bash31-004 \
 	bash31-005 \
+	bash31-006 \
+	bash31-007 \
+	bash31-008 \
+	bash31-009 \
+	bash31-010 \
+	bash31-011 \
 	readline51-001 \
 	rl-inputrc \
 	bashbug-editor \
@@ -498,6 +512,12 @@ debian_patches = \
 	rbash-manpage \
 	command-not-found \
 	bash-default-editor \
+	ulimit \
+	po-sv \
+	bash-subst-param-length \
+	pgrp-pipe \
+	read-memleak \
+	login-shell \
 
 # all debian_patches, without bash205b-*
 # patches integrated in bashdb: builtins-shift, execute-cmd, man-arithmetic,

@@ -1,3 +1,62 @@
+bash (3.1-3) unstable; urgency=low
+
+  * Apply upstream patches 006, 007, 008, 009, 010 and 011.
+  * Define PGRP_PIPE to avoid race condition; monitor mode causes emacs as
+    $EDITOR to hang on kernel 2.6 (Jim Paris). Closes: #224543.
+  * Fix read memleak when reading from non-blocking fd (Tim Waugh).
+  * Recognize 'exec -l /bin/bash' as login shell (Tim Waugh).
+  * Fix parameter expansion: Array member length expansion fails with nested
+    index expression (Jan C. Nordholz). Closes: #345861.
+  * Add swedish translation of message strings. Closes: #349677.
+
+  Merge from Ubuntu:
+  * clear_console: New helper program to clear the console, including
+    the scrollback buffer.
+  * /etc/skel/.bash_logout: Install it again and use clear_console.
+    Ubuntu #29405. Closes: #331504.
+  * /etc/skel/.bashrc: Enable bash_completion.
+    Ubuntu #11414, #25096.
+  * bash_completion:
+    - Fix ssh completion to match lines starting with `Hostname' as well.
+      Closes: #343312.
+  * Add ulimit options -e and -r.
+
+  * Update bash_completion to 20060301:
+    - Completion for minicom(1), mtr(8), sysctl(8), smartctl(8), vncviewer(1),
+      invoke-rc.d, update-rc.d and dpkg-source has been added.
+      Closes: #323824, #327414.
+    - gdb completion of second parameter was broken when first parameter
+      contained white space.
+    - gdb completion wasn't completing second parameter correctly when it was
+      a file, rather than a PID.
+    - Ruby ri completion has been broken for some time. This is now fixed.
+    - Various fixes to work around change in how POSIX quoting is handled in
+      bash 3.1.
+    - subversion completion has been reimplemented from scratch and integrated
+      into the main file.
+    - iconv(1) completion has been improved.
+    - yum(8) completion has been updated for current version of yum.
+    - ant completion will now make use of complete-ant-cmd.pl, if available.
+    - cvs(1) completion has been improved with 'update' and 'stat' completion.
+    - 'aptitude show' now works in the same way as 'apt-cache show'.
+    - make(1) now also completes on file names.
+    - MPlayer will now also complete on .flac, .mpc and .3gp files.
+      Closes: #340452.
+    - wine will now also complete on .exe.so files.
+    - unzip will now also complete on oowriter's .ott files.
+    - xine et al will now complete on .mng files.
+    - The list of programs completing on .dvi files has been expanded.
+    - The range of files on which timidity and evince complete has been
+      expanded. Closes: #351848.
+    - mkisofs completion now defaults to treating results as file names.
+    - $DEBUG has been renamed $BASH_COMPLETION_DEBUG to avoid namespace clashes
+      with other software.
+    - man(1) completion now works correctly on OpenBSD.
+    - svk and Mercurial completion have been added to contribs. Closes: #324169.
+    - Many other small optimisations and fixes. Closes: #325056.
+
+ -- Matthias Klose <doko@debian.org>  Sat,  4 Mar 2006 01:54:25 +0100
+
 bash (3.1-2) unstable; urgency=low
 
   * Apply upstream patches 002 - 005.

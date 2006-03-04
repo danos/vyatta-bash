@@ -2,8 +2,6 @@
 
 # when leaving the console clear the screen to increase privacy
 
-# Are we a login shell?
-if [ "X`ps --pid $PPID -o comm=`" = "Xlogin" ]; then
-    # Just clean the screen, requires ncurses-bin being installed
-    [ -x /usr/bin/clear ] && /usr/bin/clear
+if [ "$SHLVL" = 1 ]; then
+    [ -x /usr/bin/clear_console ] && /usr/bin/clear_console -q
 fi
