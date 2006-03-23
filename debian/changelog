@@ -1,3 +1,15 @@
+bash (3.1-4) unstable; urgency=low
+
+  * Update upstream patch 010, apply upstream patches 012, 013, 014.
+  * bash-default-editor.dpatch: Fix typo (closes: #356308).
+  * clear_console: Add FreeBSD support (Aurelian Jarno). Closes: #355336.
+  * clear_console: Only get rid of any history in the scrollback, if
+    not running in a pseudo tty (closes: #355815).
+  * bash_completion:
+    - Fix error in minicom completion (closes: #357241).
+
+ -- Matthias Klose <doko@debian.org>  Thu, 23 Mar 2006 01:16:22 +0100
+
 bash (3.1-3) unstable; urgency=low
 
   * Apply upstream patches 006, 007, 008, 009, 010 and 011.

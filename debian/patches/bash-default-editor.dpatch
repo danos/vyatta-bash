@@ -41,7 +41,7 @@ exit 0
  
 -#define VI_EDIT_COMMAND		"fc -e \"${VISUAL:-${EDITOR:-vi}}\""
 -#define EMACS_EDIT_COMMAND	"fc -e \"${VISUAL:-${EDITOR:-emacs}}\""
-+#define VI_EDIT_COMMAND		"fc -e \"${VISUAL:-${EDITOR:-$(command -v editor || echo vi))}}\""
++#define VI_EDIT_COMMAND		"fc -e \"${VISUAL:-${EDITOR:-$(command -v editor || echo vi)}}\""
 +#define EMACS_EDIT_COMMAND	"fc -e \"${VISUAL:-${EDITOR:-$(command -v editor || echo emacs)}}\""
  #define POSIX_VI_EDIT_COMMAND	"fc -e vi"
  
