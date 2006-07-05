@@ -1,10 +1,3 @@
-bash (3.1-4bpo1) sarge-backports; urgency=low
-
-  * Rebuild for Sarge.
-  * Changed debianutils dependency version from 2.15 to 2.8.4.
-
- -- Sebastian Harl <sh@tokkee.org>  Sun,  6 Aug 2006 13:34:25 +0200
-
 bash (3.1-5) unstable; urgency=low
 
   * Work around the broken remove-shell, not checking for the existance
