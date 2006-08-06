@@ -1,3 +1,41 @@
+bash (3.1-4bpo1) sarge-backports; urgency=low
+
+  * Rebuild for Sarge.
+  * Changed debianutils dependency version from 2.15 to 2.8.4.
+
+ -- Sebastian Harl <sh@tokkee.org>  Sun,  6 Aug 2006 13:34:25 +0200
+
+bash (3.1-5) unstable; urgency=low
+
+  * Work around the broken remove-shell, not checking for the existance
+    of /etc/shells (closes: #337097).
+  * Force rebuild of bashref.info (closes: #354303, #357258).
+  * Apply upstream patches 015, 016, 017, fixing
+    - a problem with the extended globbing code prevented dots from matching
+      filenames when used in some extended matching patterns.
+    - core dumps when attempting to perform globbing in directories with
+      very large numbers of files.
+    - Array expansion failure with an arithmetic syntax error when the
+      subscript appears within double quotes. Closes: #358831.
+  * Add copyrights for contributed files (Joost van Baal). Closes: #357607.
+  * bash_completion:
+    - Add apt-cache madison completion: Closes: #342073, #359021.
+    - Complete files with spaces for bzip2. Closes: #356218.
+    - Complete whatis and apropos like man. Closes: #352145.
+    - Ignore stderr in apt-cache completion. Closes: #367198.
+    - Add flv|FLV files completion for mplayer. Closes: #364509, #373904.
+    - Add dvi|DVI files completion for evince. Ubuntu #49880.
+  * Fix typos in man page. Closes: #360543.
+
+  [ Ian Jackson ]
+  * Make bash die if it cannot read its input file.  Closes: #320036.
+    (This is not an ideal fix because, for example, the exit status is
+    still wrong - it should be 127, not 2.  Also, the filename is not
+    printed.  Unfortunately the code is badly tangled making this small
+    fix the most appropriate approach.)
+
+ -- Matthias Klose <doko@debian.org>  Wed,  5 Jul 2006 06:56:54 +0200
+
 bash (3.1-4) unstable; urgency=low
 
   * Update upstream patch 010, apply upstream patches 012, 013, 014.

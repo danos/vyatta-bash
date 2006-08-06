@@ -2,6 +2,7 @@ Source: bash
 Section: base
 Priority: required
 Maintainer: Matthias Klose <doko@debian.org>
+Uploaders: Sebastian Harl <sh@tokkee.org>
 Standards-Version: 3.6.2
 Build-Depends: autoconf, patch, bison, libncurses5-dev, texinfo, autotools-dev, debhelper (>= 4.1), texi2html, locales
 Build-Depends-Indep: tetex-bin
@@ -9,7 +10,7 @@ Build-Depends-Indep: tetex-bin
 Package: bash
 Architecture: any
 Pre-Depends: ${shlibs:Pre-Depends}
-Depends: base-files (>= 2.1.12), debianutils (>= 2.15)
+Depends: base-files (>= 2.1.12), debianutils (>= 2.8.4)
 Conflicts: bash-completion
 Replaces: bash-doc (<= 2.05-1), bash-completion
 Suggests: bash-doc
