@@ -1,7 +1,9 @@
 #! /bin/sh -e
 
-install-info --quiet --section "Shells" "Shells"  \
+if [ -f /usr/share/info/bashref.info.gz ]; then
+  install-info --quiet --section "Shells" "Shells"  \
     --description="GNU Bourne-Again SHell Features." \
 	/usr/share/info/bashref.info.gz
+fi
 
 #DEBHELPER#

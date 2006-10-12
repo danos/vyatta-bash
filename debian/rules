@@ -20,6 +20,8 @@ VERSION		:= 3.1
 #dpkg_ctrl_args := -v$(PKGVERSION) -VBinary-Version=$(PKGVERSION)
 
 
+with_gfdl	= no
+
 CC	= gcc
 CFLAGS	= -g -O2
 SHELL	= bash
@@ -166,8 +168,10 @@ stamps/stamp-build-bashdb-doc:
 
 bash-doc-build: stamps/stamp-build-bash-doc
 stamps/stamp-build-bash-doc:
+ifeq ($(with_gfdl),yes)
 	rm -f bash/doc/bashref.info
 	$(MAKE) -C build-bash/doc bashref.info bashref.pdf
+endif
 	touch stamps/stamp-build-bash-doc
 
 # ---------------------------------------------------------------------------
@@ -222,8 +226,10 @@ stamps/stamp-install-bash: stamps/stamp-build-bash
 		usr/share/doc/$(p)/examples/loadables \
 		usr/{include/bash/{builtins,lib/{glob,tilde}}}
 
+ifeq ($(with_gfdl),yes)
 # XXXXX
 	cp -p build-bash/doc/*.info bash/doc/
+endif
 
 	: # install it
 	$(MAKE) -C build-bash install \
@@ -265,10 +271,12 @@ endif
 	$(ID) debian/bash_completion/BUGS \
 		$(d)/usr/share/doc/bash/BUGS.bash_completion
 
+ifeq ($(with_gfdl),yes)
 	: # files for the bash-doc package
 	mv $(d)/usr/share/info/bash.info $(d)/usr/share/info/bashref.info
 	ln -sf bashref.info $(d)/usr/share/info/bash.info
 	mv $(d)/usr/share/info $(d_doc)/usr/share/
+endif
 
 	dh_installexamples -p$(p_doc) bash/examples/*
 	mv $(d_doc)/usr/share/doc/$(p_doc)/examples \
@@ -347,10 +355,12 @@ binary-doc: bash-install bash-doc-build
 	dh_testdir
 	dh_testroot
 	mkdir -p $(d_doc)/usr/share/doc/$(p)
+ifeq ($(with_gfdl),yes)
 	cp -p build-bash/doc/bashref.pdf $(d_doc)/usr/share/doc/$(p)/.
 	dh_installdocs -p$(p_doc) 
 	dh_link -p$(p_doc) \
 	    /usr/share/doc/$(p)/bashref.pdf /usr/share/doc/$(p_doc)/bashref.pdf
+endif
 	dh_installchangelogs -p$(p_doc)
 	dh_compress -p$(p_doc) -Xexamples -X.pdf
 	dh_fixperms -p$(p_doc)
@@ -364,9 +374,12 @@ binary-bash: bash-install debian/bash.preinst
 	dh_testroot
 	dh_installchangelogs -p$(p) bash/CWRU/changelog
 	dh_installdocs -p$(p) \
-		bash/{CHANGES,NEWS,COMPAT,doc/{FAQ,INTRO},POSIX} \
+		bash/{CHANGES,NEWS,COMPAT,doc/INTRO,POSIX} \
 		debian/{README.Debian,README.abs-guide,README.commands} \
 		debian/inputrc.arrows
+ifeq ($(with_gfdl),yes)
+	cp -p bash/doc/FAQ $(d)/usr/share/doc/$(p)/.
+endif
 	cp -p debian/FAQ $(d)/usr/share/doc/$(p)/.
 	dh_installman -p$(p) bash/doc/rbash.1 debian/bash-builtins.7
 	dh_installmenu -p$(p)
@@ -468,9 +481,11 @@ stamps/stamp-build-$(build): stamps/stamp-configure-$(build)
 		YACC="$(YACC)" \
 		deb_builddir=build-$(build)/ \
 		$(debflags)
+ifeq ($(with_gfdl),yes)
 # XXX not done by toplevel make?
 	$(MAKE) -C build-$(build)/doc \
 		bash.info
+endif
 	touch stamps/stamp-build-$(build)
 
 do-configure-$(build): stamps/stamp-configure-$(build)
@@ -533,6 +548,17 @@ debian_patches = \
 	login-shell \
 	man-typos \
 
+ifeq ($(with_gfdl),yes)
+  debian_patches += \
+	bash31-002-doc \
+	command-not-found-doc \
+	man-substring-exp-doc \
+	man-test2-doc \
+	ulimit-doc \
+	man-net-redirections-doc \
+
+endif
+
 # all debian_patches, without bash205b-*
 # patches integrated in bashdb: builtins-shift, execute-cmd, man-arithmetic,
 #     man-builtin, man-fignore, random, rbash-manpage, report-155436,
@@ -582,7 +608,7 @@ stamps/stamp-unpack-$(bash_src):
 	mkdir -p stamps
 	rm -rf bash-$(VERSION) $(bash_src)
 	rm -f stamps/stamp-patch-$(bash_src){,-*}
-	tar xfz bash-$(VERSION).tar.gz
+	tar xfz bash-$(VERSION)*.tar.gz
 	mv bash-$(VERSION) $(bash_src)
 	cp -p /usr/share/misc/config.* $(bash_src)/.
 	cp -p /usr/share/misc/config.* $(bash_src)/support/.

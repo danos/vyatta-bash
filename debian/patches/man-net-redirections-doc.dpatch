@@ -17,15 +17,15 @@ exit 0
 
 # DP: Document, that bash is configured using --disable-net-redirections.
 
---- bash/doc/bash.1~	2005-09-09 22:08:10.833197680 +0200
-+++ bash/doc/bash.1	2005-09-10 11:47:57.694365104 +0200
-@@ -3033,6 +3033,9 @@
- .PD
- .RE
- .PP
-+\fBNOTE:\fP Bash, as packaged for Debian, does \fBnot\fP support using
-+the \fB/dev/tcp\fP and \fB/dev/udp\fP files.
-+.PP
+--- bash/doc/bashref.texi~	2005-09-09 22:08:10.865192816 +0200
++++ bash/doc/bashref.texi	2005-09-10 11:42:51.805867224 +0200
+@@ -2025,6 +2025,9 @@
+ is an integer port number or service name, Bash attempts to open a UDP
+ connection to the corresponding socket.
+ 
++NOTE: @code{Bash}, as packaged for Debian, does not support using the
++@file{/dev/tcp} and @file{/dev/udp} files.
++
+ @end table
+ 
  A failure to open or create a file causes the redirection to fail.
- .PP
- Redirections using file descriptors greater than 9 should be used with

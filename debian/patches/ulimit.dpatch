@@ -55,37 +55,6 @@ exit 0
  #ifdef RLIMIT_STACK
    { 's',	RLIMIT_STACK, 1024,	"stack size",		"kbytes" },
  #endif
---- bash-3.1/doc/bashref.texi.ulimit	2006-01-10 11:21:49.000000000 +0000
-+++ bash-3.1/doc/bashref.texi	2006-01-10 11:25:06.000000000 +0000
-@@ -3833,7 +3833,7 @@
- @item ulimit
- @btindex ulimit
- @example
--ulimit [-acdfilmnpqstuvxSH] [@var{limit}]
-+ulimit [-acdefilmnpqrstuvxSH] [@var{limit}]
- @end example
- @code{ulimit} provides control over the resources available to processes
- started by the shell, on systems that allow such control.  If an
-@@ -3854,6 +3854,9 @@
- @item -d
- The maximum size of a process's data segment.
- 
-+@item -e
-+The maximum scheduling priority.
-+
- @item -f
- The maximum size of files created by the shell.
- 
-@@ -3875,6 +3878,9 @@
- @item -q
- The maximum number of bytes in POSIX message queues.
- 
-+@item -r
-+The maximum RT priority.
-+
- @item -s
- The maximum stack size.
- 
 --- bash-3.1/doc/bash.1.ulimit	2006-01-10 11:21:49.000000000 +0000
 +++ bash-3.1/doc/bash.1	2006-01-10 11:24:43.000000000 +0000
 @@ -8496,7 +8496,7 @@

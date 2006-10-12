@@ -1,3 +1,10 @@
+bash (3.1dfsg-6) unstable; urgency=low
+
+  * Remove the texinfo documentation from the package. Closes: #357260.
+  * Remove the FAQ from the package.
+
+ -- Matthias Klose <doko@debian.org>  Thu, 12 Oct 2006 22:35:46 +0200
+
 bash (3.1-5) unstable; urgency=low
 
   * Work around the broken remove-shell, not checking for the existance
