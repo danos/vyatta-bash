@@ -239,6 +239,10 @@ endif
 		DESTDIR=$(PWD)/$(d)
 	mv $(d)/usr/bin/bash $(d)/bin/.
 	chmod 755 $(d)/usr/bin/bashbug
+ifneq ($(with_gfdl),yes)
+	mkdir -p $(d)/usr/share/man/man1
+	cp -p bash/doc/bash.1 $(d)/usr/share/man/man1/bash.1
+endif
 
 	: # extra links
 	ln -sf bash $(d)/bin/rbash

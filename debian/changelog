@@ -1,3 +1,9 @@
+bash (3.1dfsg-7) unstable; urgency=medium
+
+  * Restore the bash(1) manual page. Closes: #392989.
+
+ -- Matthias Klose <doko@debian.org>  Sun, 22 Oct 2006 13:41:59 +0000
+
 bash (3.1dfsg-6) unstable; urgency=low
 
   * Remove the texinfo documentation from the package. Closes: #357260.
