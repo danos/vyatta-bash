@@ -359,9 +359,9 @@ binary-doc: bash-install bash-doc-build
 	dh_testdir
 	dh_testroot
 	mkdir -p $(d_doc)/usr/share/doc/$(p)
+	dh_installdocs -p$(p_doc) 
 ifeq ($(with_gfdl),yes)
 	cp -p build-bash/doc/bashref.pdf $(d_doc)/usr/share/doc/$(p)/.
-	dh_installdocs -p$(p_doc) 
 	dh_link -p$(p_doc) \
 	    /usr/share/doc/$(p)/bashref.pdf /usr/share/doc/$(p_doc)/bashref.pdf
 endif

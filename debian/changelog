@@ -1,3 +1,10 @@
+bash (3.1dfsg-8) unstable; urgency=high
+
+  * bash-doc: Install copyright file when building without the
+    gfdl'ed docs. Closes: #402471.
+
+ -- Matthias Klose <doko@debian.org>  Mon, 11 Dec 2006 22:08:10 +0100
+
 bash (3.1dfsg-7) unstable; urgency=medium
 
   * Restore the bash(1) manual page. Closes: #392989.
