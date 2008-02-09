@@ -2,16 +2,17 @@ Source: bash
 Section: base
 Priority: required
 Maintainer: Matthias Klose <doko@debian.org>
-Standards-Version: 3.6.2
-Build-Depends: autoconf, patch, bison, libncurses5-dev, texinfo, autotools-dev, debhelper (>= 4.1), texi2html, locales
-Build-Depends-Indep: tetex-bin
+Standards-Version: 3.7.3
+Build-Depends: autoconf, patch, bison, libncurses5-dev, texinfo, autotools-dev, debhelper (>= 5), texi2html, locales
+Build-Depends-Indep: texlive-latex-base
 
 Package: bash
 Architecture: any
 Pre-Depends: ${shlibs:Pre-Depends}
 Depends: base-files (>= 2.1.12), debianutils (>= 2.15)
-Conflicts: bash-completion
-Replaces: bash-doc (<= 2.05-1), bash-completion
+Recommends: bash-completion (>= 20060301-1)
+Conflicts: bash-completion (<< 20060301-1)
+Replaces: bash-doc (<= 2.05-1), bash-completion (<< 20060301-0)
 Suggests: bash-doc
 Essential: yes
 Section: shells
@@ -24,8 +25,8 @@ Description: The GNU Bourne Again SHell
  Bash is ultimately intended to be a conformant implementation of the
  IEEE POSIX Shell and Tools specification (IEEE Working Group 1003.2).
  .
- Included in the bash package is the Programmable Completion Code, by
- Ian Macdonald.
+ The Programmable Completion Code, by Ian Macdonald, is now found in
+ the bash-completion package.
 
 Package: bash-minimal
 Architecture: any
@@ -71,7 +72,7 @@ Description: Documentation and examples for the The GNU Bourne Again SHell
  commands read from the standard input or from a file.  Bash also
  incorporates useful features from the Korn and C shells (ksh and csh).
  .
- This package contains the documentation in info format, all the
+ This package contains the distributable documentation, all the
  examples and the main changelog.
 
 Package: bashdb

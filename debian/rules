@@ -218,7 +218,6 @@ stamps/stamp-install-bash: stamps/stamp-build-bash
 	dh_installdirs -p$(p) \
 		bin \
 		etc/skel \
-		etc/bash_completion.d \
 		usr/share/doc/$(p)
 	dh_installdirs -p$(p_doc) \
 		usr/share/doc/$(p)
@@ -261,7 +260,9 @@ ifneq (,$(findstring $(DEB_HOST_ARCH_OS), linux freebsd))
 	$(ID) debian/clear_console.1 $(d)/usr/share/man/man1/
 endif
 
+ifeq (0,1)
 	: # install bash-completion
+	mkdir -p $(d)/etc/bash_completion.d
 	$(ID) debian/bash_completion/bash_completion $(d)/etc/.
 	cp -a debian/bash_completion/contrib \
 		$(d)/usr/share/doc/$(p)/completion-contrib
@@ -274,6 +275,7 @@ endif
 		>> $(d)/usr/share/doc/$(p)/README.bash_completion
 	$(ID) debian/bash_completion/BUGS \
 		$(d)/usr/share/doc/bash/BUGS.bash_completion
+endif
 
 ifeq ($(with_gfdl),yes)
 	: # files for the bash-doc package
@@ -539,6 +541,7 @@ debian_patches = \
 	man-test \
 	man-test2 \
 	man-net-redirections \
+	man-quotes \
 	privmode \
 	rbash-manpage \
 	command-not-found \

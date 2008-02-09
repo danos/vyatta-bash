@@ -1,3 +1,14 @@
+bash (3.1dfsg-9) unstable; urgency=low
+
+  * Remove bash-completion from the source.
+  * Remove the conflict with bash-completion, recommend bash-completion.
+  * Fix quotes in man page. Closes: #402845.
+  * clear_console: Don't segv if stdin isn't a tty. Closes: #451819.
+  * clear_console(1): Fix synopsis. Closes: #441242.
+  * Clarify bash-doc package description: Closes: #394275.
+
+ -- Matthias Klose <doko@debian.org>  Sat, 09 Feb 2008 10:14:22 +0100
+
 bash (3.1dfsg-8) unstable; urgency=high
 
   * bash-doc: Install copyright file when building without the

@@ -139,10 +139,18 @@ int is_pseudo_tty(int fd)
 {
   char *tty = ttyname(fd);
 
-  if (!strncmp(tty, "/dev/pts/", 9))
+  if (!tty)
+    {
+      if (!quiet)
+	perror("ttyname");
+      return 0;
+    }
+
+  if (strlen(tty) >= 9 && !strncmp(tty, "/dev/pts/", 9))
     return 1;
 
-  if (!strncmp(tty, "/dev/tty", 8) && tty[8] >= 'a' && tty[8] <= 'z')
+  if (strlen(tty) >= 8 && !strncmp(tty, "/dev/tty", 8)
+      && tty[8] >= 'a' && tty[8] <= 'z')
     return 1;
 
   return 0;
@@ -213,6 +221,7 @@ int clear_console(int fd)
 	perror("VT_WAITACTIVE");
       exit(1);
     }
+  return 0;
 }
 
 int main (int argc, char* argv[])
