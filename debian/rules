@@ -13,7 +13,7 @@ DEB_HOST_GNU_CPU	:= $(shell dpkg-architecture -qDEB_HOST_GNU_CPU)
 DEB_HOST_GNU_SYSTEM	:= $(shell dpkg-architecture -qDEB_HOST_GNU_SYSTEM)
 DEB_HOST_GNU_TYPE	:= $(shell dpkg-architecture -qDEB_HOST_GNU_TYPE)
 
-VERSION		:= 3.1
+VERSION		:= 3.2
 #PKGVERSION	:= $(shell dpkg-parsechangelog \
 #			| sed -n '/Version:/s/\(.* \)\(.*\)-2\(.*\)/\2\3/p')
 #PKGVERSION	:= 3.0
@@ -23,7 +23,7 @@ VERSION		:= 3.1
 with_gfdl	= no
 
 CC	= gcc
-CFLAGS	= -g -O2
+CFLAGS	= -g -O2 -Wall
 SHELL	= bash
 YACC	= bison -y
 
@@ -35,7 +35,6 @@ with_installed_rl = no
 
 debflags =
 
-PWD	:= $(shell pwd)
 p	= bash
 p_min	= bash-minimal
 p_stat	= bash-static
@@ -180,9 +179,11 @@ check: stamps/stamp-check
 stamps/stamp-check: bash-build
 	@echo BEGIN test
 ifeq ($(DEB_BUILD_GNU_TYPE),$(DEB_HOST_GNU_TYPE))
+  ifneq (,$(findstring nocheck, $(DEB_BUILD_OPTIONS)))
 	-sh debian/locale-gen
-	LOCPATH=$(PWD)/locales \
+	LOCPATH=$(CURDIR)/locales \
 		$(MAKE) -C build-bash test 2>&1 | tee build-bash/test-protocol
+  endif
 else
 	@echo Suppress 'make' test, because this is cross build
 endif
@@ -223,7 +224,7 @@ stamps/stamp-install-bash: stamps/stamp-build-bash
 		usr/share/doc/$(p)
 	dh_installdirs -p$(p_bins) \
 		usr/share/doc/$(p)/examples/loadables \
-		usr/{include/bash/{builtins,lib/{glob,tilde}}}
+		usr/include/bash/{builtins,lib/{glob,tilde}}
 
 ifeq ($(with_gfdl),yes)
 # XXXXX
@@ -235,7 +236,7 @@ endif
 		CC='$(CC)' \
 		CFLAGS='$(CFLAGS)' \
 		YACC="$(YACC)" \
-		DESTDIR=$(PWD)/$(d)
+		DESTDIR=$(CURDIR)/$(d)
 	mv $(d)/usr/bin/bash $(d)/bin/.
 	chmod 755 $(d)/usr/bin/bashbug
 ifneq ($(with_gfdl),yes)
@@ -330,7 +331,7 @@ stamps/stamp-install-bashdb: stamps/stamp-build-bashdb
 		CC='$(CC)' \
 		CFLAGS='$(CFLAGS)' \
 		YACC="$(YACC)" \
-		DESTDIR=$(PWD)/$(d_bdb)
+		DESTDIR=$(CURDIR)/$(d_bdb)
 	rm -f $(d_bdb)/usr/bin/bashbug
 	rm -f $(d_bdb)/usr/share/man/man1/bashbug.1
 	rm -f $(d_bdb)/usr/share/info/*
@@ -339,7 +340,7 @@ stamps/stamp-install-bashdb: stamps/stamp-build-bashdb
 		$(d_bdb)/usr/share/man/man1/bash+dbg.1
 
 	$(MAKE) -C build-bashdb/debugger/doc install \
-		DESTDIR=$(PWD)/$(d_bdb)
+		DESTDIR=$(CURDIR)/$(d_bdb)
 	cp -p build-bashdb/debugger/doc/bashdb.html \
 		$(d_bdb)/usr/share/doc/$(p_bdb)/.
 	cp -p build-bashdb/debugger/doc/bashdb.1 \
@@ -367,7 +368,7 @@ ifeq ($(with_gfdl),yes)
 	dh_link -p$(p_doc) \
 	    /usr/share/doc/$(p)/bashref.pdf /usr/share/doc/$(p_doc)/bashref.pdf
 endif
-	dh_installchangelogs -p$(p_doc)
+	dh_installchangelogs -p$(p_doc) bash/CWRU/changelog
 	dh_compress -p$(p_doc) -Xexamples -X.pdf
 	dh_fixperms -p$(p_doc)
 	dh_installdeb -p$(p_doc)
@@ -378,7 +379,7 @@ endif
 binary-bash: bash-install debian/bash.preinst
 	dh_testdir
 	dh_testroot
-	dh_installchangelogs -p$(p) bash/CWRU/changelog
+	dh_installchangelogs -p$(p)
 	dh_installdocs -p$(p) \
 		bash/{CHANGES,NEWS,COMPAT,doc/INTRO,POSIX} \
 		debian/{README.Debian,README.abs-guide,README.commands} \
@@ -510,25 +511,39 @@ stamps/stamp-configure-$(build): stamps/stamp-patch-$(bash_src)
 
 patchdir	= debian/patches
 debian_patches = \
-	bash31-001 \
-	bash31-002 \
-	bash31-003 \
-	bash31-004 \
-	bash31-005 \
-	bash31-006 \
-	bash31-007 \
-	bash31-008 \
-	bash31-009 \
-	bash31-010 \
-	bash31-011 \
-	bash31-012 \
-	bash31-013 \
-	bash31-014 \
-	bash31-015 \
-	bash31-016 \
-	bash31-017 \
-	readline51-001 \
-	rl-inputrc \
+	bash32-001 \
+	bash32-002 \
+	bash32-003 \
+	bash32-004 \
+	bash32-005 \
+	bash32-006 \
+	bash32-007 \
+	bash32-008 \
+	bash32-009 \
+	bash32-010 \
+	bash32-011 \
+	bash32-012 \
+	bash32-013 \
+	bash32-014 \
+	bash32-015 \
+	bash32-016 \
+	bash32-017 \
+	bash32-018 \
+	bash32-019 \
+	bash32-020 \
+	bash32-021 \
+	bash32-022 \
+	bash32-023 \
+	bash32-024 \
+	bash32-025 \
+	bash32-026 \
+	bash32-027 \
+	bash32-028 \
+	bash32-029 \
+	bash32-030 \
+	bash32-031 \
+	bash32-032 \
+	bash32-033 \
 	bashbug-editor \
 	deb-bash-config \
 	deb-examples \
@@ -541,29 +556,21 @@ debian_patches = \
 	man-test \
 	man-test2 \
 	man-net-redirections \
-	man-quotes \
 	privmode \
 	rbash-manpage \
 	command-not-found \
 	bash-default-editor \
-	ulimit \
 	po-sv \
 	bash-subst-param-length \
 	pgrp-pipe \
 	input-err \
-	read-memleak \
-	login-shell \
-	man-typos \
 
 ifeq ($(with_gfdl),yes)
   debian_patches += \
-	bash31-002-doc \
-	command-not-found-doc \
+	command-not-found-doc
 	man-substring-exp-doc \
 	man-test2-doc \
-	ulimit-doc \
-	man-net-redirections-doc \
-
+	man-net-redirections-doc
 endif
 
 # all debian_patches, without bash205b-*
@@ -617,6 +624,7 @@ stamps/stamp-unpack-$(bash_src):
 	rm -f stamps/stamp-patch-$(bash_src){,-*}
 	tar xfz bash-$(VERSION)*.tar.gz
 	mv bash-$(VERSION) $(bash_src)
+	uudecode -o - debian/bash.pot.uu | zcat > $(bash_src)/po/bash.pot
 	cp -p /usr/share/misc/config.* $(bash_src)/.
 	cp -p /usr/share/misc/config.* $(bash_src)/support/.
 	touch stamps/stamp-unpack-$(bash_src)

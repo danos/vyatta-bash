@@ -32,3 +32,11 @@ PS1='${debian_chroot:+($debian_chroot)}\u@\h:\w\$ '
 #if [ -f /etc/bash_completion ]; then
 #    . /etc/bash_completion
 #fi
+
+# if the command-not-found package is installed, use it
+if [ -x /usr/lib/command-not-found ]; then
+	function command_not_found_handle {
+                /usr/bin/python /usr/lib/command-not-found -- $1
+                return $?
+	}
+fi

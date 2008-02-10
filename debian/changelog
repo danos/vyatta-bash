@@ -1,3 +1,22 @@
+bash (3.2-1) experimental; urgency=low
+
+  * New upstream version (including upstream patches 01 - 33).
+    The syntax of regexes in Bash 3.2 was changed so that single quotes no
+    longer surround regexes. e.g, a regex of the form
+      if [[ "foo.tex" =~ '^(.*)\.tex$' ]]
+    becomes
+      if [[ "foo.tex" =~ ^(.*)\.tex$ ]]
+	
+  * Merge from Ubuntu:
+    - debian/skel.bashrc: Check for dircolors before using it.
+    - debian/skel.bashrc: Set HISTCONTROL to ignoreboth.
+    - Include correct bash.pot file.
+    - Move CWRU/changelog from the bash to the bash-doc package (we already
+      have the CHANGES files).
+    - debian/etc.bash.bashrc: Install command-not-found handler if available.
+
+ -- Matthias Klose <doko@debian.org>  Sun, 10 Feb 2008 23:49:35 +0100
+
 bash (3.1dfsg-9) unstable; urgency=low
 
   * Remove bash-completion from the source.

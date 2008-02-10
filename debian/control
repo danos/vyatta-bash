@@ -3,15 +3,16 @@ Section: base
 Priority: required
 Maintainer: Matthias Klose <doko@debian.org>
 Standards-Version: 3.7.3
-Build-Depends: autoconf, patch, bison, libncurses5-dev, texinfo, autotools-dev, debhelper (>= 5), texi2html, locales
+Build-Depends: autoconf, autotools-dev, patch, bison, libncurses5-dev,
+ texinfo, debhelper (>= 5), texi2html, locales, gettext, sharutils
 Build-Depends-Indep: texlive-latex-base
 
 Package: bash
 Architecture: any
 Pre-Depends: ${shlibs:Pre-Depends}
 Depends: base-files (>= 2.1.12), debianutils (>= 2.15)
-Recommends: bash-completion (>= 20060301-1)
-Conflicts: bash-completion (<< 20060301-1)
+Recommends: bash-completion (>= 20060301-0)
+Conflicts: bash-completion (<< 20060301-0)
 Replaces: bash-doc (<= 2.05-1), bash-completion (<< 20060301-0)
 Suggests: bash-doc
 Essential: yes
@@ -56,7 +57,7 @@ Description: The GNU Bourne Again SHell (static version)
 
 Package: bash-builtins
 Architecture: any
-Depends: bash (= ${Source-Version})
+Depends: bash (= ${binary:Version})
 Section: utils
 Priority: optional
 Description: Bash loadable builtins - headers & examples
@@ -67,6 +68,7 @@ Package: bash-doc
 Architecture: all
 Section: doc
 Priority: optional
+Replaces: bash (<< 3.2-1)
 Description: Documentation and examples for the The GNU Bourne Again SHell
  Bash is an sh-compatible command language interpreter that executes
  commands read from the standard input or from a file.  Bash also
