@@ -15,9 +15,27 @@ case "$1" in
 esac
 exit 0
 
-# DP: Add a shopt option compat31 to falls back to the behaviour of bash-3.1 
-# DP: and earlier versions, in that quoting the string argument to the [[ 
-# DP: command's =~ +operator does not force string matching.
+# DP: bash-3.2 upstream patch bash32-039
+
+			     BASH PATCH REPORT
+			     =================
+
+Bash-Release: 3.2
+Patch-ID: bash32-039
+
+Bug-Reported-by:	rew@erebor.com
+Bug-Reference-ID:	<20070119065603.546D011E9C@kansas.erebor.com>
+Bug-Reference-URL:	
+
+Bug-Description:
+
+Bash-3.2 changed the behavior of the [[ command's `=~' operator when the
+right-hand side was quoted:  it matched the quoted portions as strings.
+This patch introduces a new shell option: compat31.  When enabled, it
+restores the bash-3.1 behavior with respect to evaluating quoted arguments
+to the =~ operator.
+
+Patch:
 
 *** ../bash-3.2-patched/execute_cmd.c	2007-12-14 21:12:39.000000000 -0500
 --- execute_cmd.c	2008-02-22 21:20:40.000000000 -0500
@@ -52,7 +70,7 @@ exit 0
 --- 44,50 ----
   const char *sccs_version = SCCSVERSION;
   
-+ /* If == 31, shell compatible with bash-3.1, = =32 with bash-3.2, and so on */
++ /* If == 31, shell compatible with bash-3.1, == 32 with bash-3.2, and so on */
 + int shell_compatibility_level = 32;
 + 
   /* Functions for getting, setting, and displaying the shell version. */
@@ -103,25 +121,60 @@ exit 0
 + 
   #if defined (RESTRICTED_SHELL)
   /* Don't allow the value of restricted_shell to be modified. */
+*** ../bash-3.2-patched/doc/bash.1	2006-09-28 10:26:05.000000000 -0400
+--- doc/bash.1	2008-04-25 12:32:49.000000000 -0400
+***************
+*** 7978,7981 ****
+--- 8200,8209 ----
+  easy re-editing of multi-line commands.
+  .TP 8
++ .B compat31
++ If set,
++ .B bash
++ changes its behavior to that of version 3.1 with respect to quoted
++ arguments to the conditional command's =~ operator.
++ .TP 8
+  .B dotglob
+  If set, 
+*** ../bash-3.2-patched/tests/shopt.right	2005-02-19 17:46:09.000000000 -0500
+--- tests/shopt.right	2008-04-28 09:13:07.000000000 -0400
+***************
+*** 7,10 ****
+--- 7,11 ----
+  shopt -u checkwinsize
+  shopt -s cmdhist
++ shopt -u compat31
+  shopt -u dotglob
+  shopt -u execfail
+***************
+*** 54,57 ****
+--- 55,59 ----
+  shopt -u checkhash
+  shopt -u checkwinsize
++ shopt -u compat31
+  shopt -u dotglob
+  shopt -u execfail
+***************
+*** 78,81 ****
+--- 80,84 ----
+  checkhash      	off
+  checkwinsize   	off
++ compat31       	off
+  dotglob        	off
+  execfail       	off
 
---- doc/bash.1~	2008-04-14 22:41:57.000000000 +0000
-+++ doc/bash.1	2008-04-14 22:51:35.000000000 +0000
-@@ -8010,6 +8010,18 @@
- command in the same history entry.  This allows
- easy re-editing of multi-line commands.
- .TP 8
-+.B compat31
-+If set,
-+.B bash
-+falls back to the behaviour of bash-3.1 and earlier versions, in that 
-+quoting the string argument to the
-+.B [[
-+command's
-+.B =~
-+operator does
-+.B not
-+force string matching.
-+.TP 8
- .B dotglob
- If set, 
- .B bash
+*** ../bash-3.2/patchlevel.h	Thu Apr 13 08:31:04 2006
+--- patchlevel.h	Mon Oct 16 14:22:54 2006
+***************
+*** 26,30 ****
+     looks for to find the patch level (for the sccs version string). */
+  
+! #define PATCHLEVEL 38
+  
+  #endif /* _PATCHLEVEL_H_ */
+--- 26,30 ----
+     looks for to find the patch level (for the sccs version string). */
+  
+! #define PATCHLEVEL 39
+  
+  #endif /* _PATCHLEVEL_H_ */

@@ -179,7 +179,7 @@ check: stamps/stamp-check
 stamps/stamp-check: bash-build
 	@echo BEGIN test
 ifeq ($(DEB_BUILD_GNU_TYPE),$(DEB_HOST_GNU_TYPE))
-  ifneq (,$(findstring nocheck, $(DEB_BUILD_OPTIONS)))
+  ifeq (,$(findstring nocheck, $(DEB_BUILD_OPTIONS)))
 	-sh debian/locale-gen
 	LOCPATH=$(CURDIR)/locales \
 		$(MAKE) -C build-bash test 2>&1 | tee build-bash/test-protocol
@@ -547,6 +547,12 @@ debian_patches = \
 	bash32-031 \
 	bash32-032 \
 	bash32-033 \
+	bash32-034 \
+	bash32-035 \
+	bash32-036 \
+	bash32-037 \
+	bash32-038 \
+	bash32-039 \
 	bashbug-editor \
 	deb-bash-config \
 	deb-examples \
@@ -567,7 +573,6 @@ debian_patches = \
 	bash-subst-param-length \
 	pgrp-pipe \
 	input-err \
-	shell-compat \
 	exec-redirections-man \
 	bash-aliases-repeat \
 	builtins-caller \
@@ -575,12 +580,12 @@ debian_patches = \
 
 ifeq ($(with_gfdl),yes)
   debian_patches += \
-	command-not-found-doc
+	command-not-found-doc \
 	man-substring-exp-doc \
 	man-test2-doc \
 	man-net-redirections-doc \
+	bash32-039-doc \
 	exec-redirections-texi \
-	shell-compat-doc \
 
 endif
 
@@ -621,11 +626,10 @@ stamps/stamp-patch-$(bash_src): stamps/stamp-unpack-$(bash_src) \
 	mv -f pxxx $@
 
 stamps/stamp-patch-$(bash_src)-%: $(patchdir)/%.dpatch
-	if [ -x $< ]; then true; else chmod +x $<; fi
 	if [ -f $@ ]; then \
 	  echo "$* patches already applied."; exit 1; \
 	fi
-	$< -patch -d $(bash_src)
+	sh $< -patch -d $(bash_src)
 	echo "$* patches applied." > $@
 
 unpack-$(bash_src): stamps/stamp-unpack-$(bash_src)

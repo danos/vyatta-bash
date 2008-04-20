@@ -111,6 +111,7 @@ int unmodified_file(char *fn, int md5sumc, unsigned char* md5sumv[])
 
 unsigned char *md5sumv_bash_profile[] = {
   "d1a8c44e7dd1bed2f3e75d1343b6e4e1", // dapper, edgy, etch
+  "0bc1802860b758732b862ef973cd79ff", // feisty, gutsy
 };
 const int md5sumc_bash_profile = sizeof(md5sumv_bash_profile) / sizeof (char *);
 

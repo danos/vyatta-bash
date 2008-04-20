@@ -1,3 +1,12 @@
+bash (3.2-3) unstable; urgency=low
+
+  * /etc/skel/.bashrc: Overwrite SHELL for calling lesspipe. Closes: #385168.
+  * Only call `add-shell' on new installations. Closes: #477750.
+  * Apply upstream fixes 034 - 039.
+  * Add explicit copyright notice to clear_console(1).
+
+ -- Matthias Klose <doko@debian.org>  Sun, 20 Apr 2008 13:31:10 +0200
+
 bash (3.2-2) unstable; urgency=low
 
   * Add a shopt option compat31 to fall back to the behaviour of bash-3.1 
