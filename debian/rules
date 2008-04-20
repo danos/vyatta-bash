@@ -196,15 +196,17 @@ clean:
 	dh_testdir
 	dh_testroot
 	rm -rf stamps build-* bash bashdb
-	rm -f debian/bash.preinst
+	rm -f debian/bash.preinst debian/*.o
 	rm -f debian/README.Debian
 	rm -rf locales
 	rm -f clear_console
 	dh_clean
 
 preinst-build: debian/bash.preinst
-debian/bash.preinst: debian/bash.preinst.c
-	$(CC) -O2 -s -o debian/bash.preinst debian/bash.preinst.c
+debian/bash.preinst: debian/bash.preinst.c debian/md5.c debian/md5.h
+	$(CC) -O2 -c -Idebian -o debian/md5.o debian/md5.c
+	$(CC) -O2 -c -Idebian -o debian/bash.preinst.o debian/bash.preinst.c
+	$(CC) -O2 -s -o debian/bash.preinst debian/md5.o debian/bash.preinst.o
 
 # ---------------------------------------------------------------------------
 
@@ -239,6 +241,7 @@ endif
 		DESTDIR=$(CURDIR)/$(d)
 	mv $(d)/usr/bin/bash $(d)/bin/.
 	chmod 755 $(d)/usr/bin/bashbug
+	$(ID) debian/bashbug.1 $(d)/usr/share/man/man1/
 ifneq ($(with_gfdl),yes)
 	mkdir -p $(d)/usr/share/man/man1
 	cp -p bash/doc/bash.1 $(d)/usr/share/man/man1/bash.1
@@ -252,7 +255,7 @@ endif
 	: # skeleton files
 	$(ID) debian/etc.bash.bashrc $(d)/etc/bash.bashrc
 	$(ID) debian/skel.bashrc $(d)/etc/skel/.bashrc
-	$(ID) debian/skel.bash_profile $(d)/etc/skel/.bash_profile
+	$(ID) debian/skel.profile $(d)/etc/skel/.profile
 	$(ID) debian/skel.bash_logout $(d)/etc/skel/.bash_logout
 
 	: # clean_console
@@ -564,13 +567,21 @@ debian_patches = \
 	bash-subst-param-length \
 	pgrp-pipe \
 	input-err \
+	shell-compat \
+	exec-redirections-man \
+	bash-aliases-repeat \
+	builtins-caller \
+	man-bold-comma \
 
 ifeq ($(with_gfdl),yes)
   debian_patches += \
 	command-not-found-doc
 	man-substring-exp-doc \
 	man-test2-doc \
-	man-net-redirections-doc
+	man-net-redirections-doc \
+	exec-redirections-texi \
+	shell-compat-doc \
+
 endif
 
 # all debian_patches, without bash205b-*

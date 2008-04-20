@@ -1,9 +1,16 @@
-#! /bin/sh -e
+#! /bin/sh
 
-if [ "$1" = "purge" ]; then
-  rm -f /etc/bash_completion
-  rmdir --ignore-fail-on-non-empty /etc/bash_completion.d
-fi
+set -e
+
+case "$1" in
+    purge|remove|upgrade|failed-upgrade|abort-install|abort-upgrade|disappear)
+	;;
+
+    *)
+        echo "postrm called with unknown argument \`$1'" >&2
+        exit 1
+	;;
+esac
 
 if [ -x /usr/sbin/remove-shell ] && [ -f /etc/shells ]; then
     /usr/sbin/remove-shell /bin/bash
