@@ -1,3 +1,10 @@
+bash (3.2-4) unstable; urgency=low
+
+  * bash-minimal, bash-static: Only call `add-shell' on new installations.
+  * Only call remove-shell on package removal or purge.
+
+ -- Matthias Klose <doko@debian.org>  Mon, 12 May 2008 18:49:07 +0200
+
 bash (3.2-3) unstable; urgency=low
 
   * /etc/skel/.bashrc: Overwrite SHELL for calling lesspipe. Closes: #385168.
