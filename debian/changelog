@@ -1,8 +1,14 @@
-bash (3.2-6) unstable; urgency=medium
+bash (4.0-1) experimental; urgency=low
 
-  * bash. Depend on dash to install dash as a required package.
+  * New upstream version 4.0.
 
- -- Matthias Klose <doko@debian.org>  Mon, 20 Jul 2009 23:56:24 +0000
+ -- Matthias Klose <doko@debian.org>  Sun, 01 Mar 2009 10:56:15 +0100
+
+bash (4.0-0ubuntu1) jaunty; urgency=low
+
+  * New upstream version 4.0 beta.
+
+ -- Matthias Klose <doko@ubuntu.com>  Sat, 29 Nov 2008 18:20:35 +0100
 
 bash (3.2-5) unstable; urgency=low
 
