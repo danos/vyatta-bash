@@ -182,7 +182,7 @@ ifeq ($(DEB_BUILD_GNU_TYPE),$(DEB_HOST_GNU_TYPE))
   ifeq (,$(findstring nocheck, $(DEB_BUILD_OPTIONS)))
 	-sh debian/locale-gen
 	LOCPATH=$(CURDIR)/locales \
-		$(MAKE) -C build-bash test 2>&1 | tee build-bash/test-protocol
+		time $(MAKE) -C build-bash test 2>&1 | tee build-bash/test-protocol
   endif
 else
 	@echo Suppress 'make' test, because this is cross build
@@ -485,14 +485,35 @@ binary:	binary-indep binary-arch
 do-build-$(build): stamps/stamp-build-$(build)
 stamps/stamp-build-$(build): stamps/stamp-configure-$(build)
 	dh_testdir
+ifneq (,$(profiled_build))
+	$(MAKE) -C build-$(build) \
+		CC='$(CC)' \
+		CFLAGS='$(CFLAGS) -fprofile-generate' \
+		YACC="$(YACC)" \
+		deb_builddir=build-$(build)/ \
+		$(debflags)
+	-sh debian/locale-gen
+	cp debian/run-my-gprof bash/tests/
+	LOCPATH=$(CURDIR)/locales \
+	    time $(MAKE) -C build-$(build) TESTSCRIPT=run-my-gprof test 2>&1 \
+		| tee build-bash/profile-protocol
+	$(MAKE) -C build-$(build) clean
+	rm -f build-$(build)/lib/malloc/malloc*.gc??
+	$(MAKE) -C build-$(build) \
+		CC='$(CC)' \
+		CFLAGS='$(CFLAGS) -fprofile-use' \
+		YACC="$(YACC)" \
+		deb_builddir=build-$(build)/ \
+		$(debflags)
+else
 	$(MAKE) -C build-$(build) \
 		CC='$(CC)' \
 		CFLAGS='$(CFLAGS)' \
 		YACC="$(YACC)" \
 		deb_builddir=build-$(build)/ \
 		$(debflags)
-ifeq ($(with_gfdl),yes)
-# XXX not done by toplevel make?
+endif
+  ifeq ($(with_gfdl),yes)
 	$(MAKE) -C build-$(build)/doc \
 		bash.info
 endif
@@ -553,6 +574,15 @@ debian_patches = \
 	bash32-037 \
 	bash32-038 \
 	bash32-039 \
+	bash32-040 \
+	bash32-041 \
+	bash32-042 \
+	bash32-043 \
+	bash32-044 \
+	bash32-045 \
+	bash32-046 \
+	bash32-047 \
+	bash32-048 \
 	bashbug-editor \
 	deb-bash-config \
 	deb-examples \

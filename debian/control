@@ -4,7 +4,7 @@ Priority: required
 Maintainer: Matthias Klose <doko@debian.org>
 Standards-Version: 3.7.3
 Build-Depends: autoconf, autotools-dev, patch, bison, libncurses5-dev,
- texinfo, debhelper (>= 5), texi2html, locales, gettext, sharutils
+ texinfo, debhelper (>= 5), texi2html, locales, gettext, sharutils, time
 Build-Depends-Indep: texlive-latex-base
 
 Package: bash

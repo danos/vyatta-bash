@@ -1,3 +1,9 @@
+bash (3.2-5) unstable; urgency=low
+
+  * Apply upstream fixes 040 - 048.
+
+ -- Matthias Klose <doko@debian.org>  Sun, 01 Mar 2009 10:20:52 +0100
+
 bash (3.2-4) unstable; urgency=low
 
   * bash-minimal, bash-static: Only call `add-shell' on new installations.
