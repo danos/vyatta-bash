@@ -535,6 +535,16 @@ stamps/stamp-configure-$(build): stamps/stamp-patch-$(bash_src)
 
 patchdir	= debian/patches
 debian_patches = \
+	bash40-001 \
+	bash40-002 \
+	bash40-003 \
+	bash40-004 \
+	bash40-005 \
+	bash40-006 \
+	bash40-007 \
+	bash40-008 \
+	bash40-009 \
+	bash40-010 \
 	bashbug-editor \
 	deb-bash-config \
 	deb-examples \
@@ -555,6 +565,7 @@ debian_patches = \
 	input-err \
 	exec-redirections-man \
 	bash-aliases-repeat \
+	CVE-2008-5374 \
 
 ifeq ($(with_gfdl),yes)
   debian_patches += \

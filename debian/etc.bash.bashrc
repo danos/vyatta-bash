@@ -29,7 +29,7 @@ PS1='${debian_chroot:+($debian_chroot)}\u@\h:\w\$ '
 #esac
 
 # enable bash completion in interactive shells
-#if [ -f /etc/bash_completion ]; then
+#if [ -f /etc/bash_completion ] && [ $(set -o | grep -q '^posix[[:space:]]*off$' ]; then
 #    . /etc/bash_completion
 #fi
 

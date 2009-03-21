@@ -1,3 +1,12 @@
+bash (4.0-2) experimental; urgency=low
+
+  * Apply upstream patches 001 - 010. Closes: #518289.
+  * Fix insecure temp file handling in examples scripts. Closes: #509279.
+  * /etc/skel.bashrc: Only source bash_completion, if posix mode is turned
+    off. Closes: #498474.
+
+ -- Matthias Klose <doko@debian.org>  Sat, 21 Mar 2009 15:06:46 +0100
+
 bash (4.0-1) experimental; urgency=low
 
   * New upstream version 4.0.
