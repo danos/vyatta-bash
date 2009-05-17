@@ -545,6 +545,20 @@ debian_patches = \
 	bash40-008 \
 	bash40-009 \
 	bash40-010 \
+	bash40-011 \
+	bash40-012 \
+	bash40-013 \
+	bash40-014 \
+	bash40-015 \
+	bash40-016 \
+	bash40-017 \
+	bash40-018 \
+	bash40-019 \
+	bash40-020 \
+	bash40-021 \
+	bash40-022 \
+	bash40-023 \
+	bash40-024 \
 	bashbug-editor \
 	deb-bash-config \
 	deb-examples \

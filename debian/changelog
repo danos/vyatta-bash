@@ -1,3 +1,9 @@
+bash (4.0-3) experimental; urgency=low
+
+  * Apply upstream patches 011 - 024.
+
+ -- Matthias Klose <doko@debian.org>  Sun, 17 May 2009 15:29:21 +0200
+
 bash (4.0-2) experimental; urgency=low
 
   * Apply upstream patches 001 - 010. Closes: #518289.
