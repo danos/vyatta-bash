@@ -1,3 +1,9 @@
+bash (3.2-6) unstable; urgency=medium
+
+  * bash. Depend on dash to install dash as a required package.
+
+ -- Matthias Klose <doko@debian.org>  Mon, 20 Jul 2009 23:56:24 +0000
+
 bash (3.2-5) unstable; urgency=low
 
   * Apply upstream fixes 040 - 048.

@@ -10,7 +10,7 @@ Build-Depends-Indep: texlive-latex-base
 Package: bash
 Architecture: any
 Pre-Depends: ${shlibs:Pre-Depends}
-Depends: base-files (>= 2.1.12), debianutils (>= 2.15)
+Depends: base-files (>= 2.1.12), debianutils (>= 2.15), dash
 Recommends: bash-completion (>= 20060301-0)
 Conflicts: bash-completion (<< 20060301-0)
 Replaces: bash-doc (<= 2.05-1), bash-completion (<< 20060301-0)
