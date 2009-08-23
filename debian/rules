@@ -559,6 +559,10 @@ debian_patches = \
 	bash40-022 \
 	bash40-023 \
 	bash40-024 \
+	bash40-025 \
+	bash40-026 \
+	bash40-027 \
+	bash40-028 \
 	bashbug-editor \
 	deb-bash-config \
 	deb-examples \
@@ -570,7 +574,6 @@ debian_patches = \
 	man-nocaseglob \
 	man-test \
 	man-test2 \
-	man-net-redirections \
 	privmode \
 	rbash-manpage \
 	bash-default-editor \
@@ -585,8 +588,8 @@ ifeq ($(with_gfdl),yes)
   debian_patches += \
 	man-substring-exp-doc \
 	man-test2-doc \
-	man-net-redirections-doc \
 	exec-redirections-texi \
+	bash40-028-doc \
 
 endif
 

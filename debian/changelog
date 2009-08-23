@@ -1,3 +1,23 @@
+bash (4.0-4) unstable; urgency=low
+
+  * Apply upstream patches 024 - 028.
+    - patch 028 closes: #519165. bash-4.0 reverted to the historical
+      shell behavior of raising an error when $@ or $* was expanded
+      after `set -u' had been executed and there were no positional
+      parameters.  The Posix working group has since clarified the
+      standard's position on the issue, and $@ and $* are now the only
+      variables, parameters, or special parameters that do not raise an
+      error when unset if set -u is enabled.
+  * Enable net redirections, now that bash isn't the default shell
+    anymore.
+  * Changes to the skeletoon .bashrc:
+    - Fix example lines in /etc/bash.bashrc to enable bash completion.
+      Closes: #523706, #522857.
+    - Don't export HISTCONTROL in bashrc. Closes: #540371.
+    - Support user dircolors settings in ~/.dircolors. Closes: #506213.
+
+ -- Matthias Klose <doko@debian.org>  Sun, 23 Aug 2009 16:09:36 +0200
+
 bash (4.0-3) experimental; urgency=low
 
   * Apply upstream patches 011 - 024.

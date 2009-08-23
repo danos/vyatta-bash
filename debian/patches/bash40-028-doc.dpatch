@@ -1,0 +1,57 @@
+#! /bin/sh -e
+
+if [ $# -eq 3 -a "$2" = '-d' ]; then
+    pdir="-d $3"
+elif [ $# -ne 1 ]; then
+    echo >&2 "`basename $0`: script expects -patch|-unpatch as argument"
+    exit 1
+fi
+case "$1" in
+    -patch) patch $pdir -f --no-backup-if-mismatch -p0 < $0;;
+    -unpatch) patch $pdir -f --no-backup-if-mismatch -R -p0 < $0;;
+    *)
+	echo >&2 "`basename $0`: script expects -patch|-unpatch as argument"
+	exit 1
+esac
+exit 0
+
+# DP: bash-4.0 upstream fix 028 (documentation)
+
+			     BASH PATCH REPORT
+			     =================
+
+Bash-Release:	4.0
+Patch-ID:	bash40-028
+
+Bug-Reported-by:	martin f krafft <madduck@debian.org>
+Bug-Reference-ID:	<4A4E39E7.5080807@debian.org>
+Bug-Reference-URL:	http://bugs.debian.org/cgi-bin/bugreport.cgi?bug=519165
+			http://lists.gnu.org/archive/html/bug-bash/2009-07/msg00011.html
+
+Bug-Description:
+
+bash-4.0 reverted to the historical shell behavior of raising an error
+when $@ or $* was expanded after `set -u' had been executed and there
+were no positional parameters.  The Posix working group has since
+clarified the standard's position on the issue, and $@ and $* are now the
+only variables, parameters, or special parameters that do not raise an
+error when unset if set -u is enabled.
+
+Patch:
+
+*** ../bash-4.0-patched/doc/bashref.texi	Wed Feb 18 15:14:43 2009
+--- doc/bashref.texi	Wed Jun 17 08:50:46 2009
+***************
+*** 4139,4143 ****
+  
+  @item -u
+! Treat unset variables as an error when performing parameter expansion.
+  An error message will be written to the standard error, and a non-interactive
+  shell will exit.
+--- 4151,4156 ----
+  
+  @item -u
+! Treat unset variables and parameters other than the special parameters
+! @samp{@@} or @samp{*} as an error when performing parameter expansion.
+  An error message will be written to the standard error, and a non-interactive
+  shell will exit.
