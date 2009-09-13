@@ -1,3 +1,11 @@
+bash (4.0-6) unstable; urgency=medium
+
+  * Pre-depend on dash, instead of just depending on it.
+    Closes: #546504, #546516, #546518.
+  * Update and set homepage attribute. Closes: #546377, #546381.
+
+ -- Matthias Klose <doko@debian.org>  Sun, 13 Sep 2009 13:35:38 +0200
+
 bash (4.0-5) unstable; urgency=low
 
   * Re-add dependency on dash, lost with the upload of 4.0.

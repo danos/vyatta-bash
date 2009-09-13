@@ -4,10 +4,10 @@ the Bourne Again SHell.
 This package was put together by Matthias Klose <doko@debian.org>, from
 the following sources:
 
-  bash:			ftp.gnu.org:/pub/gnu/bash/bash-3.2.tar.gz
+  bash:			ftp.gnu.org:/pub/gnu/bash/bash-4.0.tar.gz
   bashdb:		http://bashdb.sf.net/
 
-Bash homepage:		 http://cnswww.cns.cwru.edu/~chet/bash/bashtop.html
+Bash homepage:		 http://tiswww.case.edu/php/chet/bash/bashtop.html
 
 Copyright (C) 1989-2006 Free Software Foundation, Inc.
 

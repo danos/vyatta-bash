@@ -2,15 +2,16 @@ Source: bash
 Section: base
 Priority: required
 Maintainer: Matthias Klose <doko@debian.org>
-Standards-Version: 3.8.0
+Standards-Version: 3.8.3
 Build-Depends: autoconf, autotools-dev, patch, bison, libncurses5-dev,
  texinfo, debhelper (>= 5), texi2html, locales, gettext, sharutils, time
 Build-Depends-Indep: texlive-latex-base
+Homepage: http://tiswww.case.edu/php/chet/bash/bashtop.html
 
 Package: bash
 Architecture: any
-Pre-Depends: ${shlibs:Pre-Depends}
-Depends: base-files (>= 2.1.12), debianutils (>= 2.15), dash (>= 0.5.5.1-2.2)
+Pre-Depends: dash (>= 0.5.5.1-2.2), ${shlibs:Pre-Depends}
+Depends: base-files (>= 2.1.12), debianutils (>= 2.15)
 Recommends: bash-completion (>= 20060301-0)
 Conflicts: bash-completion (<< 20060301-0)
 Replaces: bash-doc (<= 2.05-1), bash-completion (<< 20060301-0)
