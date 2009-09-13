@@ -1,3 +1,13 @@
+bash (4.0-5) unstable; urgency=low
+
+  * Re-add dependency on dash, lost with the upload of 4.0.
+  * Don't configure with --disable-net-redirections.
+  * Fix name of system wide bash_logout in bash(1). Closes: #546200.
+  * Stop shipping the sh and sh(1) symlinks. Closes: #545103.
+  * Apply upstream patches 029 - 033.
+
+ -- Matthias Klose <doko@debian.org>  Sun, 13 Sep 2009 12:55:54 +0200
+
 bash (4.0-4) unstable; urgency=low
 
   * Apply upstream patches 024 - 028.
@@ -10,7 +20,7 @@ bash (4.0-4) unstable; urgency=low
       error when unset if set -u is enabled.
   * Enable net redirections, now that bash isn't the default shell
     anymore.
-  * Changes to the skeletoon .bashrc:
+  * Changes to the skeleton .bashrc:
     - Fix example lines in /etc/bash.bashrc to enable bash completion.
       Closes: #523706, #522857.
     - Don't export HISTCONTROL in bashrc. Closes: #540371.
@@ -44,6 +54,12 @@ bash (4.0-0ubuntu1) jaunty; urgency=low
   * New upstream version 4.0 beta.
 
  -- Matthias Klose <doko@ubuntu.com>  Sat, 29 Nov 2008 18:20:35 +0100
+
+bash (3.2-6) unstable; urgency=medium
+
+  * bash. Depend on dash to install dash as a required package.
+
+ -- Matthias Klose <doko@debian.org>  Mon, 20 Jul 2009 23:56:24 +0000
 
 bash (3.2-5) unstable; urgency=low
 

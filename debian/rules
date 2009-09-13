@@ -51,7 +51,6 @@ d_bdb	= debian/$(p_bdb)
 
 conf_args = \
 	--with-curses \
-	--disable-net-redirections \
 	--enable-largefile \
 	--prefix=/usr \
 	--infodir=/usr/share/info \
@@ -249,8 +248,9 @@ endif
 
 	: # extra links
 	ln -sf bash $(d)/bin/rbash
-	ln -sf bash $(d)/bin/sh
-	ln -sf bash.1 $(d)/usr/share/man/man1/sh.1
+	: # now shipped by dash
+	: #ln -sf bash $(d)/bin/sh
+	: #ln -sf bash.1 $(d)/usr/share/man/man1/sh.1
 
 	: # skeleton files
 	$(ID) debian/etc.bash.bashrc $(d)/etc/bash.bashrc
@@ -563,6 +563,11 @@ debian_patches = \
 	bash40-026 \
 	bash40-027 \
 	bash40-028 \
+	bash40-029 \
+	bash40-030 \
+	bash40-031 \
+	bash40-032 \
+	bash40-033 \
 	bashbug-editor \
 	deb-bash-config \
 	deb-examples \
