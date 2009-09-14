@@ -1,3 +1,9 @@
+bash (4.0-7) unstable; urgency=medium
+
+  * Re-add the sh and sh(1) symlinks. Closes: #546516.
+
+ -- Matthias Klose <doko@debian.org>  Mon, 14 Sep 2009 08:11:58 +0200
+
 bash (4.0-6) unstable; urgency=medium
 
   * Pre-depend on dash, instead of just depending on it.

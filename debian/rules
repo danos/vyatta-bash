@@ -248,9 +248,9 @@ endif
 
 	: # extra links
 	ln -sf bash $(d)/bin/rbash
-	: # now shipped by dash
-	: #ln -sf bash $(d)/bin/sh
-	: #ln -sf bash.1 $(d)/usr/share/man/man1/sh.1
+#	: # now shipped by dash
+	ln -sf bash $(d)/bin/sh
+	ln -sf bash.1 $(d)/usr/share/man/man1/sh.1
 
 	: # skeleton files
 	$(ID) debian/etc.bash.bashrc $(d)/etc/bash.bashrc
