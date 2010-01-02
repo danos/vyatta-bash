@@ -1,3 +1,17 @@
+bash (4.1-1) unstable; urgency=low
+
+  * New upstream version 4.1.
+  * Stop building the bash-minimal package, not needed anymore with
+    dash being the default shell.
+
+ -- Matthias Klose <doko@debian.org>  Sat, 02 Jan 2010 13:49:24 +0100
+
+bash (4.1~rc1-1) unstable; urgency=low
+
+  * New upstream version 4.1, release candidate 1.
+
+ -- Matthias Klose <doko@debian.org>  Wed, 30 Dec 2009 15:41:40 +0100
+
 bash (4.0-7) unstable; urgency=medium
 
   * Re-add the sh and sh(1) symlinks. Closes: #546516.

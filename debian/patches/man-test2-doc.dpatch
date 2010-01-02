@@ -15,7 +15,7 @@ case "$1" in
 esac
 exit 0
 
-# DP: Doucment handling of paramters of the test builtin.
+# DP: Document handling of parameters of the test builtin.
 
 --- doc/bashref.texi~	2005-09-09 19:51:31.150172600 +0000
 +++ doc/bashref.texi	2005-09-09 19:52:12.693857000 +0000

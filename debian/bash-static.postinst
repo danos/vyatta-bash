@@ -3,9 +3,9 @@
 set -e
 
 if [ "$1" = configure ] && dpkg --compare-versions "$2" le 3.2-4 \
-    && [ -x /usr/sbin/add-shell ]
+    && which add-shell >/dev/null
 then
-    /usr/sbin/add-shell /bin/bash-static
+    add-shell /bin/bash-static
 fi
 
 #DEBHELPER#

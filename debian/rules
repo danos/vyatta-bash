@@ -13,7 +13,7 @@ DEB_HOST_GNU_CPU	:= $(shell dpkg-architecture -qDEB_HOST_GNU_CPU)
 DEB_HOST_GNU_SYSTEM	:= $(shell dpkg-architecture -qDEB_HOST_GNU_SYSTEM)
 DEB_HOST_GNU_TYPE	:= $(shell dpkg-architecture -qDEB_HOST_GNU_TYPE)
 
-VERSION		:= 4.0
+VERSION		:= 4.1
 #PKGVERSION	:= $(shell dpkg-parsechangelog \
 #			| sed -n '/Version:/s/\(.* \)\(.*\)-2\(.*\)/\2\3/p')
 #PKGVERSION	:= 3.0
@@ -36,14 +36,12 @@ with_installed_rl = no
 debflags =
 
 p	= bash
-p_min	= bash-minimal
 p_stat	= bash-static
 p_bins	= bash-builtins
 p_doc	= bash-doc
 p_bdb	= bashdb
 
 d	= debian/$(p)
-d_min	= debian/$(p_min)
 d_stat	= debian/$(p_stat)
 d_bins	= debian/$(p_bins)
 d_doc	= debian/$(p_doc)
@@ -66,17 +64,8 @@ static_conf_args := $(conf_args) \
 
 conf_args += --host=$(DEB_HOST_GNU_TYPE)
 
-min_conf_args = \
-	--enable-minimal-config \
-	--enable-largefile \
-	--prefix=/usr \
-	--infodir=/usr/share/info \
-	--mandir=/usr/share/man
-min_conf_args += --host=$(DEB_HOST_GNU_TYPE)
-
-
-#build: bash-build minimal-build static-build preinst-build all-bashdb-build check
-build: before-build bash-build minimal-build static-build preinst-build check
+#build: bash-build static-build preinst-build all-bashdb-build check
+build: before-build bash-build static-build preinst-build check
 
 before-build:
 	: # see #327477, needed to have HAVE_DEV_STDIN defined
@@ -101,22 +90,6 @@ bash-configure:
 	    bash_patches="$(debian_patches)" \
 	    build=bash \
 	    configure_args="$(conf_args)"
-
-# ---------------------------------------------------------------------------
-# build minimal bash
-
-minimal-build:
-	$(MAKE) -f debian/rules do-build-min \
-	    bash_src=bash \
-	    bash_patches="$(debian_patches)" \
-	    build=min \
-	    configure_args="$(min_conf_args)"
-minimal-configure:
-	$(MAKE) -f debian/rules do-configure-min \
-	    bash_src=bash \
-	    bash_patches="$(debian_patches)" \
-	    build=min \
-	    configure_args="$(min_conf_args)"
 
 # ---------------------------------------------------------------------------
 # build static bash
@@ -170,6 +143,7 @@ ifeq ($(with_gfdl),yes)
 	rm -f bash/doc/bashref.info
 	$(MAKE) -C build-bash/doc bashref.info bashref.pdf
 endif
+	$(MAKE) -C build-bash/doc bash.html bash.pdf
 	touch stamps/stamp-build-bash-doc
 
 # ---------------------------------------------------------------------------
@@ -370,7 +344,14 @@ ifeq ($(with_gfdl),yes)
 	cp -p build-bash/doc/bashref.pdf $(d_doc)/usr/share/doc/$(p)/.
 	dh_link -p$(p_doc) \
 	    /usr/share/doc/$(p)/bashref.pdf /usr/share/doc/$(p_doc)/bashref.pdf
+else
+	rm -f $(d_doc)/usr/share/doc-base/bashref
 endif
+	cp -p build-bash/doc/bash.html build-bash/doc/bash.pdf \
+	    $(d_doc)/usr/share/doc/$(p)/
+	dh_link -p$(p_doc) \
+	    /usr/share/doc/$(p)/bash.html /usr/share/doc/$(p_doc)/bash.html \
+	    /usr/share/doc/$(p)/bash.pdf /usr/share/doc/$(p_doc)/bash.pdf
 	dh_installchangelogs -p$(p_doc) bash/CWRU/changelog
 	dh_compress -p$(p_doc) -Xexamples -X.pdf
 	dh_fixperms -p$(p_doc)
@@ -434,26 +415,6 @@ binary-static: static-build
 	dh_md5sums -p$(p_stat)
 	dh_builddeb -p$(p_stat)
 
-binary-minimal: minimal-build
-	dh_testdir
-	dh_testroot
-	dh_clean -k -p$(p_min)
-	dh_installdirs -p$(p_min) \
-		bin \
-		usr/share/man/man1
-	cp -p build-min/bash $(d_min)/bin/bash-minimal
-	cp -p debian/bash-minimal.1 $(d_min)/usr/share/man/man1/.
-	dh_installdocs -p$(p_min)
-	dh_installchangelogs -p$(p_min)
-	dh_strip -p$(p_min)
-	dh_compress -p$(p_min)
-	dh_fixperms -p$(p_min)
-	dh_shlibdeps -p$(p_min)
-	dh_installdeb -p$(p_min)
-	dh_gencontrol -p$(p_min)
-	dh_md5sums -p$(p_min)
-	dh_builddeb -p$(p_min)
-
 binary-bashdb: bashdb-install
 	dh_testdir
 	dh_testroot
@@ -476,7 +437,7 @@ binary-bashdb: bashdb-install
 	dh_builddeb -p$(p_bdb)
 
 binary-indep: binary-doc
-binary-arch: binary-bash binary-builtins binary-static binary-minimal #binary-bashdb
+binary-arch: binary-bash binary-builtins binary-static #binary-bashdb
 binary:	binary-indep binary-arch
 
 # ---------------------------------------------------------------------------
@@ -535,39 +496,6 @@ stamps/stamp-configure-$(build): stamps/stamp-patch-$(bash_src)
 
 patchdir	= debian/patches
 debian_patches = \
-	bash40-001 \
-	bash40-002 \
-	bash40-003 \
-	bash40-004 \
-	bash40-005 \
-	bash40-006 \
-	bash40-007 \
-	bash40-008 \
-	bash40-009 \
-	bash40-010 \
-	bash40-011 \
-	bash40-012 \
-	bash40-013 \
-	bash40-014 \
-	bash40-015 \
-	bash40-016 \
-	bash40-017 \
-	bash40-018 \
-	bash40-019 \
-	bash40-020 \
-	bash40-021 \
-	bash40-022 \
-	bash40-023 \
-	bash40-024 \
-	bash40-025 \
-	bash40-026 \
-	bash40-027 \
-	bash40-028 \
-	bash40-029 \
-	bash40-030 \
-	bash40-031 \
-	bash40-032 \
-	bash40-033 \
 	bashbug-editor \
 	deb-bash-config \
 	deb-examples \
@@ -587,14 +515,12 @@ debian_patches = \
 	input-err \
 	exec-redirections-man \
 	bash-aliases-repeat \
-	CVE-2008-5374 \
 
 ifeq ($(with_gfdl),yes)
   debian_patches += \
 	man-substring-exp-doc \
 	man-test2-doc \
 	exec-redirections-texi \
-	bash40-028-doc \
 
 endif
 
@@ -646,7 +572,7 @@ stamps/stamp-unpack-$(bash_src):
 	mkdir -p stamps
 	rm -rf bash-$(VERSION) $(bash_src)
 	rm -f stamps/stamp-patch-$(bash_src){,-*}
-	tar xfz bash-$(VERSION)*.tar.gz
+	tar xf bash-$(VERSION)*.tar.xz
 	mv bash-$(VERSION) $(bash_src)
 	rm -f bash/y.tab.?
 	cp -p /usr/share/misc/config.* $(bash_src)/.
@@ -654,10 +580,10 @@ stamps/stamp-unpack-$(bash_src):
 	touch stamps/stamp-unpack-$(bash_src)
 
 .PHONY: unpack patch binary binary-arch binary-indep clean \
-    build bash-build minimal-build static-build preinst-build \
+    build bash-build static-build preinst-build \
     all-bashdb-build bashdb-build bashdb-doc-build \
     check \
-    bash-configure minimal-configure static-configure bashdb-configure \
+    bash-configure static-configure bashdb-configure \
     binary-doc binary-bash binary-builtins binary-static binary-bashdb \
     install bash-install bashdb-install
 

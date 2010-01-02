@@ -4,13 +4,13 @@ Priority: required
 Maintainer: Matthias Klose <doko@debian.org>
 Standards-Version: 3.8.3
 Build-Depends: autoconf, autotools-dev, patch, bison, libncurses5-dev,
- texinfo, debhelper (>= 5), texi2html, locales, gettext, sharutils, time
-Build-Depends-Indep: texlive-latex-base
+ texinfo, debhelper (>= 5), texi2html, locales, gettext, sharutils, time, xz-utils
+Build-Depends-Indep: texlive-latex-base, ghostscript
 Homepage: http://tiswww.case.edu/php/chet/bash/bashtop.html
 
 Package: bash
 Architecture: any
-Pre-Depends: dash (>= 0.5.5.1-2.2), ${shlibs:Pre-Depends}
+Pre-Depends: dash (>= 0.5.5.1-2.2), ${shlibs:Pre-Depends}, ${misc:Depends}
 Depends: base-files (>= 2.1.12), debianutils (>= 2.15)
 Recommends: bash-completion (>= 20060301-0)
 Conflicts: bash-completion (<< 20060301-0)
@@ -30,22 +30,9 @@ Description: The GNU Bourne Again SHell
  The Programmable Completion Code, by Ian Macdonald, is now found in
  the bash-completion package.
 
-Package: bash-minimal
-Architecture: any
-Depends: ${shlibs:Depends}, passwd (>= 1:4.0.3-10)
-Suggests: bash-doc
-Section: shells
-Priority: optional
-Description: The GNU Bourne Again SHell (minimal version)
- Bash is an sh-compatible command language interpreter that executes
- commands read from the standard input or from a file.  Bash also
- incorporates useful features from the Korn and C shells (ksh and csh).
- .
- Configured using --enable-minimal-config.
-
 Package: bash-static
 Architecture: any
-Depends: passwd (>= 1:4.0.3-10)
+Depends: passwd (>= 1:4.0.3-10), ${misc:Depends}
 Suggests: bash-doc
 Section: shells
 Priority: optional
@@ -58,7 +45,7 @@ Description: The GNU Bourne Again SHell (static version)
 
 Package: bash-builtins
 Architecture: any
-Depends: bash (= ${binary:Version})
+Depends: bash (= ${binary:Version}), ${misc:Depends}
 Section: utils
 Priority: optional
 Description: Bash loadable builtins - headers & examples
@@ -67,6 +54,7 @@ Description: Bash loadable builtins - headers & examples
 
 Package: bash-doc
 Architecture: all
+Depends: ${misc:Depends}, dpkg (>= 1.15.4) | install-info
 Section: doc
 Priority: optional
 Replaces: bash (<< 3.2-1)
@@ -80,7 +68,7 @@ Description: Documentation and examples for the The GNU Bourne Again SHell
 
 Package: bashdb
 Architecture: any
-Depends: ${shlibs:Depends}
+Depends: ${shlibs:Depends}, ${misc:Depends}
 Suggests: bash-doc
 Section: shells
 Priority: optional
