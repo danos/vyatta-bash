@@ -1,3 +1,9 @@
+bash (4.1-2) unstable; urgency=low
+
+  * Apply upstream patches 001, 002.
+
+ -- Matthias Klose <doko@debian.org>  Fri, 12 Mar 2010 02:08:45 +0100
+
 bash (4.1-1) unstable; urgency=low
 
   * New upstream version 4.1.

@@ -496,6 +496,8 @@ stamps/stamp-configure-$(build): stamps/stamp-patch-$(bash_src)
 
 patchdir	= debian/patches
 debian_patches = \
+	bash41-001 \
+	bash41-002 \
 	bashbug-editor \
 	deb-bash-config \
 	deb-examples \
