@@ -7,11 +7,11 @@ of bash.  See the details at the end of the file.
 The bash package was built using the following configuration options:
 
         --with-curses \
-        --disable-net-redirections \
         --enable-largefile \
 
-bash-static additionally configured with --enable-static-link, bash-minimal
-configured with --enable-minimal-config --enable-largefile.
+bash-static additionally configured with --enable-static-link.
+
+The upstream ChangeLog can be found in the bash-doc package.
 
 
 A kind of FAQ for bash on Debian GNU/{Linux,Hurd}
@@ -25,19 +25,7 @@ A kind of FAQ for bash on Debian GNU/{Linux,Hurd}
 
        set mark-symlinked-directories on
 
-1. How can I make /bin/sh point to something else?
-
-   Type
-
-	dpkg-divert --add /bin/sh
-
-   and then point it to whatever you want. Upgrades to bash  won't upgrade
-   the /bin/sh symlink. To put /bin/sh under dpkg control again, type
-
-	dpkg-divert --remove /bin/sh
-
-
-2. How can I make bash 8-bit clean so I can type hi-bit characters
+1. How can I make bash 8-bit clean so I can type hi-bit characters
    directly?
 
    Remove the comments from the indicated lines in /etc/inputrc.

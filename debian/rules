@@ -260,6 +260,8 @@ ifeq ($(with_gfdl),yes)
 	mv $(d)/usr/share/info/bash.info $(d)/usr/share/info/bashref.info
 	ln -sf bashref.info $(d)/usr/share/info/bash.info
 	mv $(d)/usr/share/info $(d_doc)/usr/share/
+else
+	rmdir $(d)/usr/share/info
 endif
 
 	dh_installexamples -p$(p_doc) bash/examples/*
@@ -474,7 +476,7 @@ else
 		deb_builddir=build-$(build)/ \
 		$(debflags)
 endif
-  ifeq ($(with_gfdl),yes)
+ifeq ($(with_gfdl),yes)
 	$(MAKE) -C build-$(build)/doc \
 		bash.info
 endif
@@ -498,6 +500,9 @@ patchdir	= debian/patches
 debian_patches = \
 	bash41-001 \
 	bash41-002 \
+	bash41-003 \
+	bash41-004 \
+	bash41-005 \
 	bashbug-editor \
 	deb-bash-config \
 	deb-examples \
@@ -517,6 +522,7 @@ debian_patches = \
 	input-err \
 	exec-redirections-man \
 	bash-aliases-repeat \
+	builtins-declare-fix \
 
 ifeq ($(with_gfdl),yes)
   debian_patches += \

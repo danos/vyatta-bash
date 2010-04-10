@@ -1,3 +1,17 @@
+bash (4.1-3) unstable; urgency=low
+
+  * Apply upstream patches 003, 004, 005.
+  * Fix crash in declare builtin.
+  * /etc/skel/.bashrc:
+    - Enable sourcing of ~/.bash_aliases by default. Closes: #569798.
+    - Find command-not-found script. Closes: #529313.
+  * README.Debian:
+    - Remove references to --disable-net-redirections, bash-minimal.
+    - Mention that the upstream changelog can be found in the bash-doc
+      package. Closes: #551019.
+
+ -- Matthias Klose <doko@debian.org>  Sat, 10 Apr 2010 10:35:29 +0200
+
 bash (4.1-2) unstable; urgency=low
 
   * Apply upstream patches 001, 002.
