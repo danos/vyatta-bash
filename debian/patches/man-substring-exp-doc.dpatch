@@ -17,15 +17,15 @@ exit 0
 
 # DP: Clarify documentation about substring expansion
 
---- bash/doc/bashref.texi~	2004-08-28 15:10:17.000000000 +0200
-+++ bash/doc/bashref.texi	2004-08-28 18:27:16.000000000 +0200
-@@ -1575,6 +1575,9 @@
- @var{length} must evaluate to a number greater than or equal to zero.
+--- bash/doc/bashref.texi~	2011-01-16 21:31:57.000000000 +0100
++++ bash/doc/bashref.texi	2011-02-24 01:38:58.368228717 +0100
+@@ -1773,6 +1773,9 @@
+ 
  If @var{offset} evaluates to a number less than zero, the value
  is used as an offset from the end of the value of @var{parameter}.
 +Arithmetic expressions starting with a - must be separated by whitespace
 +from the preceding : to be
 +distinguished from the $@{@var{parameter}:@minus{}@var{word}@} expansion.
- If @var{parameter} is @samp{@@}, the result is @var{length} positional
- parameters beginning at @var{offset}.
- If @var{parameter} is an array name indexed by @samp{@@} or @samp{*},
+ If @var{length} evaluates to a number less than zero, and @var{parameter}
+ is not @samp{@@} and not an indexed or associative array, it is interpreted
+ as an offset from the end of the value of @var{parameter} rather than

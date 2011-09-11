@@ -1,0 +1,79 @@
+#! /bin/sh -e
+
+if [ $# -eq 3 -a "$2" = '-d' ]; then
+    pdir="-d $3"
+elif [ $# -ne 1 ]; then
+    echo >&2 "`basename $0`: script expects -patch|-unpatch as argument"
+    exit 1
+fi
+case "$1" in
+    -patch) patch $pdir -f --no-backup-if-mismatch -p1 < $0;;
+    -unpatch) patch $pdir -f --no-backup-if-mismatch -R -p1 < $0;;
+    *)
+	echo >&2 "`basename $0`: script expects -patch|-unpatch as argument"
+	exit 1
+esac
+exit 0
+
+# DP: bash-4.2 upstream patch 002
+
+			     BASH PATCH REPORT
+			     =================
+
+Bash-Release:	4.2
+Patch-ID:	bash42-002
+
+Bug-Reported-by:	Clark J. Wang <dearvoid@gmail.com>
+Bug-Reference-ID:	<AANLkTimGbW7aC4E5infXP6ku5WPci4t=xVc+L1SyHqrD@mail.gmail.com>
+Bug-Reference-URL:	http://lists.gnu.org/archive/html/bug-bash/2011-02/msg00157.html
+
+Bug-Description:
+
+The readline vi-mode `cc', `dd', and `yy' commands failed to modify the
+entire line.
+
+Patch (apply with `patch -p0'):
+
+*** ../bash-4.2-patched/lib/readline/vi_mode.c	2010-11-20 19:51:39.000000000 -0500
+--- ./lib/readline/vi_mode.c	2011-02-17 20:24:25.000000000 -0500
+***************
+*** 1115,1119 ****
+        _rl_vi_last_motion = c;
+        RL_UNSETSTATE (RL_STATE_VIMOTION);
+!       return (0);
+      }
+  #if defined (READLINE_CALLBACKS)
+--- 1115,1119 ----
+        _rl_vi_last_motion = c;
+        RL_UNSETSTATE (RL_STATE_VIMOTION);
+!       return (vidomove_dispatch (m));
+      }
+  #if defined (READLINE_CALLBACKS)
+*** ../bash-4.2-patched/lib/readline/callback.c	2010-06-06 12:18:58.000000000 -0400
+--- ./lib/readline/callback.c	2011-02-17 20:43:28.000000000 -0500
+***************
+*** 149,152 ****
+--- 149,155 ----
+  	  /* Should handle everything, including cleanup, numeric arguments,
+  	     and turning off RL_STATE_VIMOTION */
++ 	  if (RL_ISSTATE (RL_STATE_NUMERICARG) == 0)
++ 	    _rl_internal_char_cleanup ();
++ 
+  	  return;
+  	}
+*** ../bash-4.2-patched/patchlevel.h	Sat Jun 12 20:14:48 2010
+--- ./patchlevel.h	Thu Feb 24 21:41:34 2011
+***************
+*** 26,30 ****
+     looks for to find the patch level (for the sccs version string). */
+  
+! #define PATCHLEVEL 1
+  
+  #endif /* _PATCHLEVEL_H_ */
+--- 26,30 ----
+     looks for to find the patch level (for the sccs version string). */
+  
+! #define PATCHLEVEL 2
+  
+  #endif /* _PATCHLEVEL_H_ */
+

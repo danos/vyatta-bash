@@ -1,21 +1,46 @@
-bash (4.1-3+deb6u2) squeeze-lts; urgency=high
+bash (4.2-1~exp1) experimental; urgency=low
 
-  * Non-maintainer upload by the Security Team.
-  * Add variables-affix.patch patch.
-    Apply patch from Florian Weimer to add prefix and suffix for environment
-    variable names which contain shell functions.
-  * Add parser-oob.patch patch.
-    Fixes two out-of-bound array accesses in the bash parser.
-  * Add CVE-2014-7169.diff diff.
-    CVE-2014-7169: Incomplete fix for CVE-2014-6271. (Closes: #762760, #762761)
+  [ Matthias Klose ]
+  * New upstream version.
+  * Apply upstream patches 001 - 010.
+  * Fix parsing of double doublequotes. LP: #780441.
+  * /etc/bash.bashrc:
+    - Fix quoting issue calling command-not-found. LP: #754859. Closes: #587185.
+  * Don't cache the value of brk between sbrk calls (Samuel Thibault).
+    Closes: #614815.
+  * Remove the bashdb and bash-completion packaging rules and files.
+  * Just link with libtinfo instead of libncurses if available.
+  * Make lintian happy.
 
- -- Thijs Kinkhorst <thijs@debian.org>  Fri, 26 Sep 2014 00:10:13 +0200
+  [ Jonathan Nieder ]
+  * Update copyright file. Many files that were GPL-2+ were relicensed
+    under GPL-3+ in bash 4.0-rc1. Closes: #632177.
+  * debian/rules: Use "rm -rf" instead of rmdir to remove usr/share/info
+    directory in "with_gfdl = no" build. This prevents build failures when
+    using the unmodified upstream tarball.
+  * bash.preinst: Tidy up a little.
+    - Remove codepath that would rename .bash_profile → .profile if .profile
+      was unmodified from the gutsy → hardy transition. Closes: #602244
+    - Remove commented experiment from bash-completion transition.
+    - Remove misleading "dpkg --assert-support-predepends" check.
+      Closes: #602456.
+    - Move utility functions to a separate bash.preinst-lib.c and corresponding
+      declarations to bash.preinst.h.
+  * Remove /bin/sh symlink and /usr/share/man/man1/sh.1.gz from bash package
+    contents. Closes: #602483.
+    - debian/rules: Do not install /bin/sh and sh.1.gz symlinks.
+    - bash.preinst:
+      - Make sure /bin/sh is present and points to an executable, forcibly
+        creating symlinks /bin/sh -> bash and /usr/share/man/man1/sh.1.gz ->
+        bash.1.gz if not.
+      - Divert /bin/sh and sh.1.gz on behalf of dash if we are upgrading from
+        a bash version with /bin/sh in the files list and bash's copy of
+        /bin/sh is not already diverted. This ensures unpacking bash will not
+        cause /bin/sh to go missing.
+  * bash.postinst: Simplify comment that contained an implementation detail
+    about how /bin/sh is provided.
 
-bash (4.1-3+deb6u1) squeeze-lts; urgency=high
-
-  * Apply patch from Chet Ramey to fix CVE-2014-6271.
-
- -- Florian Weimer <fw@deneb.enyo.de>  Wed, 24 Sep 2014 09:37:02 +0200
+ -- Matthias Klose <doko@debian.org>  Sun, 11 Sep 2011 17:52:30 +0200
 
 bash (4.1-3) unstable; urgency=low
 
