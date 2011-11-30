@@ -24,8 +24,16 @@ VERSION		:= 4.2
 
 with_gfdl	= no
 
-CC	= gcc
-CFLAGS	= $(shell dpkg-buildflags --get CFLAGS) -Wall
+ifneq ($(DEB_HOST_GNU_TYPE),$(DEB_BUILD_GNU_TYPE))
+  CC	= $(DEB_HOST_GNU_TYPE)-gcc
+else
+  CC	= gcc
+endif
+dpkg_buildflags = DEB_CFLAGS_MAINT_APPEND=-Wall dpkg-buildflags
+CFLAGS := $(shell $(dpkg_buildflags) --get CFLAGS)
+CPPFLAGS := $(shell $(dpkg_buildflags) --get CPPFLAGS)
+LDFLAGS := $(shell $(dpkg_buildflags) --get LDFLAGS)
+
 SHELL	= /bin/bash
 YACC	= bison -y
 
@@ -60,13 +68,15 @@ conf_args = \
 ifeq ($(with_installed_rl),yes)
     conf_args += --with-installed-readline
 endif
+ifeq ($(DEB_BUILD_GNU_TYPE), $(DEB_HOST_GNU_TYPE))
+    conf_args += --build $(DEB_HOST_GNU_TYPE)
+else
+    conf_args += --build $(DEB_BUILD_GNU_TYPE) --host $(DEB_HOST_GNU_TYPE)
+endif
 
 static_conf_args := $(conf_args) \
 	--enable-static-link \
 	--without-bash-malloc \
-	--host=$(DEB_HOST_GNU_TYPE)
-
-conf_args += --host=$(DEB_HOST_GNU_TYPE)
 
 #build: bash-build static-build preinst-build check
 build: before-build bash-build static-build preinst-build check
@@ -78,7 +88,8 @@ before-build:
 	(test -d /dev/fd && test -r /dev/stdin < /dev/null) \
 	  || (test -d /proc/self/fd && test -r /dev/stdin < /dev/null)
 ifneq (,$(findstring $(DEB_HOST_ARCH_OS), linux freebsd))
-	$(CC) $(CFLAGS) -o clear_console debian/clear_console.c $(termcap_lib)
+	$(CC) $(CFLAGS) $(LDFLAGS) $(CPPFLAGS) -o clear_console \
+	    debian/clear_console.c $(termcap_lib)
 endif
 
 # ---------------------------------------------------------------------------
@@ -151,6 +162,8 @@ clean:
 	rm -f debian/README.Debian
 	rm -rf locales
 	rm -f clear_console
+	rm -f debian/patches/series
+	rm -rf .pc
 	dh_clean
 
 preinst-build: debian/bash.preinst
@@ -163,10 +176,10 @@ endif
 PREINST_OBJECTS = debian/bash.preinst.o debian/bash.preinst-lib.o
 
 $(PREINST_OBJECTS): %.o: %.c debian/bash.preinst.h
-	$(CC) -c -o $@ $(CFLAGS) $<
+	$(CC) -c -o $@ $(CFLAGS) $(CPPFLAGS) $<
 
 debian/bash.preinst: $(PREINST_OBJECTS)
-	$(CC) -o $@ $(CFLAGS) $(PREINST_OBJECTS)
+	$(CC) -o $@ $(CFLAGS) $(LDFLAGS) $(PREINST_OBJECTS)
 	$(STRIP) -R .comment -R .note debian/bash.preinst
 
 # ---------------------------------------------------------------------------
@@ -175,7 +188,7 @@ debian/bash.preinst: $(PREINST_OBJECTS)
 install: bash-install
 
 bash-install: bash-build stamps/stamp-install-bash
-stamps/stamp-install-bash: stamps/stamp-build-bash
+stamps/stamp-install-bash: before-build stamps/stamp-build-bash
 	dh_testdir
 	dh_testroot
 	dh_clean -k -p$(p) -p$(p_doc) -p$(p_bins)
@@ -196,8 +209,6 @@ endif
 
 	: # install it
 	$(MAKE) -C build-bash install \
-		CC='$(CC)' \
-		CFLAGS='$(CFLAGS)' \
 		YACC="$(YACC)" \
 		DESTDIR=$(CURDIR)/$(d)
 	mv $(d)/usr/bin/bash $(d)/bin/.
@@ -361,7 +372,6 @@ stamps/stamp-build-$(build): stamps/stamp-configure-$(build)
 	dh_testdir
 ifneq (,$(profiled_build))
 	$(MAKE) -C build-$(build) \
-		CC='$(CC)' \
 		CFLAGS='$(CFLAGS) -fprofile-generate' \
 		YACC="$(YACC)" \
 		TERMCAP_LIB="$(termcap_lib)" \
@@ -375,7 +385,6 @@ ifneq (,$(profiled_build))
 	$(MAKE) -C build-$(build) clean
 	rm -f build-$(build)/lib/malloc/malloc*.gc??
 	$(MAKE) -C build-$(build) \
-		CC='$(CC)' \
 		CFLAGS='$(CFLAGS) -fprofile-use' \
 		YACC="$(YACC)" \
 		TERMCAP_LIB="$(termcap_lib)" \
@@ -383,8 +392,6 @@ ifneq (,$(profiled_build))
 		$(debflags)
 else
 	$(MAKE) -C build-$(build) \
-		CC='$(CC)' \
-		CFLAGS='$(CFLAGS)' \
 		YACC="$(YACC)" \
 		TERMCAP_LIB="$(termcap_lib)" \
 		deb_builddir=build-$(build)/ \
@@ -402,7 +409,9 @@ stamps/stamp-configure-$(build): stamps/stamp-patch-$(bash_src)
 	rm -rf build-$(build)
 	mkdir build-$(build)
 	cd build-$(build) && \
-	    CC="$(CC)" CFLAGS="$(CFLAGS)" YACC="$(YACC)" \
+	    CC="$(CC)" \
+	    CFLAGS="$(CFLAGS)" CPPFLAGS="$(CPPFLAGS)" LDFLAGS="$(LDFLAGS)" \
+	    YACC="$(YACC)" \
 		../$(bash_src)/configure $(configure_args)
 	if ! grep -q '#define HAVE_DEV_STDIN 1' build-$(build)/config.h; then \
 	  echo "HAVE_DEV_STDIN not defined, abortig build"; \
@@ -410,64 +419,37 @@ stamps/stamp-configure-$(build): stamps/stamp-patch-$(bash_src)
 	fi
 	touch stamps/stamp-configure-$(build)
 
-patchdir	= debian/patches
-debian_patches = \
-	bash42-001 \
-	bash42-002 \
-	bash42-003 \
-	bash42-004 \
-	bash42-005 \
-	bash42-006 \
-	bash42-007 \
-	bash42-008 \
-	bash42-009 \
-	bash42-010 \
-	bashbug-editor \
-	deb-bash-config \
-	deb-examples \
-	man-arithmetic \
-	man-fignore \
-	man-bashrc \
-	man-bashlogout \
-	man-substring-exp \
-	man-nocaseglob \
-	man-test \
-	man-test2 \
-	privmode \
-	rbash-manpage \
-	bash-default-editor \
-	bash-subst-param-length \
-	pgrp-pipe \
-	input-err \
-	exec-redirections-man \
-	bash-aliases-repeat \
-	quoted-nulls \
-	no-brk-caching \
+patchdir = debian/patches
 
-ifeq ($(with_gfdl),yes)
-  debian_patches += \
-	man-substring-exp-doc \
-	man-test2-doc \
-	exec-redirections-texi \
-
-endif
+$(patchdir)/series: $(patchdir)/series.in
+	cpp -E \
+	  $(if $(filter no, $(with_gfdl)),,-DGFDL) \
+	  -Darch_os_$(DEB_HOST_ARCH_OS) -Darch_$(DEB_HOST_ARCH) \
+	  -o - $(patchdir)/series.in \
+	  | egrep -v '^(#.*|$$)' > $(patchdir)/series
 
 patch-$(bash_src): stamps/stamp-patch-$(bash_src)
-stamps/stamp-patch-$(bash_src): stamps/stamp-unpack-$(bash_src) \
-    $(foreach p,$(bash_patches),stamps/stamp-patch-$(bash_src)-$(p))
-	echo -e "\nPatches applied in this version:" > pxxx
-	for i in $(bash_patches); do \
-	  echo -e "\n$$i:" >> pxxx; \
-	  sed -n 's/^# *DP: */  /p' $(patchdir)/$$i.dpatch >> pxxx; \
-	done
-	mv -f pxxx $@
+stamps/stamp-patch-$(bash_src): $(patchdir)/series stamps/stamp-unpack-$(bash_src)
+	QUILT_PATCHES=$(patchdir) quilt push -a || test $$? = 2
+	mkdir -p stamps
+	echo ""; echo "Patches applied in this version:" > stamps/pxx
+	for i in $$(cat $(patchdir)/series); do \
+	  echo ""; echo "$$i:"; \
+	  sed -n 's/^# *DP: */  /p' $(patchdir)/$$i; \
+	done >> stamps/pxx
+	mv stamps/pxx $@
 
-stamps/stamp-patch-$(bash_src)-%: $(patchdir)/%.dpatch
-	if [ -f $@ ]; then \
-	  echo "$* patches already applied."; exit 1; \
-	fi
-	sh -e $< -patch -d $(bash_src)
-	echo "$* patches applied." > $@
+reverse-patches: unpatch
+unpatch:
+	QUILT_PATCHES=$(patchdir) quilt pop -a -R || test $$? = 2
+	rm -f stamps/stamp-patch $(patchdir)/series
+	rm -rf configure autom4te.cache
+
+update-patches: $(patchdir)/series stamps/stamp-unpack-$(bash_src)
+	export QUILT_PATCHES=$(patchdir); \
+	export QUILT_REFRESH_ARGS="--no-timestamps --no-index -p ab"; \
+	export QUILT_DIFF_ARGS="--no-timestamps --no-index -p ab"; \
+	while quilt push; do quilt refresh; done
 
 unpack-$(bash_src): stamps/stamp-unpack-$(bash_src)
 stamps/stamp-unpack-$(bash_src):

@@ -1,8 +1,8 @@
-bash (4.2-1~exp1) experimental; urgency=low
+bash (4.2-1) unstable; urgency=low
 
   [ Matthias Klose ]
   * New upstream version.
-  * Apply upstream patches 001 - 010.
+  * Apply upstream patches 001 - 020.
   * Fix parsing of double doublequotes. LP: #780441.
   * /etc/bash.bashrc:
     - Fix quoting issue calling command-not-found. LP: #754859. Closes: #587185.
@@ -11,6 +11,12 @@ bash (4.2-1~exp1) experimental; urgency=low
   * Remove the bashdb and bash-completion packaging rules and files.
   * Just link with libtinfo instead of libncurses if available.
   * Make lintian happy.
+  * Use quilt to apply patches.
+  * Fix build error with -Werror=format-security (Pierre Chifflier).
+    Closes: #641350.
+  * Fix build for the binary target, without calling the build target.
+    Closes: #602159.
+  * Fix cross builds (Steve McIntyre). Closes: #629929.
 
   [ Jonathan Nieder ]
   * Update copyright file. Many files that were GPL-2+ were relicensed
@@ -39,8 +45,19 @@ bash (4.2-1~exp1) experimental; urgency=low
         cause /bin/sh to go missing.
   * bash.postinst: Simplify comment that contained an implementation detail
     about how /bin/sh is provided.
+  * Use dpkg-buildflags to retrieve compiler options, including hardening flags.
+    Build-Depends: dpkg-dev (>= 1.16.1) (Steve Langasek). Closes: #629929.
+  * Pass --host to configure only when cross-compiling, --build always, as
+    recommended in autotools documentation (Steve Langasek).
 
- -- Matthias Klose <doko@debian.org>  Sun, 11 Sep 2011 17:52:30 +0200
+  * Merge from Ubuntu (closes: #648578):
+    - /etc/skel/.bashrc:
+      - Don't set HISTCONTROL twice. Thanks to Kevin Knerr. LP: #465500.
+      - Set HISTFILESIZE to 2000 and HISTSIZE to 1000. LP: #544542.
+      - README.Debian: Remove obsolete entry "Why is bash configured
+        with --disable-net-redirections?"
+
+ -- Matthias Klose <doko@debian.org>  Wed, 30 Nov 2011 07:29:05 +0100
 
 bash (4.1-3) unstable; urgency=low
 
