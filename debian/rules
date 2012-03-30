@@ -278,12 +278,13 @@ binary-doc: bash-install bash-doc-build
 	dh_testdir
 	dh_testroot
 	mkdir -p $(d_doc)/usr/share/doc/$(p)
-	dh_installdocs -p$(p_doc) 
 ifeq ($(with_gfdl),yes)
+	dh_installdocs -p$(p_doc) 
 	cp -p build-bash/doc/bashref.pdf $(d_doc)/usr/share/doc/$(p)/.
 	dh_link -p$(p_doc) \
 	    /usr/share/doc/$(p)/bashref.pdf /usr/share/doc/$(p_doc)/bashref.pdf
 else
+	dh_installdocs -p$(p_doc) -X.doc-base
 	rm -f $(d_doc)/usr/share/doc-base/bashref
 endif
 	rm -f $(d_doc)/usr/share/info/dir*

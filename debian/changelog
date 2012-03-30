@@ -1,3 +1,14 @@
+bash (4.2-2) unstable; urgency=low
+
+  * Fix command-not-found location. Closes: #529313.
+  * Print a replacement error message if command-not-found was removed
+    after bashrc was loaded. Closes: #631023. LP: #561155.
+  * skel.bashrc: Document and prepare enabling the globstar feature (Fabian
+    Greffrath). Closes: #627926.
+  * Apply upstream patches 021 - 024.
+
+ -- Matthias Klose <doko@debian.org>  Fri, 30 Mar 2012 19:20:04 +0200
+
 bash (4.2-1) unstable; urgency=low
 
   [ Matthias Klose ]
