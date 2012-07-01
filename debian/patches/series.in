@@ -18,6 +18,15 @@ bash42-017.diff
 bash42-018.diff
 bash42-019.diff
 bash42-020.diff
+bash42-021.diff
+bash42-022.diff
+bash42-023.diff
+bash42-024.diff
+bash42-025.diff
+bash42-026.diff
+bash42-027.diff
+bash42-028.diff
+bash42-029.diff
 bashbug-editor.diff
 deb-bash-config.diff
 deb-examples.diff
@@ -44,3 +53,4 @@ man-test2-doc.diff
 exec-redirections-texi.diff
 #endif
 hardening-formatstring.diff
+unicode-escape-bug.diff

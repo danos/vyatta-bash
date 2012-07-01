@@ -1,3 +1,35 @@
+bash (4.2-3) unstable; urgency=low
+
+  * Apply upstream patches 025 - 029, fixes for
+    - When used in a shell function, `declare -g -a array=(compound assignment)'
+      creates a local variable instead of a global one.
+    - The `lastpipe' option does not behave correctly on machines where the
+      open file limit is less than 256.
+    - When the `extglob' shell option is enabled, pattern substitution does not
+      work correctly in the presence of multibyte characters.
+    - When using a word expansion for which the right hand side is evaluated,
+      certain expansions of quoted null strings include spurious ^? characters.
+    - Bash-4.2 tries to leave completed directory names as the user typed them,
+      without expanding them to a full pathname.  One effect of this is that
+      shell variables used in pathnames being completed (e.g., $HOME) are left
+      unchanged, but the `$' is quoted by readline because it is a special
+      character to the shell. This patch introduces two things:
+      - A new shell option, `direxpand', which, if set, attempts to emulate the
+        bash-4.1 behavior of expanding words to full pathnames during
+        completion;
+      - A set of heuristics that reduce the number of times special characters
+        such as `$' are quoted when the directory name is not expanded.
+  * Mark bash and bash-static as Multi-Arch: foreign . Closes: #674120.
+  * Avoid warning for unset debian_chroot with -u (Marko Mäkelä).
+    Closes: #659940.
+  * Fix string expansion: \u and \U for code points U+0080 to U+00FF (Darran
+    Salt). Closes: #661386.
+  * Search $- for `i' for the interactivity test. Closes: #482194.
+  * Search for bash_completion in /usr/share/bash-completion too.
+    Closes: #655071, #655208.
+
+ -- Matthias Klose <doko@debian.org>  Sun, 01 Jul 2012 13:45:35 +0200
+
 bash (4.2-2) unstable; urgency=low
 
   * Fix command-not-found location. Closes: #529313.

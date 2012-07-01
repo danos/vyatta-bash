@@ -13,6 +13,7 @@ Vcs-Bzr: http://bazaar.launchpad.net/~doko/+junk/pkg-bash-debian
 
 Package: bash
 Architecture: any
+Multi-Arch: foreign
 Pre-Depends: dash (>= 0.5.5.1-2.2), ${shlibs:Pre-Depends}, ${misc:Depends}
 Depends: base-files (>= 2.1.12), debianutils (>= 2.15)
 Recommends: bash-completion (>= 20060301-0)
@@ -35,6 +36,7 @@ Description: GNU Bourne Again SHell
 
 Package: bash-static
 Architecture: any
+Multi-Arch: foreign
 Depends: passwd (>= 1:4.0.3-10), ${misc:Depends}
 Suggests: bash-doc
 Section: shells
