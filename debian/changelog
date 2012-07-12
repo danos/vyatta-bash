@@ -1,3 +1,29 @@
+bash (4.2-4) unstable; urgency=high
+
+  * Apply upstream patches 030 - 036, fixes for
+    - When attempting to glob strings in a multibyte locale, and those strings
+      contain invalid multibyte characters that cause mbsnrtowcs to return 0,
+      the globbing code loops infinitely.
+    - A change between bash-4.1 and bash-4.2 to prevent the readline input hook
+      from being called too frequently had the side effect of causing delays
+      when reading pasted input on systems such as Mac OS X.  This patch fixes
+      those delays while retaining the bash-4.2 behavior.
+    - Bash-4.2 has problems with DEL characters in the expanded value of
+      variables used in the same quoted string as variables that expand
+      to nothing.
+    - Bash uses a static buffer when expanding the /dev/fd prefix for the test
+      and conditional commands, among other uses, when it should use a dynamic
+      buffer to avoid buffer overflow.
+    - In bash-4.2, the history code would inappropriately add a semicolon to
+      multi-line compound array assignments when adding them to the history.
+    - When given a number of lines to read, `mapfile -n lines' reads
+      one too many.
+    - Bash-4.2 produces incorrect word splitting results when expanding
+      double-quoted $@ in the same string as and adjacent to other variable
+      expansions.  The $@ should be split, the other expansions should not.
+
+ -- Matthias Klose <doko@debian.org>  Thu, 12 Jul 2012 23:58:51 +0200
+
 bash (4.2-3) unstable; urgency=low
 
   * Apply upstream patches 025 - 029, fixes for
