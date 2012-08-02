@@ -1,11 +1,10 @@
-bash (4.2-4wheezy0.1) testing; urgency=low
+bash (4.2-5) unstable; urgency=low
 
-  * Non-maintainer upload.
-  * debian/bash.preinst-lib.c: pass F_[GS]ETFD, not F_[GS]ETFL, to fcntl
-    to set FD_CLOEXEC flag, avoiding "Inappropriate ioctl for device"
-    errors installing using the upstream FreeBSD kernel (Closes: #679198)
+  * Apply upstream patch 037, fix for
+    - Attempting to redo (using `.') the vi editing mode `cc', `dd', or `yy'
+      commands leads to an infinite loop.
 
- -- Nicolas Boulenguez <nicolas@debian.org>  Fri, 21 Dec 2012 23:47:40 +0100
+ -- Matthias Klose <doko@debian.org>  Fri, 03 Aug 2012 01:21:14 +0200
 
 bash (4.2-4) unstable; urgency=high
 
