@@ -1,3 +1,10 @@
+bash (4.2-5.1) unstable; urgency=low
+
+  * Non-maintainer upload.
+  * debian/bash.preinst-lib.c: typo in fcntl argument (Closes: #679198).
+
+ -- Nicolas Boulenguez <nicolas@debian.org>  Tue, 11 Dec 2012 22:02:44 +0100
+
 bash (4.2-5) unstable; urgency=low
 
   * Apply upstream patch 037, fix for
