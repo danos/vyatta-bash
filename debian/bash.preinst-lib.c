@@ -60,8 +60,8 @@ int exists(const char *file)
 
 void set_cloexec(int fd)
 {
-	int flags = fcntl(fd, F_GETFL);
-	if (flags < 0 || fcntl(fd, F_SETFL, flags | FD_CLOEXEC))
+	int flags = fcntl(fd, F_GETFD);
+	if (flags < 0 || fcntl(fd, F_SETFD, flags | FD_CLOEXEC))
 		die_errno("cannot set close-on-exec flag");
 }
 
