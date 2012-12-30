@@ -1,3 +1,11 @@
+bash (4.2+dfsg-0.1) unstable; urgency=low
+
+  * Non-maintainer upload.
+  * Remove unused and non DFSG-compliant bash-4.2/lib/readline/doc from
+    source. (Closes: #695709)
+
+ -- David Prévot <taffit@debian.org>  Sat, 29 Dec 2012 21:19:34 -0400
+
 bash (4.2-5.1) unstable; urgency=low
 
   * Non-maintainer upload.
