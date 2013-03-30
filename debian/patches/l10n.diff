@@ -1,0 +1,11 @@
+--- a/bash/po/de.po
++++ b/bash/po/de.po
+@@ -267,7 +267,7 @@
+ #: builtins/common.c:563
+ #, c-format
+ msgid "%s: error retrieving current directory: %s: %s\n"
+-msgstr "%s: Kann das nicht aktuelle Verzeichnis wiederfinden: %s: %s\n"
++msgstr "%s: Kann das aktuelle Verzeichnis nicht wiederfinden: %s: %s\n"
+ 
+ #: builtins/common.c:629 builtins/common.c:631
+ #, c-format

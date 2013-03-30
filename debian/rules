@@ -464,6 +464,7 @@ stamps/stamp-unpack-$(bash_src):
 	cp -p /usr/share/misc/config.* $(bash_src)/support/.
 	touch stamps/stamp-unpack-$(bash_src)
 
+.NOTPARALLEL: build
 .PHONY: unpack patch binary binary-arch binary-indep clean \
     build bash-build static-build preinst-build \
     check \

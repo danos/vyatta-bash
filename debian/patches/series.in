@@ -35,6 +35,14 @@ bash42-034.diff
 bash42-035.diff
 bash42-036.diff
 bash42-037.diff
+bash42-038.diff
+bash42-039.diff
+bash42-040.diff
+bash42-041.diff
+bash42-042.diff
+bash42-043.diff
+bash42-044.diff
+bash42-045.diff
 bashbug-editor.diff
 deb-bash-config.diff
 deb-examples.diff
@@ -46,6 +54,7 @@ man-substring-exp.diff
 man-nocaseglob.diff
 man-test.diff
 man-test2.diff
+man-bash.diff
 privmode.diff
 rbash-manpage.diff
 bash-default-editor.diff
@@ -62,8 +71,4 @@ exec-redirections-texi.diff
 #endif
 hardening-formatstring.diff
 unicode-escape-bug.diff
-CVE-2014-6271.diff
-CVE-2014-7169.diff
-variables-affix.patch
-parser-oob.patch
-bash43-048-backported-CVE-2016-7543-20161018.patch
+l10n.diff

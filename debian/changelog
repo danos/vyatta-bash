@@ -1,36 +1,36 @@
-bash (4.2+dfsg-0.1+deb7u4) wheezy-security; urgency=high
+bash (4.2+dfsg-1) unstable; urgency=low
 
-  * Non-maintainer upload by the Long Term Security Team.
-  * Add bash43-048-backported-CVE-2016-7543-20161018.patch patch.
-    Prevent privilege escalation to root by using a combination of
-    SHELLOPTS and PS4 variables as described in CVE-2016-7543.
+  * Apply upstream patches 038 - 045, fixes for
+    - If a backslash-newline (which is removed) with no other input is given as
+      input to `read', the shell tries to dereference a null pointer and
+      segfaults.
+    - Under certain circumstances, bash attempts to expand variables in
+      arithmetic expressions even when evaluation is being suppressed.
+    - Output redirection applied to builtin commands missed I/O errors if
+      they happened when the file descriptor was closed, rather than on write
+      (e.g., like with an out-of-space error on a remote NFS file system).
+    - Process substitution incorrectly inherited a flag that inhibited using the
+      (local) temporary environment for variable lookups if it was providing
+      the filename to a redirection.  The intent the flag is to enforce the
+      Posix command expansion ordering rules.
+    - Compilation failed after specifying the  `--enable-minimal-config' option
+      to configure (more specifically, specifying `--disable-alias').
+    - When SIGCHLD is trapped, and a SIGCHLD trap handler runs when a pending
+      `read -t' invocation times out and generates SIGALRM, bash can crash with
+      a segmentation fault.
+    - When converting a multibyte string to a wide character string as part of
+      pattern matching, bash does not handle the end of the string correctly,
+      causing the search for the NUL to go beyond the end of the string and
+      reference random memory.  Depending on the contents of that memory, bash
+      can produce errors or crash.
+    - The <&n- and >&n- redirections, which move one file descriptor to another,
+      leave the file descriptor closed when applied to builtins or compound
+      commands.
+  * Fix parallel build (Steven Chamberlain). Closes: #694659.
+  * Fix german translations. Closes: #688571.
+  * Fix typo in man page. Closes: #696706.
 
- -- Ola Lundqvist <opal@debian.org>  Wed, 26 Oct 2016 19:37:54 +0200
-
-bash (4.2+dfsg-0.1+deb7u3) wheezy-security; urgency=high
-
-  * Non-maintainer upload by the Security Team.
-  * Add variables-affix.patch patch.
-    Apply patch from Florian Weimer to add prefix and suffix for environment
-    variable names which contain shell functions.
-  * Add parser-oob.patch patch.
-    Fixes two out-of-bound array accesses in the bash parser.
-
- -- Salvatore Bonaccorso <carnil@debian.org>  Thu, 25 Sep 2014 21:43:01 +0200
-
-bash (4.2+dfsg-0.1+deb7u2) wheezy-security; urgency=high
-
-  * Non-maintainer upload by the Security Team.
-  * Add CVE-2014-7169.diff diff.
-    CVE-2014-7169: Incomplete fix for CVE-2014-6271. (Closes: #762760, #762761)
-
- -- Salvatore Bonaccorso <carnil@debian.org>  Thu, 25 Sep 2014 07:23:43 +0200
-
-bash (4.2+dfsg-0.1+deb7u1) wheezy-security; urgency=high
-
-  * Apply patch from Chet Ramey to fix CVE-2014-6271.
-
- -- Florian Weimer <fw@deneb.enyo.de>  Tue, 16 Sep 2014 21:28:27 +0200
+ -- Matthias Klose <doko@debian.org>  Sat, 30 Mar 2013 14:56:51 +0100
 
 bash (4.2+dfsg-0.1) unstable; urgency=low
 
