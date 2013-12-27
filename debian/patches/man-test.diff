@@ -1,8 +1,8 @@
 # DP: document conditional file expressions acting on the target of
 # DP: symbolic links as well (except -h, -L).
 
---- a/bash/builtins/test.def
-+++ b/bash/builtins/test.def
+--- a/builtins/test.def
++++ b/builtins/test.def
 @@ -64,6 +64,9 @@
  
    FILE1 -ef FILE2  True if file1 is a hard link to file2.

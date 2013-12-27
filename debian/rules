@@ -22,7 +22,7 @@ VERSION		:= 4.2
 #PKGVERSION	:= 3.0
 #dpkg_ctrl_args := -v$(PKGVERSION) -VBinary-Version=$(PKGVERSION)
 
-with_gfdl	= no
+with_gfdl	= yes
 
 ifneq ($(DEB_HOST_GNU_TYPE),$(DEB_BUILD_GNU_TYPE))
   CC	= $(DEB_HOST_GNU_TYPE)-gcc
@@ -84,6 +84,7 @@ build-arch: build
 build-indep: build
 
 before-build:
+	mkdir -p stamps
 	: # see #327477, needed to have HAVE_DEV_STDIN defined
 	(test -d /dev/fd && test -r /dev/stdin < /dev/null) \
 	  || (test -d /proc/self/fd && test -r /dev/stdin < /dev/null)
@@ -97,14 +98,12 @@ endif
 
 bash-build:
 	$(MAKE) -f debian/rules do-build-bash \
-	    bash_src=bash \
-	    bash_patches="$(debian_patches)" \
+	    bash_src=. \
 	    build=bash \
 	    configure_args="$(conf_args)"
 bash-configure:
 	$(MAKE) -f debian/rules do-configure-bash \
-	    bash_src=bash \
-	    bash_patches="$(debian_patches)" \
+	    bash_src=. \
 	    build=bash \
 	    configure_args="$(conf_args)"
 
@@ -113,14 +112,12 @@ bash-configure:
 
 static-build:
 	$(MAKE) -f debian/rules do-build-static \
-	    bash_src=bash \
-	    bash_patches="$(debian_patches)" \
+	    bash_src=. \
 	    build=static \
 	    configure_args="$(static_conf_args)"
 static-configure:
 	$(MAKE) -f debian/rules do-configure-static \
-	    bash_src=bash \
-	    bash_patches="$(debian_patches)" \
+	    bash_src=. \
 	    build=static \
 	    configure_args="$(static_conf_args)"
 
@@ -128,11 +125,9 @@ static-configure:
 
 bash-doc-build: stamps/stamp-build-bash-doc
 stamps/stamp-build-bash-doc:
-ifeq ($(with_gfdl),yes)
 	rm -f bash/doc/bashref.info
-	$(MAKE) -C build-bash/doc bashref.info bashref.pdf
-endif
-	$(MAKE) -C build-bash/doc bash.html bash.pdf
+	$(MAKE) -C build-bash/doc info html
+	$(MAKE) -C build-bash/doc bash.pdf bashref.pdf
 	touch stamps/stamp-build-bash-doc
 
 # ---------------------------------------------------------------------------
@@ -157,12 +152,11 @@ endif
 clean:
 	dh_testdir
 	dh_testroot
-	rm -rf stamps build-* bash
+	rm -rf stamps build-*
 	rm -f debian/bash.preinst debian/*.o
 	rm -f debian/README.Debian
 	rm -rf locales
 	rm -f clear_console
-	rm -f debian/patches/series
 	rm -rf .pc
 	dh_clean
 
@@ -204,7 +198,7 @@ stamps/stamp-install-bash: before-build stamps/stamp-build-bash
 
 ifeq ($(with_gfdl),yes)
 # XXXXX
-	cp -p build-bash/doc/*.info bash/doc/
+#	cp -p build-bash/doc/*.info bash/doc/
 endif
 
 	: # install it
@@ -234,16 +228,9 @@ ifneq (,$(findstring $(DEB_HOST_ARCH_OS), linux freebsd))
 	$(ID) debian/clear_console.1 $(d)/usr/share/man/man1/
 endif
 
-ifeq ($(with_gfdl),yes)
 	: # files for the bash-doc package
-	mv $(d)/usr/share/info/bash.info $(d)/usr/share/info/bashref.info
-	ln -sf bashref.info $(d)/usr/share/info/bash.info
-	mv $(d)/usr/share/info $(d_doc)/usr/share/
-else
-	rm -rf $(d)/usr/share/info
-endif
 
-	dh_installexamples -p$(p_doc) bash/examples/*
+	dh_installexamples -p$(p_doc) examples/*
 	mv $(d_doc)/usr/share/doc/$(p_doc)/examples \
 		$(d_doc)/usr/share/doc/$(p)/examples
 	rm -rf $(d_doc)/usr/share/doc/$(p)/examples/loadables
@@ -254,23 +241,23 @@ endif
 		misc/aliasconv.*sh misc/cshtobash
 
 	cd $(d_doc)/usr/share/doc/$(p)/examples && chmod 644 \
-		scripts/shprompt scripts/precedence \
-		scripts/bcsh.sh scripts/krand.bash
+		scripts/shprompt
 
 	: # files for the bash-builtins package
-	$(ID) bash/include/*.h bash/*.h  $(d_bins)/usr/include/bash/
+	$(ID) include/*.h *.h  $(d_bins)/usr/include/bash/
 	$(ID) build-bash/*.h $(d_bins)/usr/include/bash/
 	rm -f $(d_bins)/usr/include/bash/y.tab.h
-	$(ID) bash/builtins/*.h $(d_bins)/usr/include/bash/builtins/
-	$(ID) bash/lib/glob/*.h $(d_bins)/usr/include/bash/lib/glob/
-	$(ID) bash/lib/tilde/*.h $(d_bins)/usr/include/bash/lib/tilde/
-	$(ID) bash/examples/loadables/{README,*.c} \
+	$(ID) builtins/*.h $(d_bins)/usr/include/bash/builtins/
+	$(ID) lib/glob/*.h $(d_bins)/usr/include/bash/lib/glob/
+	$(ID) lib/tilde/*.h $(d_bins)/usr/include/bash/lib/tilde/
+	$(ID) examples/loadables/{README,*.c} \
 		$(d_bins)/usr/share/doc/$(p)/examples/loadables
 	$(ID) build-bash/examples/loadables/Makefile \
 		$(d_bins)/usr/share/doc/$(p)/examples/loadables
 	ln -sf bash $(d_bins)/usr/share/doc/$(p_bins)
 
-	cat debian/README stamps/stamp-patch-bash > debian/README.Debian
+#	cat debian/README stamps/stamp-patch > debian/README.Debian
+	cat debian/README > debian/README.Debian
 
 	touch stamps/stamp-install-bash
 
@@ -280,8 +267,9 @@ binary-doc: bash-install bash-doc-build
 	mkdir -p $(d_doc)/usr/share/doc/$(p)
 ifeq ($(with_gfdl),yes)
 	dh_installdocs -p$(p_doc) 
-	cp -p build-bash/doc/bashref.pdf $(d_doc)/usr/share/doc/$(p)/.
+	cp -p build-bash/doc/bashref.{html,pdf} $(d_doc)/usr/share/doc/$(p)/.
 	dh_link -p$(p_doc) \
+	    /usr/share/doc/$(p)/bashref.html /usr/share/doc/$(p_doc)/bashref.html \
 	    /usr/share/doc/$(p)/bashref.pdf /usr/share/doc/$(p_doc)/bashref.pdf
 else
 	dh_installdocs -p$(p_doc) -X.doc-base
@@ -293,7 +281,7 @@ endif
 	dh_link -p$(p_doc) \
 	    /usr/share/doc/$(p)/bash.html /usr/share/doc/$(p_doc)/bash.html \
 	    /usr/share/doc/$(p)/bash.pdf /usr/share/doc/$(p_doc)/bash.pdf
-	dh_installchangelogs -p$(p_doc) bash/CWRU/changelog
+	dh_installchangelogs -p$(p_doc) CWRU/changelog
 	dh_compress -p$(p_doc) -Xexamples -X.pdf
 	dh_fixperms -p$(p_doc)
 	dh_installdeb -p$(p_doc)
@@ -306,17 +294,12 @@ binary-bash: bash-install debian/bash.preinst
 	dh_testroot
 	dh_installchangelogs -p$(p)
 	dh_installdocs -p$(p) \
-		bash/{CHANGES,NEWS,COMPAT,doc/INTRO,POSIX} \
+		CHANGES NEWS COMPAT doc/INTRO POSIX \
 		debian/{README.Debian,README.abs-guide,README.commands} \
 		debian/inputrc.arrows
-ifeq ($(with_gfdl),yes)
-	cp -p bash/doc/FAQ $(d)/usr/share/doc/$(p)/.
-else
-	cp -p debian/FAQ $(d)/usr/share/doc/$(p)/.
-endif
 	install -D -m 644 debian/bash.overrides \
 		debian/bash/usr/share/lintian/overrides/bash
-	dh_installman -p$(p) bash/doc/rbash.1 debian/bash-builtins.7
+	dh_installman -p$(p) doc/rbash.1 debian/bash-builtins.7
 	dh_installmenu -p$(p)
 	dh_strip -p$(p)
 	dh_compress -p$(p)
@@ -348,7 +331,7 @@ binary-static: static-build
 		bin \
 		usr/share/man/man1
 	cp -p build-static/bash $(d_stat)/bin/bash-static
-	cp -p bash/doc/bash.1 $(d_stat)/usr/share/man/man1/bash-static.1
+	cp -p doc/bash.1 $(d_stat)/usr/share/man/man1/bash-static.1
 	dh_installdocs -p$(p_stat)
 	dh_installchangelogs -p$(p_stat)
 	install -D -m 644 debian/bash-static.overrides \
@@ -405,7 +388,7 @@ endif
 	touch stamps/stamp-build-$(build)
 
 do-configure-$(build): stamps/stamp-configure-$(build)
-stamps/stamp-configure-$(build): stamps/stamp-patch-$(bash_src)
+stamps/stamp-configure-$(build):
 	dh_testdir
 	rm -rf build-$(build)
 	mkdir build-$(build)
@@ -420,52 +403,30 @@ stamps/stamp-configure-$(build): stamps/stamp-patch-$(bash_src)
 	fi
 	touch stamps/stamp-configure-$(build)
 
-patchdir = debian/patches
-
-$(patchdir)/series: $(patchdir)/series.in
-	cpp -E \
-	  $(if $(filter no, $(with_gfdl)),,-DGFDL) \
-	  -Darch_os_$(DEB_HOST_ARCH_OS) -Darch_$(DEB_HOST_ARCH) \
-	  -o - $(patchdir)/series.in \
-	  | egrep -v '^(#.*|$$)' > $(patchdir)/series
-
-patch-$(bash_src): stamps/stamp-patch-$(bash_src)
-stamps/stamp-patch-$(bash_src): $(patchdir)/series stamps/stamp-unpack-$(bash_src)
-	QUILT_PATCHES=$(patchdir) quilt push -a || test $$? = 2
-	mkdir -p stamps
-	echo ""; echo "Patches applied in this version:" > stamps/pxx
-	for i in $$(cat $(patchdir)/series); do \
-	  echo ""; echo "$$i:"; \
-	  sed -n 's/^# *DP: */  /p' $(patchdir)/$$i; \
-	done >> stamps/pxx
-	mv stamps/pxx $@
-
-reverse-patches: unpatch
-unpatch:
-	QUILT_PATCHES=$(patchdir) quilt pop -a -R || test $$? = 2
-	rm -f stamps/stamp-patch $(patchdir)/series
-	rm -rf configure autom4te.cache
-
-update-patches: $(patchdir)/series stamps/stamp-unpack-$(bash_src)
+update-patches:
 	export QUILT_PATCHES=$(patchdir); \
 	export QUILT_REFRESH_ARGS="--no-timestamps --no-index -p ab"; \
 	export QUILT_DIFF_ARGS="--no-timestamps --no-index -p ab"; \
 	while quilt push; do quilt refresh; done
 
-unpack-$(bash_src): stamps/stamp-unpack-$(bash_src)
-stamps/stamp-unpack-$(bash_src):
-	mkdir -p stamps
-	rm -rf bash-$(VERSION) $(bash_src)
-	rm -f stamps/stamp-patch-$(bash_src){,-*}
-	tar xf bash-$(VERSION)*.tar.xz
-	mv bash-$(VERSION) $(bash_src)
-	rm -f bash/y.tab.?
-	cp -p /usr/share/misc/config.* $(bash_src)/.
-	cp -p /usr/share/misc/config.* $(bash_src)/support/.
-	touch stamps/stamp-unpack-$(bash_src)
+#unpack-$(bash_src): stamps/stamp-unpack-$(bash_src)
+#stamps/stamp-unpack-$(bash_src):
+#	mkdir -p stamps
+#	rm -rf bash-$(VERSION) $(bash_src)
+#	rm -f stamps/stamp-patch-$(bash_src){,-*}
+#	tar xf bash-$(VERSION)*.tar.xz
+#	mv bash-$(VERSION) $(bash_src)
+#	rm -f bash/y.tab.?
+#	cp -p /usr/share/misc/config.* $(bash_src)/.
+#	cp -p /usr/share/misc/config.* $(bash_src)/support/.
+#	touch stamps/stamp-unpack-$(bash_src)
+
+remove-non-dfsg-files:
+	rm -f doc/article.*
+	rm -f doc/FAQ
 
 .NOTPARALLEL: build
-.PHONY: unpack patch binary binary-arch binary-indep clean \
+.PHONY: unpack binary binary-arch binary-indep clean \
     build bash-build static-build preinst-build \
     check \
     bash-configure static-configure \

@@ -6,9 +6,9 @@
 # DP: called with the -p option.  I won't install this. 
  
 
---- a/bash/shell.c
-+++ b/bash/shell.c
-@@ -486,7 +486,7 @@
+--- a/shell.c
++++ b/shell.c
+@@ -492,7 +492,7 @@
    if (dump_translatable_strings)
      read_but_dont_execute = 1;
  

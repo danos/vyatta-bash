@@ -1,7 +1,7 @@
 # DP: doc/rbash.1: fix bash(1) reference
 
---- a/bash/doc/rbash.1
-+++ b/bash/doc/rbash.1
+--- a/doc/rbash.1
++++ b/doc/rbash.1
 @@ -3,6 +3,6 @@
  rbash \- restricted bash, see \fBbash\fR(1)
  .SH RESTRICTED SHELL

@@ -1,8 +1,10 @@
 # DP: document deprecated syntax for arithmetic evaluation.
 
---- a/bash/doc/bash.1
-+++ b/bash/doc/bash.1
-@@ -2994,6 +2994,9 @@
+Index: b/doc/bash.1
+===================================================================
+--- a/doc/bash.1
++++ b/doc/bash.1
+@@ -3148,6 +3148,9 @@
  \fB$((\fP\fIexpression\fP\fB))\fP
  .RE
  .PP

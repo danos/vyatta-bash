@@ -1,7 +1,7 @@
 # DP: Define PGRP_PIPE to avoid race condition.
 
---- a/bash/config-bot.h
-+++ b/bash/config-bot.h
+--- a/config-bot.h
++++ b/config-bot.h
 @@ -197,3 +197,6 @@
  
  /* If you don't want bash to provide a default mail file to check. */

@@ -1,7 +1,7 @@
 # DP: Fix bug in Bash_aliases example.
 
---- a/bash/examples/startup-files/Bash_aliases
-+++ b/bash/examples/startup-files/Bash_aliases
+--- a/examples/startup-files/Bash_aliases
++++ b/examples/startup-files/Bash_aliases
 @@ -41,20 +41,20 @@
  { 
      local count="$1" i;

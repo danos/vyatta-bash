@@ -1,7 +1,7 @@
 # DP: send bug reports to Debian bash maintainer too.
 
---- a/bash/support/bashbug.sh
-+++ b/bash/support/bashbug.sh
+--- a/support/bashbug.sh
++++ b/support/bashbug.sh
 @@ -117,6 +117,7 @@
  		esac ;;
  esac

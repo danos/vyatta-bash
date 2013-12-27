@@ -1,8 +1,8 @@
 # DP: bash(1): mention quoting when assigning to FIGNORE
 
---- a/bash/doc/bash.1
-+++ b/bash/doc/bash.1
-@@ -1902,7 +1902,9 @@
+--- a/doc/bash.1
++++ b/doc/bash.1
+@@ -1993,7 +1993,9 @@
  is excluded from the list of matched filenames.
  A sample value is
  .if t \f(CW".o:~"\fP.

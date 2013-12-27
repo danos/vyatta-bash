@@ -1,7 +1,9 @@
 # DP: document /etc/bash.bashrc in bash man page
 
---- a/bash/doc/bash.1
-+++ b/bash/doc/bash.1
+Index: b/doc/bash.1
+===================================================================
+--- a/doc/bash.1
++++ b/doc/bash.1
 @@ -182,7 +182,9 @@
  .PD
  Execute commands from
@@ -24,7 +26,7 @@
  .I ~/.bashrc
  if the shell is interactive.
  This option is on by default if the shell is invoked as
-@@ -321,13 +325,15 @@
+@@ -326,13 +330,15 @@
  .PP
  When an interactive shell that is not a login shell is started,
  .B bash
@@ -42,7 +44,7 @@
  .PP
  When
  .B bash
-@@ -413,7 +419,8 @@
+@@ -418,7 +424,8 @@
  If
  .B bash
  determines it is being run in this fashion, it reads and executes
@@ -52,7 +54,7 @@
  It will not do this if invoked as \fBsh\fP.
  The
  .B \-\-norc
-@@ -9830,6 +9837,9 @@
+@@ -10227,6 +10234,9 @@
  .FN /etc/profile
  The systemwide initialization file, executed for login shells
  .TP

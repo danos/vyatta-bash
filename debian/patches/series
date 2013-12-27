@@ -1,0 +1,20 @@
+bashbug-editor.diff
+deb-bash-config.diff
+deb-examples.diff
+man-arithmetic.diff
+man-fignore.diff
+man-bashrc.diff
+man-bashlogout.diff
+man-nocaseglob.diff
+man-test.diff
+man-test2.diff
+privmode.diff
+rbash-manpage.diff
+bash-default-editor.diff
+bash-subst-param-length.diff
+pgrp-pipe.diff
+input-err.diff
+exec-redirections-doc.diff
+bash-aliases-repeat.diff
+# no-brk-caching.diff
+rc1-fixes.diff

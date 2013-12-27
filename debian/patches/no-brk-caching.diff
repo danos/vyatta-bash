@@ -1,7 +1,7 @@
 # DP: Don't cache the value of brk between sbrk calls.
 
---- a/bash/lib/malloc/malloc.c
-+++ b/bash/lib/malloc/malloc.c
+--- a/lib/malloc/malloc.c
++++ b/lib/malloc/malloc.c
 @@ -227,8 +227,6 @@
  static int pagebucket;	/* bucket for requests a page in size */
  static int maxbuck;	/* highest bucket receiving allocation request. */
@@ -19,7 +19,7 @@
  
  #ifdef MALLOC_STATS
    _mstats.nsbrk++;
-@@ -629,8 +626,6 @@
+@@ -633,8 +630,6 @@
    if ((long)mp == -1)
      goto morecore_done;
  
@@ -28,7 +28,7 @@
    /* shouldn't happen, but just in case -- require 8-byte alignment */
    if ((long)mp & MALIGN_MASK)
      {
-@@ -680,7 +675,7 @@
+@@ -684,7 +679,7 @@
       Some of this partial page will be wasted space, but we'll use as
       much as we can.  Once we figure out how much to advance the break
       pointer, go ahead and do it. */
@@ -37,7 +37,7 @@
    sbrk_needed = pagesz - ((long)curbrk & (pagesz - 1));	/* sbrk(0) % pagesz */
    if (sbrk_needed < 0)
      sbrk_needed += pagesz;
-@@ -695,7 +690,6 @@
+@@ -699,7 +694,6 @@
        curbrk = sbrk (sbrk_needed);
        if ((long)curbrk == -1)
  	return -1;
@@ -45,15 +45,3 @@
  
        /* Take the memory which would otherwise be wasted and populate the most
  	 popular bin (2 == 32 bytes) with it.  Add whatever we need to curbrk
-@@ -902,9 +896,9 @@
-     xbotch (mem, ERR_ASSERT_FAILED, _("free: start and end chunk sizes differ"), file, line);
- 
- #if 1
--  if (nunits >= LESSCORE_MIN && ((char *)p + binsize(nunits) == memtop))
-+  if (nunits >= LESSCORE_MIN && ((char *)p + binsize(nunits) == sbrk(0)))
- #else
--  if (((char *)p + binsize(nunits) == memtop) && nunits >= LESSCORE_MIN)
-+  if (((char *)p + binsize(nunits) == sbrk(0)) && nunits >= LESSCORE_MIN)
- #endif
-     {
-       /* If above LESSCORE_FRC, give back unconditionally.  This should be set

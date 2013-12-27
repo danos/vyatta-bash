@@ -1,3 +1,15 @@
+bash (4.3~rc1-1) experimental; urgency=medium
+
+  * New upstream version 4.3 rc1.
+
+ -- Matthias Klose <doko@debian.org>  Fri, 27 Dec 2013 23:01:38 +0100
+
+bash (4.3~beta2-1) experimental; urgency=low
+
+  * New upstream version 4.3 beta2.
+
+ -- Matthias Klose <doko@debian.org>  Wed, 23 Oct 2013 13:59:32 +0200
+
 bash (4.2+dfsg-1) unstable; urgency=low
 
   * Apply upstream patches 038 - 045, fixes for

@@ -1,8 +1,10 @@
 # DP: document /etc/bash.bashrc in bash man page
 
---- a/bash/doc/bash.1
-+++ b/bash/doc/bash.1
-@@ -9840,6 +9840,9 @@
+Index: b/doc/bash.1
+===================================================================
+--- a/doc/bash.1
++++ b/doc/bash.1
+@@ -10237,6 +10237,9 @@
  .FN /etc/bash.bashrc
  The systemwide per-interactive-shell startup file
  .TP

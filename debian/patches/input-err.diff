@@ -1,8 +1,10 @@
 # DP: Define PGRP_PIPE to avoid race condition.
 
---- a/bash/input.c
-+++ b/bash/input.c
-@@ -498,7 +498,7 @@
+Index: b/input.c
+===================================================================
+--- a/input.c
++++ b/input.c
+@@ -507,7 +507,7 @@
        if (nr == 0)
  	bp->b_flag |= B_EOF;
        else
