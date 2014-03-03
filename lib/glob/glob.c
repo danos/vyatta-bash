@@ -116,7 +116,7 @@ static void wdequote_pathname __P((char *));
 #  define dequote_pathname udequote_pathname
 #endif
 static void dequote_pathname __P((char *));
-static int glob_testdir __P((char *));
+static int glob_testdir __P((char *, int));
 static char **glob_dir_to_array __P((char *, char **, int));
 
 /* Make sure these names continue to agree with what's in smatch.c */
@@ -443,13 +443,20 @@ dequote_pathname (pathname)
 
 /* Return 0 if DIR is a directory, -1 otherwise. */
 static int
-glob_testdir (dir)
+glob_testdir (dir, flags)
      char *dir;
+     int flags;
 {
   struct stat finfo;
+  int r;
 
-/*itrace("glob_testdir: testing %s", dir);*/
-  if (stat (dir, &finfo) < 0)
+/*itrace("glob_testdir: testing %s" flags = %d, dir, flags);*/
+#if defined (HAVE_LSTAT)
+  r = (flags & GX_ALLDIRS) ? lstat (dir, &finfo) : stat (dir, &finfo);
+#else
+  r = stat (dir, &finfo);
+#endif
+  if (r < 0)
     return (-1);
 
   if (S_ISDIR (finfo.st_mode) == 0)
@@ -573,7 +580,7 @@ glob_vector (pat, dir, flags)
   /* If PAT is empty, skip the loop, but return one (empty) filename. */
   if (pat == 0 || *pat == '\0')
     {
-      if (glob_testdir (dir) < 0)
+      if (glob_testdir (dir, 0) < 0)
 	return ((char **) &glob_error_return);
 
       nextlink = (struct globval *)alloca (sizeof (struct globval));
@@ -606,7 +613,7 @@ glob_vector (pat, dir, flags)
       int dirlen;
       struct stat finfo;
 
-      if (glob_testdir (dir) < 0)
+      if (glob_testdir (dir, 0) < 0)
 	return ((char **) &glob_error_return);
 
       dirlen = strlen (dir);
@@ -660,7 +667,7 @@ glob_vector (pat, dir, flags)
 	 is not robust (i.e., it opens non-directories successfully), test
 	 that DIR is a directory and punt if it's not. */
 #if defined (OPENDIR_NOT_ROBUST)
-      if (glob_testdir (dir) < 0)
+      if (glob_testdir (dir, 0) < 0)
 	return ((char **) &glob_error_return);
 #endif
 
@@ -728,7 +735,7 @@ glob_vector (pat, dir, flags)
 	      if (flags & GX_NULLDIR)
 		pflags |= MP_IGNDOT;
 	      subdir = sh_makepath (dir, dp->d_name, pflags);
-	      isdir = glob_testdir (subdir);
+	      isdir = glob_testdir (subdir, flags);
 	      if (isdir < 0 && (flags & GX_MATCHDIRS))
 		{
 		  free (subdir);

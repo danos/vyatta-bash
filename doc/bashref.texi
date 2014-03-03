@@ -1566,8 +1566,12 @@ only be referenced; assignment to them is not allowed.
 
 @item *
 @vindex $*
-($*) Expands to the positional parameters, starting from one.  When the
-expansion occurs within double quotes, it expands to a single word
+($*) Expands to the positional parameters, starting from one.
+When the expansion is not within double quotes, each positional parameter
+expands to a separate word.
+In contexts where it is performed, those words
+are subject to further word splitting and pathname expansion.
+When the expansion occurs within double quotes, it expands to a single word
 with the value of each parameter separated by the first character
 of the @env{IFS}
 special variable.  That is, @code{"$*"} is equivalent
@@ -1577,7 +1581,6 @@ variable.
 If @env{IFS} is unset, the parameters are separated by spaces.
 If @env{IFS} is null, the parameters are joined without intervening
 separators.
-
 
 @item @@
 @vindex $@@
@@ -3999,6 +4002,10 @@ When used in a function, @code{declare} makes each @var{name} local,
 as with the @code{local} command, unless the @option{-g} option is used.
 If a variable name is followed by =@var{value}, the value of the variable
 is set to @var{value}.
+
+When using @option{-a} or @option{-A} and the compound assignment syntax to 
+create array variables, additional attributes do not take effect until
+subsequent assignments.
 
 The return status is zero unless an invalid option is encountered,
 an attempt is made to define a function using @samp{-f foo=bar},
@@ -7251,7 +7258,7 @@ A variable assignment error occurs, for example, when trying to assign
 a value to a readonly variable.
 
 @item
-A non-interactive shell exists with an error status if a variable
+A non-interactive shell exits with an error status if a variable
 assignment error occurs in an assignment statement preceding a special
 builtin, but not with any other simple command.
 

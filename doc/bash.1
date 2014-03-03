@@ -5,12 +5,12 @@
 .\"	Case Western Reserve University
 .\"	chet.ramey@case.edu
 .\"
-.\"	Last Change: Mon Jan  6 16:40:31 EST 2014
+.\"	Last Change: Sun Feb  2 16:21:40 EST 2014
 .\"
 .\" bash_builtins, strip all but Built-Ins section
 .if \n(zZ=1 .ig zZ
 .if \n(zY=1 .ig zY
-.TH BASH 1 "2014 January 6" "GNU Bash 4.3"
+.TH BASH 1 "2014 February 2" "GNU Bash 4.3"
 .\"
 .\" There's some problem with having a `@'
 .\" in a tagged paragraph with the BSD man macros.
@@ -1305,8 +1305,12 @@ only be referenced; assignment to them is not allowed.
 .PD 0
 .TP
 .B *
-Expands to the positional parameters, starting from one.  When the
-expansion occurs within double quotes, it expands to a single word
+Expands to the positional parameters, starting from one.
+When the expansion is not within double quotes, each positional parameter
+expands to a separate word.
+In contexts where it is performed, those words
+are subject to further word splitting and pathname expansion.
+When the expansion occurs within double quotes, it expands to a single word
 with the value of each parameter separated by the first character
 of the 
 .SM
@@ -7522,6 +7526,9 @@ command,
 unless the \fB\-g\fP option is supplied.
 If a variable name is followed by =\fIvalue\fP, the value of
 the variable is set to \fIvalue\fP.
+When using \fB\-a\fP or \fB\-A\fP and the compound assignment syntax to
+create array variables, additional attributes do not take effect until
+subsequent assignments.
 The return value is 0 unless an invalid option is encountered,
 an attempt is made to define a function using
 .if n ``\-f foo=bar'',

@@ -4,7 +4,7 @@ Index: b/doc/bash.1
 ===================================================================
 --- a/doc/bash.1
 +++ b/doc/bash.1
-@@ -10237,6 +10237,9 @@
+@@ -10253,6 +10253,9 @@
  .FN /etc/bash.bashrc
  The systemwide per-interactive-shell startup file
  .TP

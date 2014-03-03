@@ -17,4 +17,4 @@ input-err.diff
 exec-redirections-doc.diff
 bash-aliases-repeat.diff
 # no-brk-caching.diff
-rc1-fixes.diff
+use-system-texi2html.diff

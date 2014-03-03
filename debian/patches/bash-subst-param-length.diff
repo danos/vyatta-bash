@@ -1,6 +1,8 @@
+Index: b/subst.c
+===================================================================
 --- a/subst.c
 +++ b/subst.c
-@@ -7121,7 +7121,7 @@
+@@ -7160,7 +7160,7 @@
        (sindex == t_index - 1 && string[sindex] == '!' && VALID_INDIR_PARAM (string[t_index])))
      {
        t_index++;

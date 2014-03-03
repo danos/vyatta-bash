@@ -17,7 +17,7 @@ The upstream ChangeLog can be found in the bash-doc package.
 A kind of FAQ for bash on Debian GNU/{Linux,Hurd}
 -------------------------------------------------
 
-0. symlinked directory completion behavior
+1. symlinked directory completion behavior
 
    Starting with readline-4.2a, completion on symlinks that point
    to directories does not append the slash. To restore the behaviour
@@ -25,7 +25,7 @@ A kind of FAQ for bash on Debian GNU/{Linux,Hurd}
 
        set mark-symlinked-directories on
 
-1. How can I make bash 8-bit clean so I can type hi-bit characters
+2. How can I make bash 8-bit clean so I can type hi-bit characters
    directly?
 
    Remove the comments from the indicated lines in /etc/inputrc.

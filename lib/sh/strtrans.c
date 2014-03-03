@@ -231,7 +231,7 @@ ansic_quote (str, flags, rlen)
 
   for (s = str; c = *s; s++)
     {
-      l = 1;		/* 1 == add backslash; 0 == no backslash */
+      b = l = 1;		/* 1 == add backslash; 0 == no backslash */
       clen = 1;
 
       switch (c)
@@ -257,7 +257,7 @@ ansic_quote (str, flags, rlen)
 #if defined (HANDLE_MULTIBYTE)
 	  b = is_basic (c);
 	  /* XXX - clen comparison to 0 is dicey */
-	  if ((b == 0 && ((clen = mbrtowc (&wc, s, MB_CUR_MAX, 0)) < 0 || iswprint (wc) == 0)) ||
+	  if ((b == 0 && ((clen = mbrtowc (&wc, s, MB_CUR_MAX, 0)) < 0 || MB_INVALIDCH (clen) || iswprint (wc) == 0)) ||
 	      (b == 1 && ISPRINT (c) == 0))
 #else
 	  if (ISPRINT (c) == 0)
@@ -272,14 +272,20 @@ ansic_quote (str, flags, rlen)
 	  l = 0;
 	  break;
 	}
+      if (b == 0 && clen == 0)
+	break;
+
       if (l)
 	*r++ = '\\';
 
       if (clen == 1)
 	*r++ = c;
       else
-	for (b = 0; b < (int)clen; c = b ? *++s : c)
-	  *r++ = c;
+	{
+	  for (b = 0; b < (int)clen; b++)
+	    *r++ = (unsigned char)s[b];
+	  s += clen - 1;	/* -1 because of the increment above */
+	}
     }
 
   *r++ = '\'';

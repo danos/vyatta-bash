@@ -1,8 +1,10 @@
 # DP: Use `command -v editor`, as an editor, if available.
 
+Index: b/bashline.c
+===================================================================
 --- a/bashline.c
 +++ b/bashline.c
-@@ -924,8 +924,8 @@
+@@ -926,8 +926,8 @@
     command being entered (if no explicit argument is given), otherwise on
     a command from the history file. */
  
@@ -13,6 +15,8 @@
  #define POSIX_VI_EDIT_COMMAND	"fc -e vi"
  
  static int
+Index: b/builtins/fc.def
+===================================================================
 --- a/builtins/fc.def
 +++ b/builtins/fc.def
 @@ -159,11 +159,11 @@
