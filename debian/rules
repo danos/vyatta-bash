@@ -217,6 +217,8 @@ ifneq ($(with_gfdl),yes)
 	mkdir -p $(d)/usr/share/man/man1
 	cp -p bash/doc/bash.1 $(d)/usr/share/man/man1/bash.1
 endif
+	rm -f $(d)/usr/share/doc/bash/*.html
+	rm -f $(d)/usr/share/info/*.info
 
 	: # extra links
 	ln -sf bash $(d)/bin/rbash
@@ -273,6 +275,8 @@ binary-doc: bash-install bash-doc-build
 ifeq ($(with_gfdl),yes)
 	dh_installdocs -p$(p_doc) 
 	cp -p build-bash/doc/bashref.{html,pdf} $(d_doc)/usr/share/doc/$(p)/.
+	mkdir -p $(d_doc)/usr/share/info
+	cp -p build-bash/doc/bash.info $(d_doc)/usr/share/info/.
 	dh_link -p$(p_doc) \
 	    /usr/share/doc/$(p)/bashref.html /usr/share/doc/$(p_doc)/bashref.html \
 	    /usr/share/doc/$(p)/bashref.pdf /usr/share/doc/$(p_doc)/bashref.pdf

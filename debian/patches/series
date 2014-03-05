@@ -18,3 +18,4 @@ exec-redirections-doc.diff
 bash-aliases-repeat.diff
 # no-brk-caching.diff
 use-system-texi2html.diff
+bzero.diff

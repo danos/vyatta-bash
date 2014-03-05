@@ -6,7 +6,7 @@ Standards-Version: 3.9.5
 Build-Depends: autoconf, autotools-dev, bison, libncurses5-dev,
  texinfo, texi2html, debhelper (>= 5), locales, gettext, sharutils, time,
  xz-utils, dpkg-dev (>= 1.16.1)
-Build-Depends-Indep: texlive-latex-base, ghostscript
+Build-Depends-Indep: texlive-latex-base, ghostscript, texlive-fonts-recommended
 Homepage: http://tiswww.case.edu/php/chet/bash/bashtop.html
 Vcs-Browser: https://code.launchpad.net/~doko/+junk/pkg-bash-debian
 Vcs-Bzr: http://bazaar.launchpad.net/~doko/+junk/pkg-bash-debian
@@ -62,7 +62,7 @@ Architecture: all
 Depends: ${misc:Depends}, dpkg (>= 1.15.4) | install-info
 Section: doc
 Priority: optional
-Replaces: bash (<< 3.2-1)
+Replaces: bash (<< 4.3-2)
 Description: Documentation and examples for the The GNU Bourne Again SHell
  Bash is an sh-compatible command language interpreter that executes
  commands read from the standard input or from a file.  Bash also

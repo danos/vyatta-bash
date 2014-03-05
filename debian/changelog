@@ -1,3 +1,11 @@
+bash (4.3-2) unstable; urgency=medium
+
+  * Build-depend on texlive-fonts-recommended.
+  * Work around a build failure of bash static on ppc64el.
+  * Only include the documentation into the bash-doc package. Closes:
+
+ -- Matthias Klose <doko@debian.org>  Wed, 05 Mar 2014 05:05:16 +0100
+
 bash (4.3-1) unstable; urgency=medium
 
   * Bash 4.3 release.
