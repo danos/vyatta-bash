@@ -19,3 +19,7 @@ bash-aliases-repeat.diff
 # no-brk-caching.diff
 use-system-texi2html.diff
 bzero.diff
+rl-dispatch-multikey.diff
+rl-vi-last.diff
+pcomplete-dequote.diff
+debug-trap.diff

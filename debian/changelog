@@ -1,3 +1,15 @@
+bash (4.3-3) unstable; urgency=medium
+
+  * Fix an issue with with empty completions and bash-completion.
+    Closes: #741060 . LP: #1291586.
+  * Fix an issue with updating terminal titles using trap commands.
+    LP : #1294167.
+  * Fix an issue in vi-mode, not re-doing the latest "dw", "dl", "D", ...
+    commands.
+  * Fix segfault in _rl_dispatch_callback(). Closes: #741555.
+
+ -- Matthias Klose <doko@debian.org>  Wed, 19 Mar 2014 18:54:13 +0100
+
 bash (4.3-2) unstable; urgency=medium
 
   * Build-depend on texlive-fonts-recommended.
