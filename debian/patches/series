@@ -23,3 +23,6 @@ rl-dispatch-multikey.diff
 rl-vi-last.diff
 pcomplete-dequote.diff
 debug-trap.diff
+compound-array-empty-value.diff
+extglob-skipname.diff
+parse-ansi-expand.diff

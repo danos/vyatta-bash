@@ -1,9 +1,20 @@
+bash (4.3-4) unstable; urgency=high
+
+  * Fix an issue with an associative array expanding to the
+    empty string if the associated value is the empty string.
+  * Fix an issue, when invoked as sh, bash doesn't interpret C-style escapes
+    within double-quoted substitution expansions ("${var/$'what'/ever}").
+  * Fix an issue with the extglob option to not expand hidden files.
+  * Update the pcomplete-dequote patch.
+
+ -- Matthias Klose <doko@debian.org>  Fri, 21 Mar 2014 15:20:45 +0100
+
 bash (4.3-3) unstable; urgency=medium
 
   * Fix an issue with with empty completions and bash-completion.
     Closes: #741060 . LP: #1291586.
   * Fix an issue with updating terminal titles using trap commands.
-    LP : #1294167.
+    LP: #1294167.
   * Fix an issue in vi-mode, not re-doing the latest "dw", "dl", "D", ...
     commands.
   * Fix segfault in _rl_dispatch_callback(). Closes: #741555.
