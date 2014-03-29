@@ -26,3 +26,5 @@ debug-trap.diff
 compound-array-empty-value.diff
 extglob-skipname.diff
 parse-ansi-expand.diff
+rl-sigint-cleanup.diff
+input-line-realloc.diff

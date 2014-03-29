@@ -1,3 +1,10 @@
+bash (4.3-5) unstable; urgency=medium
+
+  * Fix a display issue when a multiline command is aborted with ^C.
+  * Fix a crash after a failed history expansion. LP: #1294669.
+
+ -- Matthias Klose <doko@debian.org>  Sat, 29 Mar 2014 19:10:21 +0100
+
 bash (4.3-4) unstable; urgency=high
 
   * Fix an issue with an associative array expanding to the
