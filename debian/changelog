@@ -1,3 +1,32 @@
+bash (4.3-6) unstable; urgency=medium
+
+  * Apply upstream patches 001 - 008:
+    - A missing check for a valid option prevented `test -R' from working.
+      There is another problem that causes bash to look up the wrong variable
+      name when processing the argument to `test -R'.
+    - A change to save state while running the DEBUG trap caused pipelines to
+      hang on systems which need process group synchronization while building
+      pipelines.
+    - When in callback mode, some readline commands can cause readline
+      to segfault by passing invalid contexts to callback functions.
+    - The `.' command in vi mode cannot undo multi-key commands beginning with
+      `c', `d', and `y' (command plus motion specifier).
+    - When in Posix mode, bash did not correctly interpret the ANSI-C-style
+      $'...' quoting mechanism when performing pattern substitution word
+      expansions within double quotes.
+    - A shell that started with job control active but was not interactive left
+      the terminal in the wrong process group when exiting, causing its parent
+      shell to get a stop signal when it attempted to read from the terminal.
+    - Using compound assignments for associative arrays like
+        assoc=( [x]= [y]=bar )
+      left the value corresponding to the key `x' NULL.  This caused
+      subsequent lookups to interpret it as unset.
+    - Some extended glob patterns incorrectly matched filenames with a leading
+      dot, regardless of the setting of the `dotglob' option.
+  * Replace already applied patches by the upstream patch files.
+
+ -- Matthias Klose <doko@debian.org>  Mon, 07 Apr 2014 22:20:10 +0200
+
 bash (4.3-5) unstable; urgency=medium
 
   * Fix a display issue when a multiline command is aborted with ^C.

@@ -219,6 +219,7 @@ ifneq ($(with_gfdl),yes)
 endif
 	rm -f $(d)/usr/share/doc/bash/*.html
 	rm -f $(d)/usr/share/info/*.info
+	rm -f $(d)/usr/share/info/dir*
 
 	: # extra links
 	ln -sf bash $(d)/bin/rbash
