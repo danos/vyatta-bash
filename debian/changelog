@@ -1,3 +1,19 @@
+bash (4.3-7) unstable; urgency=medium
+
+  * Apply upstream patches 009 - 011 (replacing local patches):
+    - Fix a problem with unsigned sign extension when attempting to reallocate
+      the input line when it is fewer than 3 characters long and there has been
+      a history expansion.  The sign extension causes the shell to not
+      reallocate the line, which results in a segmentation fault when it writes
+      past the end.
+    - Change the behavior of programmable completion to compensate for two
+      assumptions made by the bash-completion package.
+    - The signal handling changes to bash and readline (to avoid running any
+      code in a signal handler context) cause the cursor to be placed on the
+      wrong line of a multi-line command after a ^C interrupts editing.
+
+ -- Matthias Klose <doko@debian.org>  Wed, 16 Apr 2014 23:10:28 +0200
+
 bash (4.3-6) unstable; urgency=medium
 
   * Apply upstream patches 001 - 008:

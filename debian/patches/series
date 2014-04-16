@@ -6,6 +6,9 @@ bash43-005.diff
 bash43-006.diff
 bash43-007.diff
 bash43-008.diff
+bash43-009.diff
+bash43-010.diff
+bash43-011.diff
 bashbug-editor.diff
 deb-bash-config.diff
 deb-examples.diff
@@ -27,6 +30,3 @@ bash-aliases-repeat.diff
 # no-brk-caching.diff
 use-system-texi2html.diff
 bzero.diff
-pcomplete-dequote.diff
-rl-sigint-cleanup.diff
-input-line-realloc.diff
