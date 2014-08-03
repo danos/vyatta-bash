@@ -1,3 +1,38 @@
+bash (4.3-8) unstable; urgency=medium
+
+  * Apply upstream patches 012 - 022, fixing the issues:
+    - When a SIGCHLD trap runs a command containing a shell builtin while a
+      script is running `wait' to wait for all running children to complete,
+      the SIGCHLD trap will not be run once for each child that terminates.
+    - Using reverse-i-search when horizontal scrolling is enabled does not
+      redisplay the entire line containing the successful search results.
+    - Under certain circumstances, $@ is expanded incorrectly in contexts
+      where word splitting is not performed.
+    - When completing directory names, the directory name is dequoted twice.
+      This causes problems for directories with single and double quotes in
+      their names.
+    - An extended glob pattern containing a slash (`/') causes the globbing
+      code to misinterpret it as a directory separator.
+    - The code that creates local variables should not clear the `invisible'
+      attribute when returning an existing local variable.  Let the code that
+      actually assigns a value clear it.
+    - When assigning an array variable using the compound assignment syntax,
+      but using `declare' with the rhs of the compound assignment quoted, the
+      shell did not mark the variable as visible after successfully performing
+      the assignment.
+    - The -t timeout option to `read' does not work when the -e option is used.
+      LP: #1317476.
+    - When PS2 contains a command substitution, here-documents entered in an
+      interactive shell can sometimes cause a segmentation fault.
+    - When the readline `revert-all-at-newline' option is set, pressing newline
+      when the current line is one retrieved from history results in a double
+      free and a segmentation fault. Closes: #747341.
+    - Using nested pipelines within loops with the `lastpipe' option set can
+      result in a segmentation fault.
+  * Fix typo in package description. Closes: #707810.
+
+ -- Matthias Klose <doko@debian.org>  Sun, 03 Aug 2014 18:14:31 +0200
+
 bash (4.3-7) unstable; urgency=medium
 
   * Apply upstream patches 009 - 011 (replacing local patches):

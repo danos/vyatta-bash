@@ -63,7 +63,7 @@ Depends: ${misc:Depends}, dpkg (>= 1.15.4) | install-info
 Section: doc
 Priority: optional
 Replaces: bash (<< 4.3-2)
-Description: Documentation and examples for the The GNU Bourne Again SHell
+Description: Documentation and examples for the GNU Bourne Again SHell
  Bash is an sh-compatible command language interpreter that executes
  commands read from the standard input or from a file.  Bash also
  incorporates useful features from the Korn and C shells (ksh and csh).
