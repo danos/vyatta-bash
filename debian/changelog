@@ -1,3 +1,15 @@
+bash (4.3-9) unstable; urgency=medium
+
+  * Apply upstream patches 023 - 024, fixing the issues:
+    - bash does not correctly parse process substitution constructs that
+      contain unbalanced parentheses as part of the contained command.
+    - Indirect variable references do not work correctly if the reference
+      variable expands to an array reference using a subscript other than 0
+      (e.g., foo='bar[1]' ; echo ${!foo}).
+  * debian/skel.bashrc: Add GCC_COLORS setting (disabled by default).
+
+ -- Matthias Klose <doko@debian.org>  Thu, 21 Aug 2014 22:58:16 +0200
+
 bash (4.3-8) unstable; urgency=medium
 
   * Apply upstream patches 012 - 022, fixing the issues:
