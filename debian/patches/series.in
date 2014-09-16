@@ -62,3 +62,4 @@ exec-redirections-texi.diff
 #endif
 hardening-formatstring.diff
 unicode-escape-bug.diff
+CVE-2014-6271.diff
