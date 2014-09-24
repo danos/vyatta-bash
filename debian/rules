@@ -523,6 +523,7 @@ debian_patches = \
 	exec-redirections-man \
 	bash-aliases-repeat \
 	builtins-declare-fix \
+	CVE-2014-6271 \
 
 ifeq ($(with_gfdl),yes)
   debian_patches += \
