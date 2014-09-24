@@ -1,3 +1,10 @@
+bash (4.3-9.1) unstable; urgency=high
+
+  * Non-maintainer upload by the security team
+  * Apply upstream patch bash43-025, fixing CVE-2014-6271.
+
+ -- Florian Weimer <fw@deneb.enyo.de>  Wed, 24 Sep 2014 20:29:30 +0200
+
 bash (4.3-9) unstable; urgency=medium
 
   * Apply upstream patches 023 - 024, fixing the issues:
