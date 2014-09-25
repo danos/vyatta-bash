@@ -44,3 +44,6 @@ bash-aliases-repeat.diff
 # no-brk-caching.diff
 use-system-texi2html.diff
 bzero.diff
+CVE-2014-7169.diff
+variables-affix.patch
+parser-oob.patch
