@@ -1,3 +1,11 @@
+bash (4.2+dfsg-0.1+deb7u2) wheezy-security; urgency=high
+
+  * Non-maintainer upload by the Security Team.
+  * Add CVE-2014-7169.diff diff.
+    CVE-2014-7169: Incomplete fix for CVE-2014-6271. (Closes: #762760, #762761)
+
+ -- Salvatore Bonaccorso <carnil@debian.org>  Thu, 25 Sep 2014 07:23:43 +0200
+
 bash (4.2+dfsg-0.1+deb7u1) wheezy-security; urgency=high
 
   * Apply patch from Chet Ramey to fix CVE-2014-6271.
