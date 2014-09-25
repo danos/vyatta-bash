@@ -1,3 +1,16 @@
+bash (4.1-3+deb6u2) squeeze-lts; urgency=high
+
+  * Non-maintainer upload by the Security Team.
+  * Add variables-affix.patch patch.
+    Apply patch from Florian Weimer to add prefix and suffix for environment
+    variable names which contain shell functions.
+  * Add parser-oob.patch patch.
+    Fixes two out-of-bound array accesses in the bash parser.
+  * Add CVE-2014-7169.diff diff.
+    CVE-2014-7169: Incomplete fix for CVE-2014-6271. (Closes: #762760, #762761)
+
+ -- Thijs Kinkhorst <thijs@debian.org>  Fri, 26 Sep 2014 00:10:13 +0200
+
 bash (4.1-3+deb6u1) squeeze-lts; urgency=high
 
   * Apply patch from Chet Ramey to fix CVE-2014-6271.

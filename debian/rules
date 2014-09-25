@@ -524,6 +524,9 @@ debian_patches = \
 	bash-aliases-repeat \
 	builtins-declare-fix \
 	CVE-2014-6271 \
+	CVE-2014-7169 \
+	parser-oob \
+	variables-affix \
 
 ifeq ($(with_gfdl),yes)
   debian_patches += \
