@@ -23,6 +23,8 @@ bash43-022.diff
 bash43-023.diff
 bash43-024.diff
 bash43-025.diff
+bash43-026.diff
+bash43-027.diff
 bashbug-editor.diff
 deb-bash-config.diff
 deb-examples.diff
@@ -44,6 +46,4 @@ bash-aliases-repeat.diff
 # no-brk-caching.diff
 use-system-texi2html.diff
 bzero.diff
-CVE-2014-7169.diff
-variables-affix.patch
 parser-oob.patch

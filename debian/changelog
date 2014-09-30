@@ -1,3 +1,10 @@
+bash (4.3-10) unstable; urgency=medium
+
+  * Apply upstream patches 026 and 027.
+  * Remove patches CVE-2014-6271 and variables-affix.
+
+ -- Matthias Klose <doko@ubuntu.com>  Tue, 30 Sep 2014 13:36:38 +0200
+
 bash (4.3-9.2) unstable; urgency=high
 
   * Non-maintainer upload by the Security Team.

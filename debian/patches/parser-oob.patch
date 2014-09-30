@@ -1,6 +1,8 @@
---- a/parse.y	2014-09-25 13:07:59.218209276 +0200
-+++ b/parse.y	2014-09-25 15:26:52.813159810 +0200
-@@ -264,9 +264,21 @@
+Index: b/parse.y
+===================================================================
+--- a/parse.y
++++ b/parse.y
+@@ -265,9 +265,21 @@ int parser_state;
  
  /* Variables to manage the task of reading here documents, because we need to
     defer the reading until after a complete command has been collected. */
@@ -23,7 +25,7 @@
  /* Where shell input comes from.  History expansion is performed on each
     line when the shell is interactive. */
  static char *shell_input_line = (char *)NULL;
-@@ -519,42 +531,42 @@
+@@ -520,42 +532,42 @@ redirection:	'>' WORD
  			  source.dest = 0;
  			  redir.filename = $2;
  			  $$ = make_redirection (source, r_reading_until, redir, 0);
@@ -72,7 +74,7 @@
  			}
  	|	LESS_LESS_LESS WORD
  			{
-@@ -4757,7 +4769,7 @@
+@@ -4905,7 +4917,7 @@ got_token:
      case CASE:
      case SELECT:
      case FOR:
@@ -81,5 +83,3 @@
  	word_top++;
        word_lineno[word_top] = line_number;
        break;
-
-
