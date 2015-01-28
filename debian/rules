@@ -350,7 +350,8 @@ binary-static: static-build
 	dh_compress -p$(p_stat)
 	dh_fixperms -p$(p_stat)
 	dh_installdeb -p$(p_stat)
-	dh_gencontrol -p$(p_stat)
+	dh_gencontrol -p$(p_stat) -- \
+		'-Vglibc:Source=$(shell dpkg-query -f '$${source:Package} (= $${source:Version}), ' -W libc-bin)'
 	dh_md5sums -p$(p_stat)
 	dh_builddeb -p$(p_stat)
 

@@ -41,6 +41,7 @@ Depends: passwd (>= 1:4.0.3-10), ${misc:Depends}
 Suggests: bash-doc
 Section: shells
 Priority: optional
+Built-Using: ${glibc:Source}
 Description: GNU Bourne Again SHell (static version)
  Bash is an sh-compatible command language interpreter that executes
  commands read from the standard input or from a file.  Bash also

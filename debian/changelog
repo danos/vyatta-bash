@@ -1,19 +1,12 @@
-bash (4.3-11+deb8u2) jessie-security; urgency=medium
+bash (4.3-12) unstable; urgency=medium
 
-  * Non-maintainer upload by the LTS Team.
-  * CVE-2019-9924: restrict BASH_CMDS when in restricted mode.
-  * CVE-2016-9401: fix crash in popd with out of range nevative offsets.
+  * Apply upstream patches 031 - 033.
+  * Add a Built-Using attribute for bash-static. Closes: #769342.
+  * Move definition of the macro "FN" out of the region of the "ig"
+    macro.  Define macros and registers "zZ" and "zY". Closes: #774597.
+  * Also set color prompt for *-256color terminals. Closes: #766443.
 
- -- Emilio Pozuelo Monfort <pochu@debian.org>  Mon, 25 Mar 2019 11:50:49 +0100
-
-bash (4.3-11+deb8u1) jessie; urgency=medium
-
-  * Non-maintainer upload.
-  * CVE-2016-0634: Arbitrary code execution via malicious hostname
-  * CVE-2016-7543: Specially crafted SHELLOPTS+PS4 variables allows command
-    substitution
-
- -- Salvatore Bonaccorso <carnil@debian.org>  Sun, 09 Oct 2016 17:35:21 +0200
+ -- Matthias Klose <doko@debian.org>  Wed, 28 Jan 2015 17:05:00 +0100
 
 bash (4.3-11) unstable; urgency=medium
 
