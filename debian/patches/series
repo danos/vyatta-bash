@@ -31,6 +31,12 @@ bash43-030.diff
 bash43-031.diff
 bash43-032.diff
 bash43-033.diff
+bash43-034.diff
+bash43-035.diff
+bash43-036.diff
+bash43-037.diff
+bash43-038.diff
+bash43-039.diff
 bashbug-editor.diff
 deb-bash-config.diff
 deb-examples.diff
@@ -41,7 +47,6 @@ man-bashlogout.diff
 man-nocaseglob.diff
 man-test.diff
 man-test2.diff
-privmode.diff
 rbash-manpage.diff
 bash-default-editor.diff
 bash-subst-param-length.diff
