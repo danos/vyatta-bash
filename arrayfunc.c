@@ -1,6 +1,6 @@
 /* arrayfunc.c -- High-level array functions used by other parts of the shell. */
 
-/* Copyright (C) 2001-2011 Free Software Foundation, Inc.
+/* Copyright (C) 2001-2015 Free Software Foundation, Inc.
 
    This file is part of GNU Bash, the Bourne Again SHell.
 
@@ -33,6 +33,9 @@
 #include "pathexp.h"
 
 #include "shmbutil.h"
+#if defined (HAVE_MBSTR_H) && defined (HAVE_MBSCHR)
+#  include <mbstr.h>		/* mbschr */
+#endif
 
 #include "builtins/common.h"
 
@@ -179,6 +182,7 @@ bind_array_var_internal (entry, ind, key, value, flags)
     array_insert (array_cell (entry), ind, newval);
   FREE (newval);
 
+  VUNSETATTR (entry, att_invisible);	/* no longer invisible */
   return (entry);
 }
 
@@ -202,7 +206,7 @@ bind_array_variable (name, ind, value, flags)
 
   if (entry == (SHELL_VAR *) 0)
     entry = make_new_array_variable (name);
-  else if (readonly_p (entry) || noassign_p (entry))
+  else if ((readonly_p (entry) && (flags&ASS_FORCE) == 0) || noassign_p (entry))
     {
       if (readonly_p (entry))
 	err_readonly (name);
@@ -236,7 +240,7 @@ bind_assoc_variable (entry, name, key, value, flags)
   SHELL_VAR *dentry;
   char *newval;
 
-  if (readonly_p (entry) || noassign_p (entry))
+  if ((readonly_p (entry) && (flags&ASS_FORCE) == 0) || noassign_p (entry))
     {
       if (readonly_p (entry))
 	err_readonly (name);
@@ -403,6 +407,9 @@ assign_array_var_from_word_list (var, list, flags)
       (*var->assign_func) (var, l->word->word, i, 0);
     else
       array_insert (a, i, l->word->word);
+
+  VUNSETATTR (var, att_invisible);	/* no longer invisible */
+
   return var;
 }
 
@@ -472,7 +479,7 @@ assign_compound_array_list (var, nlist, flags)
   ARRAY *a;
   HASH_TABLE *h;
   WORD_LIST *list;
-  char *w, *val, *nval;
+  char *w, *val, *nval, *savecmd;
   int len, iflags, free_val;
   arrayind_t ind, last_ind;
   char *akey;
@@ -497,7 +504,9 @@ assign_compound_array_list (var, nlist, flags)
 
   for (list = nlist; list; list = list->next)
     {
-      iflags = flags;
+      /* Don't allow var+=(values) to make assignments in VALUES append to
+	 existing values by default. */
+      iflags = flags & ~ASS_APPEND;
       w = list->word->word;
 
       /* We have a word of the form [ind]=value */
@@ -597,13 +606,20 @@ assign_compound_array_list (var, nlist, flags)
       if (assoc_p (var))
 	{
 	  val = expand_assignment_string_to_string (val, 0);
+	  if (val == 0)
+	    {
+	      val = (char *)xmalloc (1);
+	      val[0] = '\0';	/* like do_assignment_internal */
+	    }
 	  free_val = 1;
 	}
 
+      savecmd = this_command_name;
       if (integer_p (var))
 	this_command_name = (char *)NULL;	/* no command name for errors */
       bind_array_var_internal (var, ind, akey, val, iflags);
       last_ind++;
+      this_command_name = savecmd;
 
       if (free_val)
 	free (val);
@@ -628,6 +644,10 @@ assign_array_var_from_string (var, value, flags)
 
   if (nlist)
     dispose_words (nlist);
+
+  if (var)
+    VUNSETATTR (var, att_invisible);	/* no longer invisible */
+
   return (var);
 }
 
@@ -719,7 +739,7 @@ unbind_array_element (var, sub)
   char *akey;
   ARRAY_ELEMENT *ae;
 
-  len = skipsubscript (sub, 0, 0);
+  len = skipsubscript (sub, 0, (var && assoc_p(var)));
   if (sub[len] != ']' || len == 0)
     {
       builtin_error ("%s[%s: %s", var->name, sub, _(bash_badsub_errmsg));
@@ -729,8 +749,13 @@ unbind_array_element (var, sub)
 
   if (ALL_ELEMENT_SUB (sub[0]) && sub[1] == 0)
     {
-      unbind_variable (var->name);
-      return (0);
+      if (array_p (var) || assoc_p (var))
+	{
+	  unbind_variable (var->name);	/* XXX -- {array,assoc}_flush ? */
+	  return (0);
+	}
+      else
+	return -2;	/* don't allow this to unset scalar variables */
     }
 
   if (assoc_p (var))
@@ -745,7 +770,7 @@ unbind_array_element (var, sub)
       assoc_remove (assoc_cell (var), akey);
       free (akey);
     }
-  else
+  else if (array_p (var))
     {
       ind = array_expand_index (var, sub, len+1);
       /* negative subscripts to indexed arrays count back from end */
@@ -759,6 +784,19 @@ unbind_array_element (var, sub)
       ae = array_remove (array_cell (var), ind);
       if (ae)
 	array_dispose_element (ae);
+    }
+  else	/* array_p (var) == 0 && assoc_p (var) == 0 */
+    {
+      akey = this_command_name;
+      ind = array_expand_index (var, sub, len+1);
+      this_command_name = akey;
+      if (ind == 0)
+	{
+	  unbind_variable (var->name);
+	  return (0);
+	}
+      else
+	return -2;	/* any subscript other than 0 is invalid with scalar variables */
     }
 
   return 0;
@@ -812,8 +850,9 @@ print_assoc_assignment (var, quoted)
 
 /* Return 1 if NAME is a properly-formed array reference v[sub]. */
 int
-valid_array_reference (name)
+valid_array_reference (name, flags)
      char *name;
+     int flags;
 {
   char *t;
   int r, len;
@@ -845,22 +884,26 @@ array_expand_index (var, s, len)
      char *s;
      int len;
 {
-  char *exp, *t;
+  char *exp, *t, *savecmd;
   int expok;
   arrayind_t val;
 
   exp = (char *)xmalloc (len);
   strncpy (exp, s, len - 1);
   exp[len - 1] = '\0';
-  t = expand_arith_string (exp, 0);
+  t = expand_arith_string (exp, Q_DOUBLE_QUOTES|Q_ARITH|Q_ARRAYSUB);	/* XXX - Q_ARRAYSUB for future use */
+  savecmd = this_command_name;
   this_command_name = (char *)NULL;
   val = evalexp (t, &expok);
+  this_command_name = savecmd;
   free (t);
   free (exp);
   if (expok == 0)
     {
       last_command_exit_value = EXECUTION_FAILURE;
 
+      if (no_longjmp_on_fatal_error)
+	return 0;
       top_level_cleanup ();      
       jump_to_top_level (DISCARD);
     }
@@ -929,11 +972,7 @@ array_variable_part (s, subp, lenp)
   var = find_variable (t);
 
   free (t);
-#if 0
-  return (var == 0 || invisible_p (var)) ? (SHELL_VAR *)0 : var;
-#else
   return var;	/* now return invisible variables; caller must handle */
-#endif
 }
 
 #define INDEX_ERROR() \

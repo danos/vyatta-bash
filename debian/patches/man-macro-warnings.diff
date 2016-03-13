@@ -1,10 +1,12 @@
 # DP: Move definition of the macro "FN" out of the region of the "ig"
 # DP: macro.  Define macros and registers "zZ" and "zY".
 
+Index: b/doc/bash.1
+===================================================================
 --- a/doc/bash.1
 +++ b/doc/bash.1
 @@ -8,6 +8,22 @@
- .\"	Last Change: Sun Feb  2 16:21:40 EST 2014
+ .\"	Last Change: Mon Feb  8 10:15:48 EST 2016
  .\"
  .\" bash_builtins, strip all but Built-Ins section
 +.de zZ
@@ -25,7 +27,7 @@
 +.if !rzY .nr zY 0 \" avoid a warning about an undefined register
  .if \n(zZ=1 .ig zZ
  .if \n(zY=1 .ig zY
- .TH BASH 1 "2014 February 2" "GNU Bash 4.3"
+ .TH BASH 1 "2016 February 8" "GNU Bash 4.4"
 @@ -36,13 +52,6 @@
  .el \\*(]X\h|\\n()Iu+\\n()Ru\c
  .}f
@@ -40,7 +42,7 @@
  .SH NAME
  bash \- GNU Bourne-Again SHell
  .SH SYNOPSIS
-@@ -2282,8 +2291,8 @@ The default path is system-dependent,
+@@ -2332,8 +2341,8 @@ The default path is system-dependent,
  and is set by the administrator who installs
  .BR bash .
  A common value is

@@ -4,7 +4,7 @@ Index: b/builtins/test.def
 ===================================================================
 --- a/builtins/test.def
 +++ b/builtins/test.def
-@@ -99,6 +99,9 @@
+@@ -100,6 +100,9 @@ Arithmetic binary operators return true
  less-than, less-than-or-equal, greater-than, or greater-than-or-equal
  than ARG2.
  
@@ -18,7 +18,7 @@ Index: b/doc/bash.1
 ===================================================================
 --- a/doc/bash.1
 +++ b/doc/bash.1
-@@ -712,6 +712,10 @@
+@@ -718,6 +718,10 @@ as primaries.
  .if n .sp 1
  When used with \fB[[\fP, the \fB<\fP and \fB>\fP operators sort
  lexicographically using the current locale.
@@ -33,7 +33,7 @@ Index: b/doc/bashref.texi
 ===================================================================
 --- a/doc/bashref.texi
 +++ b/doc/bashref.texi
-@@ -6448,6 +6448,10 @@
+@@ -6622,6 +6622,10 @@ The @code{test} command uses ASCII order
  Unless otherwise specified, primaries that operate on files follow symbolic
  links and operate on the target of the link, rather than the link itself.
  

@@ -190,7 +190,7 @@ bash-install: bash-build stamps/stamp-install-bash
 stamps/stamp-install-bash: before-build stamps/stamp-build-bash
 	dh_testdir
 	dh_testroot
-	dh_clean -k -p$(p) -p$(p_doc) -p$(p_bins)
+	dh_prep -p$(p) -p$(p_doc) -p$(p_bins)
 	dh_installdirs -p$(p) \
 		bin \
 		etc/skel \
@@ -198,8 +198,7 @@ stamps/stamp-install-bash: before-build stamps/stamp-build-bash
 	dh_installdirs -p$(p_doc) \
 		usr/share/doc/$(p)
 	dh_installdirs -p$(p_bins) \
-		usr/share/doc/$(p)/examples/loadables \
-		usr/include/bash/{builtins,lib/{glob,tilde}}
+		usr/share/doc/$(p)/examples/loadables
 
 ifeq ($(with_gfdl),yes)
 # XXXXX
@@ -252,12 +251,8 @@ endif
 		scripts/shprompt
 
 	: # files for the bash-builtins package
-	$(ID) include/*.h *.h  $(d_bins)/usr/include/bash/
-	$(ID) build-bash/*.h $(d_bins)/usr/include/bash/
-	rm -f $(d_bins)/usr/include/bash/y.tab.h
-	$(ID) builtins/*.h $(d_bins)/usr/include/bash/builtins/
-	$(ID) lib/glob/*.h $(d_bins)/usr/include/bash/lib/glob/
-	$(ID) lib/tilde/*.h $(d_bins)/usr/include/bash/lib/tilde/
+	mv $(d)/usr/include $(d_bins)/usr/.
+	mv $(d)/usr/lib $(d_bins)/usr/.
 	$(ID) examples/loadables/{README,*.c} \
 		$(d_bins)/usr/share/doc/$(p)/examples/loadables
 	$(ID) build-bash/examples/loadables/Makefile \
@@ -309,6 +304,8 @@ binary-bash: bash-install debian/bash.preinst
 		debian/inputrc.arrows
 	install -D -m 644 debian/bash.overrides \
 		debian/bash/usr/share/lintian/overrides/bash
+	install -D -m 644 debian/bash-builtins.overrides \
+		debian/bash-builtins/usr/share/lintian/overrides/bash-builtins
 	dh_installman -p$(p) doc/rbash.1 debian/bash-builtins.7
 	dh_installmenu -p$(p)
 	dh_strip -p$(p)
@@ -326,6 +323,7 @@ binary-bash: bash-install debian/bash.preinst
 binary-builtins: bash-install
 	dh_testdir
 	dh_testroot
+	dh_strip -p$(p_bins)
 	dh_compress -p$(p_bins) -Xexamples
 	dh_fixperms -p$(p_bins)
 	dh_installdeb -p$(p_bins)
@@ -336,7 +334,7 @@ binary-builtins: bash-install
 binary-static: static-build
 	dh_testdir
 	dh_testroot
-	dh_clean -k -p$(p_stat)
+	dh_prep -p$(p_stat)
 	dh_installdirs -p$(p_stat) \
 		bin \
 		usr/share/man/man1

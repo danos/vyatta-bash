@@ -4,7 +4,7 @@ Index: b/doc/bash.1
 ===================================================================
 --- a/doc/bash.1
 +++ b/doc/bash.1
-@@ -182,7 +182,9 @@
+@@ -186,7 +186,9 @@ Display a usage message on standard outp
  .PD
  Execute commands from
  .I file
@@ -15,7 +15,7 @@ Index: b/doc/bash.1
  .I ~/.bashrc
  if the shell is interactive (see
  .SM
-@@ -213,7 +215,9 @@
+@@ -217,7 +219,9 @@ reads these files when it is invoked as
  below).
  .TP
  .B \-\-norc
@@ -26,7 +26,7 @@ Index: b/doc/bash.1
  .I ~/.bashrc
  if the shell is interactive.
  This option is on by default if the shell is invoked as
-@@ -326,13 +330,15 @@
+@@ -332,13 +336,15 @@ exists.
  .PP
  When an interactive shell that is not a login shell is started,
  .B bash
@@ -44,7 +44,7 @@ Index: b/doc/bash.1
  .PP
  When
  .B bash
-@@ -418,7 +424,8 @@
+@@ -424,7 +430,8 @@ daemon, usually \fIrshd\fP, or the secur
  If
  .B bash
  determines it is being run in this fashion, it reads and executes
@@ -54,7 +54,7 @@ Index: b/doc/bash.1
  It will not do this if invoked as \fBsh\fP.
  The
  .B \-\-norc
-@@ -10243,6 +10250,9 @@
+@@ -10507,6 +10514,9 @@ The \fBbash\fP executable
  .FN /etc/profile
  The systemwide initialization file, executed for login shells
  .TP

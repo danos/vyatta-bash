@@ -15,6 +15,8 @@
 # DP: - don't define a default DEFAULT_MAIL_DIRECTORY, because it
 # DP:   can cause a timeout on NFS mounts.
 
+Index: b/config-bot.h
+===================================================================
 --- a/config-bot.h
 +++ b/config-bot.h
 @@ -196,4 +196,4 @@
@@ -23,10 +25,12 @@
  /* If you don't want bash to provide a default mail file to check. */
 -/* #undef DEFAULT_MAIL_DIRECTORY */
 +#undef DEFAULT_MAIL_DIRECTORY
+Index: b/config-top.h
+===================================================================
 --- a/config-top.h
 +++ b/config-top.h
-@@ -80,20 +80,20 @@
- #define KSH_COMPATIBLE_SELECT
+@@ -83,20 +83,20 @@
+ #define DEFAULT_BASHRC "~/.bashrc"
  
  /* System-wide .bashrc file for interactive shells. */
 -/* #define SYS_BASHRC "/etc/bash.bashrc" */

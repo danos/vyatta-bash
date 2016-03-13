@@ -1,6 +1,6 @@
 /* evalstring.c - evaluate a string as one or more shell commands. */
 
-/* Copyright (C) 1996-2012 Free Software Foundation, Inc.
+/* Copyright (C) 1996-2015 Free Software Foundation, Inc.
 
    This file is part of GNU Bash, the Bourne Again SHell.
 
@@ -96,6 +96,33 @@ restore_lastcom (x)
   the_printed_command_except_trap = x;
 }
 
+int
+should_suppress_fork (command)
+     COMMAND *command;
+{
+  return (startup_state == 2 && parse_and_execute_level == 1 &&
+	  running_trap == 0 &&
+	  *bash_input.location.string == '\0' &&
+	  command->type == cm_simple &&
+	  signal_is_trapped (EXIT_TRAP) == 0 &&
+	  command->redirects == 0 && command->value.Simple->redirects == 0 &&
+	  ((command->flags & CMD_TIME_PIPELINE) == 0) &&
+	  ((command->flags & CMD_INVERT_RETURN) == 0));
+}
+
+void
+optimize_fork (command)
+     COMMAND *command;
+{
+  if (command->type == cm_connection &&
+      (command->value.Connection->connector == AND_AND || command->value.Connection->connector == OR_OR) &&
+      should_suppress_fork (command->value.Connection->second))
+    {
+      command->value.Connection->second->flags |= CMD_NO_FORK;
+      command->value.Connection->second->value.Simple->flags |= CMD_NO_FORK;
+    }
+}
+     
 /* How to force parse_and_execute () to clean up after itself. */
 void
 parse_and_execute_cleanup ()
@@ -141,8 +168,7 @@ parse_prologue (string, flags, tag)
   else
     unwind_protect_int (remember_on_history);	/* can be used in scripts */
 #  if defined (BANG_HISTORY)
-  if (interactive_shell)
-    unwind_protect_int (history_expansion_inhibited);
+  unwind_protect_int (history_expansion_inhibited);
 #  endif /* BANG_HISTORY */
 #endif /* HISTORY */
 
@@ -172,6 +198,10 @@ parse_prologue (string, flags, tag)
 #if defined (HISTORY)
   if (flags & SEVAL_NOHIST)
     bash_history_disable ();
+#  if defined (BANG_HISTORY)
+  if (flags & SEVAL_NOHISTEXP)
+    history_expansion_inhibited = 1;
+#  endif /* BANG_HISTORY */
 #endif /* HISTORY */
 }
 
@@ -184,6 +214,7 @@ parse_prologue (string, flags, tag)
    	(flags & SEVAL_NOHIST) -> call bash_history_disable ()
    	(flags & SEVAL_NOFREE) -> don't free STRING when finished
    	(flags & SEVAL_RESETLINE) -> reset line_number to 1
+   	(flags & SEVAL_NOHISTEXP) -> history_expansion_inhibited -> 1
 */
 
 int
@@ -225,6 +256,10 @@ parse_and_execute (string, from_file, flags)
 
   code = should_jump_to_top_level = 0;
   last_result = EXECUTION_SUCCESS;
+
+  /* We need to reset enough of the token state so we can start fresh. */
+  if (current_token == yacc_EOF)
+    current_token = '\n';		/* reset_parser() ? */
 
   with_input_from_string (string, from_file);
   while (*(bash_input.location.string))
@@ -308,6 +343,27 @@ parse_and_execute (string, from_file, flags)
 	    {
 	      struct fd_bitmap *bitmap;
 
+	      if (flags & SEVAL_FUNCDEF)
+		{
+		  char *x;
+
+		  /* If the command parses to something other than a straight
+		     function definition, or if we have not consumed the entire
+		     string, or if the parser has transformed the function
+		     name (as parsing will if it begins or ends with shell
+		     whitespace, for example), reject the attempt */
+		  if (command->type != cm_function_def ||
+		      ((x = parser_remaining_input ()) && *x) ||
+		      (STREQ (from_file, command->value.Function_def->name->word) == 0))
+		    {
+		      internal_warning (_("%s: ignoring function definition attempt"), from_file);
+		      should_jump_to_top_level = 0;
+		      last_result = last_command_exit_value = EX_BADUSAGE;
+		      reset_parser ();
+		      break;
+		    }
+		}
+
 	      bitmap = new_fd_bitmap (FD_BITMAP_SIZE);
 	      begin_unwind_frame ("pe_dispose");
 	      add_unwind_protect (dispose_fd_bitmap, bitmap);
@@ -332,18 +388,13 @@ parse_and_execute (string, from_file, flags)
 	       * THEN
 	       *   tell the execution code that we don't need to fork
 	       */
-	      if (startup_state == 2 && parse_and_execute_level == 1 &&
-		  running_trap == 0 &&
-		  *bash_input.location.string == '\0' &&
-		  command->type == cm_simple &&
-		  signal_is_trapped (EXIT_TRAP) == 0 &&
-		  command->redirects == 0 && command->value.Simple->redirects == 0 &&
-		  ((command->flags & CMD_TIME_PIPELINE) == 0) &&
-		  ((command->flags & CMD_INVERT_RETURN) == 0))
+	      if (should_suppress_fork (command))
 		{
 		  command->flags |= CMD_NO_FORK;
 		  command->value.Simple->flags |= CMD_NO_FORK;
 		}
+	      else if (command->type == cm_connection)
+		optimize_fork (command);
 #endif /* ONESHOT */
 
 	      /* See if this is a candidate for $( <file ). */
@@ -368,6 +419,12 @@ parse_and_execute (string, from_file, flags)
 	      dispose_command (command);
 	      dispose_fd_bitmap (bitmap);
 	      discard_unwind_frame ("pe_dispose");
+
+	      if (flags & SEVAL_ONECMD)
+		{
+		  reset_parser ();
+		  break;
+		}
 	    }
 	}
       else
@@ -520,8 +577,16 @@ itrace("parse_string: longjmp executed: code = %d", code);
 
   run_unwind_frame (PS_TAG);
 
+  /* If we return < 0, the caller (xparse_dolparen) will jump_to_top_level for
+     us, after doing cleanup */
   if (should_jump_to_top_level)
-    jump_to_top_level (code);
+    {
+      if (parse_and_execute_level == 0)
+	top_level_cleanup ();
+      if (code == DISCARD)
+	return -DISCARD;
+      jump_to_top_level (code);
+    }
 
   return (nc);
 }
@@ -607,7 +672,7 @@ evalstring (string, from_file, flags)
       if (rcatch && return_catch_flag)
 	{
 	  return_catch_value = r;
-	  longjmp (return_catch, 1);
+	  sh_longjmp (return_catch, 1);
 	}
     }
     
