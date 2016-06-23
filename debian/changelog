@@ -1,3 +1,21 @@
+bash (4.3-15) unstable; urgency=medium
+
+  * Apply upstream patches 043 - 046. Fixes:
+    - When the lastpipe option is enabled, the last component can contain
+      nested pipelines and cause a segmentation fault under
+      certain circumestances.
+    - A typo prevents the `compat42' shopt option from working as intended.
+    - If a file open attempted as part of a redirection fails because it is
+      interrupted by a signal, the shell needs to process any pending traps
+      to allow the redirection to be canceled.
+    - An incorrect conversion from an indexed to associative array can result
+      in a core dump.
+  * Add $HOME/.local/bin to PATH, and add the user's home directories
+    unconditionally to the path, so that they are available without
+    a new login. Closes: #820856, LP: #1588562.
+
+ -- Matthias Klose <doko@debian.org>  Thu, 23 Jun 2016 21:10:31 +0200
+
 bash (4.3-14) unstable; urgency=medium
 
   * Apply upstream patches 040 - 042.
