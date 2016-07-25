@@ -4,7 +4,7 @@ Index: b/bashline.c
 ===================================================================
 --- a/bashline.c
 +++ b/bashline.c
-@@ -935,8 +935,8 @@ operate_and_get_next (count, c)
+@@ -936,8 +936,8 @@ operate_and_get_next (count, c)
     command being entered (if no explicit argument is given), otherwise on
     a command from the history file. */
  

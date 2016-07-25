@@ -19,7 +19,7 @@ Index: b/config-bot.h
 ===================================================================
 --- a/config-bot.h
 +++ b/config-bot.h
-@@ -196,4 +196,4 @@
+@@ -200,4 +200,4 @@
  /******************************************************************/
  
  /* If you don't want bash to provide a default mail file to check. */
@@ -29,7 +29,7 @@ Index: b/config-top.h
 ===================================================================
 --- a/config-top.h
 +++ b/config-top.h
-@@ -83,20 +83,20 @@
+@@ -87,20 +87,20 @@
  #define DEFAULT_BASHRC "~/.bashrc"
  
  /* System-wide .bashrc file for interactive shells. */
