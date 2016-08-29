@@ -33,7 +33,7 @@ Index: b/doc/bashref.texi
 ===================================================================
 --- a/doc/bashref.texi
 +++ b/doc/bashref.texi
-@@ -6627,6 +6627,10 @@ The @code{test} command uses ASCII order
+@@ -6630,6 +6630,10 @@ The @code{test} command uses ASCII order
  Unless otherwise specified, primaries that operate on files follow symbolic
  links and operate on the target of the link, rather than the link itself.
  

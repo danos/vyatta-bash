@@ -42,7 +42,7 @@ Index: b/doc/bash.1
  .SH NAME
  bash \- GNU Bourne-Again SHell
  .SH SYNOPSIS
-@@ -2337,8 +2346,8 @@ and is set by the administrator who inst
+@@ -2339,8 +2348,8 @@ and is set by the administrator who inst
  .BR bash .
  A common value is
  .na

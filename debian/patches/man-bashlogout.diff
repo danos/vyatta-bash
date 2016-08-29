@@ -4,7 +4,7 @@ Index: b/doc/bash.1
 ===================================================================
 --- a/doc/bash.1
 +++ b/doc/bash.1
-@@ -10551,6 +10551,9 @@ The systemwide initialization file, exec
+@@ -10556,6 +10556,9 @@ The systemwide initialization file, exec
  .FN /etc/bash.bashrc
  The systemwide per-interactive-shell startup file
  .TP
