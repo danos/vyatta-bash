@@ -49,3 +49,5 @@ bash-aliases-repeat.diff
 # no-brk-caching.diff
 use-system-texi2html.diff
 bzero.diff
+CVE-2016-0634.diff
+CVE-2016-7543.diff

@@ -1,3 +1,12 @@
+bash (4.3-11+deb8u1) jessie; urgency=medium
+
+  * Non-maintainer upload.
+  * CVE-2016-0634: Arbitrary code execution via malicious hostname
+  * CVE-2016-7543: Specially crafted SHELLOPTS+PS4 variables allows command
+    substitution
+
+ -- Salvatore Bonaccorso <carnil@debian.org>  Sun, 09 Oct 2016 17:35:21 +0200
+
 bash (4.3-11) unstable; urgency=medium
 
   * Apply upstream patches 028 - 030.
