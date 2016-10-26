@@ -66,3 +66,4 @@ CVE-2014-6271.diff
 CVE-2014-7169.diff
 variables-affix.patch
 parser-oob.patch
+bash43-048-backported-CVE-2016-7543-20161018.patch

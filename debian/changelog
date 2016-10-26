@@ -1,3 +1,12 @@
+bash (4.2+dfsg-0.1+deb7u4) wheezy-security; urgency=high
+
+  * Non-maintainer upload by the Long Term Security Team.
+  * Add bash43-048-backported-CVE-2016-7543-20161018.patch patch.
+    Prevent privilege escalation to root by using a combination of
+    SHELLOPTS and PS4 variables as described in CVE-2016-7543.
+
+ -- Ola Lundqvist <opal@debian.org>  Wed, 26 Oct 2016 19:37:54 +0200
+
 bash (4.2+dfsg-0.1+deb7u3) wheezy-security; urgency=high
 
   * Non-maintainer upload by the Security Team.
