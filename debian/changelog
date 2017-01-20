@@ -1,3 +1,13 @@
+bash (4.4-3) unstable; urgency=medium
+
+  * Apply upstream patches 006 - 007.
+  * clear_console: Securely erase the current console. Closes: #845177.
+  * Mark locales and time build dependencies with <!nocheck>.
+    Closes: #838201.
+  * Don't configure with --with-curses. Closes: #794588.
+
+ -- Matthias Klose <doko@debian.org>  Fri, 20 Jan 2017 11:52:59 +0100
+
 bash (4.4-2) unstable; urgency=medium
 
   * Apply upstream patches 001 - 005.

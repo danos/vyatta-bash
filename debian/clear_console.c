@@ -1,5 +1,5 @@
 /*
-Copyright (C) 2006-2008 Canonical Ltd.
+Copyright (C) 2006-2017 Canonical Ltd.
 
 clear_console and it's man page are free software; you can redistribute it
 and/or modify it under the terms of the GNU General Public License as
@@ -171,6 +171,12 @@ int clear_console(int fd)
 #if defined(__linux__)
   struct vt_stat vtstat;
 #endif
+
+  /* Linux console secure erase (since 2.6.39), this is sufficient there;
+     other terminals silently ignore this code.  If they don't and write junk
+     instead, well, we're clearing the screen anyway.
+   */ 
+  write(1, "\e[3J", 4);
 
   /* clear screen */
   setupterm((char *) 0, 1, (int *) 0);

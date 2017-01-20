@@ -70,7 +70,6 @@ termcap_lib := $(if $(wildcard /usr/lib/libtinfo.so /usr/lib/$(DEB_HOST_MULTIARC
 		 -lncurses)
 
 conf_args = \
-	--with-curses \
 	--enable-largefile \
 	--prefix=/usr \
 	--infodir=/usr/share/info \
@@ -167,7 +166,6 @@ clean:
 	rm -f debian/README.Debian
 	rm -rf locales
 	rm -f clear_console
-	rm -rf .pc
 	dh_clean
 
 preinst-build: debian/bash.preinst
