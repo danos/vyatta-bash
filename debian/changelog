@@ -1,3 +1,9 @@
+bash (4.4-4) unstable; urgency=medium
+
+  * Apply upstream patches 008 - 011.
+
+ -- Matthias Klose <doko@debian.org>  Tue, 24 Jan 2017 16:13:37 +0100
+
 bash (4.4-3) unstable; urgency=medium
 
   * Apply upstream patches 006 - 007.
