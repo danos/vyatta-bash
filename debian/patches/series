@@ -51,3 +51,5 @@ use-system-texi2html.diff
 bzero.diff
 CVE-2016-0634.diff
 CVE-2016-7543.diff
+CVE-2019-9924.diff
+bash44-006.diff
