@@ -1,0 +1,10 @@
+@ignore
+Copyright (C) 1988-2013 Free Software Foundation, Inc. 
+@end ignore
+
+@set EDITION 6.3
+@set VERSION 6.3
+@set UPDATED 26 May 2013
+@set UPDATED-MONTH May 2013
+
+@set LASTCHANGE Sat May 25 17:02:56 EDT 2013
