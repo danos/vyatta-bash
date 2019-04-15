@@ -17,7 +17,7 @@
 
    You should have received a copy of the GNU General Public License along
    with Bash; see the file COPYING.  If not, write to the Free Software
-   Foundation, 675 Mass Ave, Cambridge, MA 02139, USA. */
+   Foundation, 59 Temple Place, Suite 330, Boston, MA 02111 USA. */
 
 #include "config.h"
 
@@ -38,7 +38,7 @@ GENERIC_LIST global_error_list;
 void
 map_over_list (list, function)
      GENERIC_LIST *list;
-     Function *function;
+     sh_glist_func_t *function;
 {
   for ( ; list; list = list->next)
     (*function) (list);
@@ -48,7 +48,7 @@ map_over_list (list, function)
 void
 map_over_words (words, function)
      WORD_LIST *words;
-     Function *function;
+     sh_icpfunc_t *function;
 {
   for ( ; words; words = words->next)
     (*function) (words->word->word);

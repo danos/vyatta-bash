@@ -16,16 +16,21 @@
 
    You should have received a copy of the GNU General Public License along
    with Bash; see the file COPYING.  If not, write to the Free Software
-   Foundation, 675 Mass Ave, Cambridge, MA 02139, USA. */
+   Foundation, 59 Temple Place, Suite 330, Boston, MA 02111 USA. */
 
 #if !defined (_BASHANSI_H_)
 #define _BASHANSI_H_
 
 #if defined (HAVE_STRING_H)
+#  if ! defined (STDC_HEADERS) && defined (HAVE_MEMORY_H)
+#    include <memory.h>
+#  endif
 #  include <string.h>
-#else
-#  include <strings.h>
 #endif /* !HAVE_STRING_H */
+
+#if defined (HAVE_STRINGS_H)
+#  include <strings.h>
+#endif /* !HAVE_STRINGS_H */
 
 #if defined (HAVE_STDLIB_H)
 #  include <stdlib.h>

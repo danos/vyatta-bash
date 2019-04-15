@@ -16,7 +16,7 @@
 
    You should have received a copy of the GNU General Public License along
    with Bash; see the file COPYING.  If not, write to the Free Software
-   Foundation, 675 Mass Ave, Cambridge, MA 02139, USA. */
+   Foundation, 59 Temple Place, Suite 330, Boston, MA 02111 USA. */
 
 #if !defined (_PATHEXP_H_)
 #define _PATHEXP_H_
@@ -34,7 +34,7 @@ extern char *glob_error_return;
 #define QGLOB_FILENAME	0x02	/* do correct quoting for matching filenames */
 
 #if defined (EXTENDED_GLOB)
-/* Flags to OR with other flag args to fnmatch() to enabled the extended
+/* Flags to OR with other flag args to strmatch() to enabled the extended
    pattern matching. */
 #  define FNMATCH_EXTFLAG	(extended_glob ? FNM_EXTMATCH : 0)
 #else
@@ -56,14 +56,14 @@ extern int unquoted_glob_pattern_p __P((char *));
    pattern while executing a case statement), flags should include
    QGLOB_CVTNULL.  If flags includes QGLOB_FILENAME, appropriate quoting
    to match a filename should be performed. */
-extern char *quote_string_for_globbing __P((char *, int));
+extern char *quote_string_for_globbing __P((const char *, int));
 
 extern char *quote_globbing_chars __P((char *));
 
 /* Call the glob library to do globbing on PATHNAME. */
-extern char **shell_glob_filename __P((char *));
+extern char **shell_glob_filename __P((const char *));
 
-/* Filename completion ignore.  Used to the "fignore" facility of
+/* Filename completion ignore.  Used to implement the "fignore" facility of
    tcsh and GLOBIGNORE (like ksh-93 FIGNORE).
 
    It is passed a NULL-terminated array of (char *)'s that must be
@@ -77,12 +77,14 @@ struct ign {
   int len, flags;
 };
 
+typedef int sh_iv_item_func_t __P((struct ign *));
+
 struct ignorevar {
   char *varname;	/* FIGNORE or GLOBIGNORE */
   struct ign *ignores;	/* Store the ignore strings here */
   int num_ignores;	/* How many are there? */
   char *last_ignoreval;	/* Last value of variable - cached for speed */
-  Function *item_func;	/* Called when each item is parsed from $`varname' */
+  sh_iv_item_func_t *item_func; /* Called when each item is parsed from $`varname' */
 };
 
 extern void setup_ignore_patterns __P((struct ignorevar *));

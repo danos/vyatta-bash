@@ -16,7 +16,7 @@
 
    You should have received a copy of the GNU General Public License along
    with Bash; see the file COPYING.  If not, write to the Free Software
-   Foundation, 675 Mass Ave, Cambridge, MA 02139, USA. */
+   Foundation, 59 Temple Place, Suite 330, Boston, MA 02111 USA. */
 
 /* Make sure that this is included *after* config.h! */
 
@@ -114,7 +114,7 @@ extern void reinitialize_signals __P((void));
 extern void initialize_terminating_signals __P((void));
 extern void reset_terminating_signals __P((void));
 extern void throw_to_top_level __P((void));
-extern void jump_to_top_level __P((int));
+extern void jump_to_top_level __P((int)) __attribute__((__noreturn__));
 
 /* Functions defined in trap.c. */
 extern SigHandler *set_sigint_handler __P((void));

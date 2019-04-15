@@ -6,7 +6,7 @@
 
    Bash is free software; you can redistribute it and/or modify it
    under the terms of the GNU General Public License as published by
-   the Free Software Foundation; either version 1, or (at your option)
+   the Free Software Foundation; either version 2, or (at your option)
    any later version.
 
    Bash is distributed in the hope that it will be useful, but WITHOUT
@@ -22,7 +22,7 @@
 #include "config.h"
 
 #include <stdio.h>
-#include <ctype.h>
+#include "chartypes.h"
 #include "bashtypes.h"
 #ifndef _MINIX
 #  include <sys/file.h>
@@ -34,10 +34,6 @@
 #  include <unistd.h>
 #endif
 
-#if defined (HAVE_LIMITS_H)
-#  include <limits.h>
-#endif
-
 #include "bashansi.h"
 
 #include "memalloc.h"
@@ -46,12 +42,18 @@
 #include "hashlib.h"
 #include "pathexp.h"
 #include "hashcmd.h"
+#include "findcmd.h"	/* matching prototypes and declarations */
 
 extern int posixly_correct;
 
 /* Static functions defined and used in this file. */
-static char *find_user_command_internal (), *find_user_command_in_path ();
-static char *find_in_path_element (), *find_absolute_program ();
+static char *_find_user_command_internal __P((const char *, int));
+static char *find_user_command_internal __P((const char *, int));
+static char *find_user_command_in_path __P((const char *, char *, int));
+static char *find_in_path_element __P((const char *, char *, int, int, struct stat *));
+static char *find_absolute_program __P((const char *, int));
+
+static char *get_next_path_element __P((char *, int *));
 
 /* The file name which we would try to execute, except that it isn't
    possible to execute it.  This is the first file that matches the
@@ -81,7 +83,7 @@ int dot_found_in_search = 0;
    Zero is returned if the file is not found. */
 int
 file_status (name)
-     char *name;
+     const char *name;
 {
   struct stat finfo;
 
@@ -145,7 +147,7 @@ file_status (name)
    what an executable file is. */
 int
 executable_file (file)
-     char *file;
+     const char *file;
 {
   int s;
 
@@ -155,9 +157,19 @@ executable_file (file)
 
 int
 is_directory (file)
-     char *file;
+     const char *file;
 {
   return (file_status (file) & FS_DIRECTORY);
+}
+
+int
+executable_or_directory (file)
+     const char *file;
+{
+  int s;
+
+  s = file_status (file);
+  return ((s & FS_EXECABLE) || (s & FS_DIRECTORY));
 }
 
 /* Locate the executable file referenced by NAME, searching along
@@ -167,7 +179,7 @@ is_directory (file)
    and that is the only match, then return that. */
 char *
 find_user_command (name)
-     char *name;
+     const char *name;
 {
   return (find_user_command_internal (name, FS_EXEC_PREFERRED|FS_NODIRS));
 }
@@ -178,14 +190,14 @@ find_user_command (name)
    returns the first file found. */
 char *
 find_path_file (name)
-     char *name;
+     const char *name;
 {
   return (find_user_command_internal (name, FS_EXISTS));
 }
 
 static char *
 _find_user_command_internal (name, flags)
-     char *name;
+     const char *name;
      int flags;
 {
   char *path_list, *cmd;
@@ -211,13 +223,13 @@ _find_user_command_internal (name, flags)
 
 static char *
 find_user_command_internal (name, flags)
-     char *name;
+     const char *name;
      int flags;
 {
 #ifdef __WIN32__
   char *res, *dotexe;
 
-  dotexe = xmalloc (strlen (name) + 5);
+  dotexe = (char *)xmalloc (strlen (name) + 5);
   strcpy (dotexe, name);
   strcat (dotexe, ".exe");
   res = _find_user_command_internal (dotexe, flags);
@@ -243,10 +255,10 @@ get_next_path_element (path_list, path_index_pointer)
 
   path = extract_colon_unit (path_list, path_index_pointer);
 
-  if (!path)
+  if (path == 0)
     return (path);
 
-  if (!*path)
+  if (*path == '\0')
     {
       free (path);
       path = savestring (".");
@@ -260,7 +272,7 @@ get_next_path_element (path_list, path_index_pointer)
    in $PATH.  Returns a newly-allocated string. */
 char *
 search_for_command (pathname)
-     char *pathname;
+     const char *pathname;
 {
   char *hashed_file, *command;
   int temp_path, st;
@@ -305,23 +317,23 @@ search_for_command (pathname)
       /* If $PATH is in the temporary environment, we've already retrieved
 	 it, so don't bother trying again. */
       if (temp_path)
-        {
+	{
 	  command = find_user_command_in_path (pathname, value_cell (path),
 					       FS_EXEC_PREFERRED|FS_NODIRS);
 	  if (tempvar_p (path))
 	    dispose_variable (path);
-        }
+	}
       else
 	command = find_user_command (pathname);
       if (command && hashing_enabled && temp_path == 0)
-	remember_filename (pathname, command, dot_found_in_search, 1);
+	remember_filename ((char *)pathname, command, dot_found_in_search, 1);	/* XXX fix const later */
     }
   return (command);
 }
 
 char *
 user_command_matches (name, flags, state)
-     char *name;
+     const char *name;
      int flags, state;
 {
   register int i;
@@ -338,7 +350,7 @@ user_command_matches (name, flags, state)
       if (match_list == 0)
 	{
 	  match_list_size = 5;
-	  match_list = (char **)xmalloc (match_list_size * sizeof(char *));
+	  match_list = alloc_array (match_list_size);
 	}
 
       /* Clear out the old match list. */
@@ -402,27 +414,9 @@ user_command_matches (name, flags, state)
   return (match);
 }
 
-/* Turn PATH, a directory, and NAME, a filename, into a full pathname.
-   This allocates new memory and returns it. */
-static char *
-make_full_pathname (path, name, name_len)
-     char *path, *name;
-     int name_len;
-{
-  char *full_path;
-  int path_len;
-
-  path_len = strlen (path);
-  full_path = xmalloc (2 + path_len + name_len);
-  strcpy (full_path, path);
-  full_path[path_len] = '/';
-  strcpy (full_path + path_len + 1, name);
-  return (full_path);
-}
-
 static char *
 find_absolute_program (name, flags)
-     char *name;
+     const char *name;
      int flags;
 {
   int st;
@@ -439,12 +433,13 @@ find_absolute_program (name, flags)
   if ((flags & FS_EXISTS) || ((flags & FS_EXEC_ONLY) && (st & FS_EXECABLE)))
     return (savestring (name));
 
-  return ((char *)NULL);
+  return (NULL);
 }
 
 static char *
 find_in_path_element (name, path, flags, name_len, dotinfop)
-     char *name, *path;
+     const char *name;
+     char *path;
      int flags, name_len;
      struct stat *dotinfop;
 {
@@ -458,7 +453,7 @@ find_in_path_element (name, path, flags, name_len, dotinfop)
   if (dot_found_in_search == 0 && *xpath == '.')
     dot_found_in_search = same_file (".", xpath, dotinfop, (struct stat *)NULL);
 
-  full_path = make_full_pathname (xpath, name, name_len);
+  full_path = sh_makepath (xpath, name, 0);
 
   status = file_status (full_path);
 
@@ -517,7 +512,7 @@ find_in_path_element (name, path, flags, name_len, dotinfop)
 */
 static char *
 find_user_command_in_path (name, path_list, flags)
-     char *name;
+     const char *name;
      char *path_list;
      int flags;
 {
@@ -575,6 +570,14 @@ find_user_command_in_path (name, path_list, flags)
   /* We didn't find exactly what the user was looking for.  Return
      the contents of FILE_TO_LOSE_ON which is NULL when the search
      required an executable, or non-NULL if a file was found and the
-     search would accept a non-executable as a last resort. */
+     search would accept a non-executable as a last resort.  If the
+     caller specified FS_NODIRS, and file_to_lose_on is a directory,
+     return NULL. */
+  if (file_to_lose_on && (flags & FS_NODIRS) && is_directory (file_to_lose_on))
+    {
+      free (file_to_lose_on);
+      file_to_lose_on = (char *)NULL;
+    }
+
   return (file_to_lose_on);
 }

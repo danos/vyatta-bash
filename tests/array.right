@@ -1,3 +1,6 @@
+./array.tests: array assign: line 10: syntax error near unexpected token `&'
+./array.tests: array assign: line 10: `first & second'
+1
 abcde
 abcde
 abcde bdef
@@ -24,7 +27,6 @@ declare -ar a='([1]="" [2]="bdef" [5]="hello world" [6]="test expression")'
 declare -ar c='()'
 readonly -a a='([1]="" [2]="bdef" [5]="hello world" [6]="test expression")'
 readonly -a c='()'
-./array.tests: declare: e: cannot assign to array variables in this way
 a test
 declare -a DIRSTACK='()'
 declare -ar a='([1]="" [2]="bdef" [5]="hello world" [6]="test expression")'
@@ -101,3 +103,26 @@ grep [ 123 ] *
 length = 3
 value = new1 new2 new3
 ./array.tests: narray: unbound variable
+
+a b c d e f g
+for case if then else
+<> < > !
+12 14 16 18 20
+4414758999202
+aaa bbb
+./array.tests: array assign: line 263: syntax error near unexpected token `for'
+./array.tests: array assign: line 263: `a b c for case if then else'
+./array.tests: array assign: line 265: syntax error near unexpected token `for'
+./array.tests: array assign: line 265: `for case if then else'
+./array.tests: array assign: line 267: syntax error near unexpected token `<>'
+./array.tests: array assign: line 267: ` <> < > ! '
+./array.tests: array assign: line 268: syntax error near unexpected token `[1]=<>'
+./array.tests: array assign: line 268: ` [1]=<> [2]=< [3]=> [4]=! '
+abc 3
+0
+abc 1
+abc 1
+0
+0
+1
+1

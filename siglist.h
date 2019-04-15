@@ -16,7 +16,7 @@
 
    You should have received a copy of the GNU General Public License along
    with Bash; see the file COPYING.  If not, write to the Free Software
-   Foundation, 675 Mass Ave, Cambridge, MA 02139, USA. */
+   Foundation, 59 Temple Place, Suite 330, Boston, MA 02111 USA. */
 
 #if !defined (_SIGLIST_H_)
 #define _SIGLIST_H_
@@ -36,5 +36,9 @@ extern char *sys_siglist[];
 #if !defined (strsignal) && !defined (HAVE_STRSIGNAL)
 #  define strsignal(sig) (char *)sys_siglist[sig]
 #endif /* !strsignal && !HAVE_STRSIGNAL */
+
+#if !defined (strsignal) && !HAVE_DECL_STRSIGNAL
+extern char *strsignal __P((int));
+#endif
 
 #endif /* _SIGLIST_H */

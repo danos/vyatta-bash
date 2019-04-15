@@ -7,7 +7,7 @@ This file is part of GNU Bash, the Bourne Again SHell.
 
 Bash is free software; you can redistribute it and/or modify it under
 the terms of the GNU General Public License as published by the Free
-Software Foundation; either version 1, or (at your option) any later
+Software Foundation; either version 2, or (at your option) any later
 version.
 
 Bash is distributed in the hope that it will be useful, but WITHOUT ANY
@@ -17,7 +17,7 @@ for more details.
 
 You should have received a copy of the GNU General Public License along
 with Bash; see the file COPYING.  If not, write to the Free Software
-Foundation, 675 Mass Ave, Cambridge, MA 02139, USA. */
+Foundation, 59 Temple Place, Suite 330, Boston, MA 02111 USA. */
 
 #include <config.h>
 
@@ -33,11 +33,13 @@ Foundation, 675 Mass Ave, Cambridge, MA 02139, USA. */
 #include <sys/file.h>
 #endif
 
-#include "../posixstat.h"
-#include "../filecntl.h"
+#include "posixstat.h"
+#include "filecntl.h"
 
 #include "../bashansi.h"
 #include <stdio.h>
+
+#include "stdc.h"
 
 #define DOCFILE "builtins.texi"
 
@@ -205,7 +207,7 @@ main (argc, argv)
 #if !defined (OLDCODE)
       else if (strcmp (arg, "-nodocument") == 0)
 	no_long_document = 1;
-#endif /* !OLDCODE */        
+#endif /* !OLDCODE */	
       else
 	{
 	  fprintf (stderr, "%s: Unknown flag %s.\n", argv[0], arg);
@@ -223,7 +225,7 @@ main (argc, argv)
       if (struct_filename)
 	{
 	  temp_struct_filename = xmalloc (15);
-	  sprintf (temp_struct_filename, "mk-%d", (int) getpid ());
+	  sprintf (temp_struct_filename, "mk-%ld", (long) getpid ());
 	  structfile = fopen (temp_struct_filename, "w");
 
 	  if (!structfile)
@@ -378,17 +380,22 @@ array_free (array)
 
 /* The definition of a function. */
 typedef int Function ();
+typedef int mk_handler_func_t __P((char *, DEF_FILE *, char *));
 
 /* Structure handles processor directives. */
 typedef struct {
   char *directive;
-  Function *function;
+  mk_handler_func_t *function;
 } HANDLER_ENTRY;
 
-extern int
-  builtin_handler (), function_handler (), short_doc_handler (),
-  comment_handler (), depends_on_handler (), produces_handler (),
-  end_handler (), docname_handler ();
+extern int builtin_handler __P((char *, DEF_FILE *, char *));
+extern int function_handler __P((char *, DEF_FILE *, char *));
+extern int short_doc_handler __P((char *, DEF_FILE *, char *));
+extern int comment_handler __P((char *, DEF_FILE *, char *));
+extern int depends_on_handler __P((char *, DEF_FILE *, char *));
+extern int produces_handler __P((char *, DEF_FILE *, char *));
+extern int end_handler __P((char *, DEF_FILE *, char *));
+extern int docname_handler __P((char *, DEF_FILE *, char *));
 
 HANDLER_ENTRY handlers[] = {
   { "BUILTIN", builtin_handler },
@@ -400,7 +407,7 @@ HANDLER_ENTRY handlers[] = {
   { "DEPENDS_ON", depends_on_handler },
   { "PRODUCES", produces_handler },
   { "END", end_handler },
-  { (char *)NULL, (Function *)NULL }
+  { (char *)NULL, (mk_handler_func_t *)NULL }
 };
 
 /* Return the entry in the table of handlers for NAME. */
@@ -614,10 +621,10 @@ free_defs (defs)
   if (defs->builtins)
     {
       for (i = 0; builtin = (BUILTIN_DESC *)defs->builtins->array[i]; i++)
-        {
+	{
 	  free_builtin (builtin);
 	  free (builtin);
-        }
+	}
       array_free (defs->builtins);
     }
   free (defs);
@@ -724,8 +731,9 @@ add_documentation (defs, line)
 /* How to handle the $BUILTIN directive. */
 int
 builtin_handler (self, defs, arg)
-     char *self, *arg;
+     char *self;
      DEF_FILE *defs;
+     char *arg;
 {
   BUILTIN_DESC *new;
   char *name;
@@ -769,8 +777,9 @@ builtin_handler (self, defs, arg)
 /* How to handle the $FUNCTION directive. */
 int
 function_handler (self, defs, arg)
-     char *self, *arg;
+     char *self;
      DEF_FILE *defs;
+     char *arg;
 {
   register BUILTIN_DESC *builtin;
 
@@ -793,8 +802,9 @@ function_handler (self, defs, arg)
 /* How to handle the $DOCNAME directive. */
 int
 docname_handler (self, defs, arg)
-     char *self, *arg;
+     char *self;
      DEF_FILE *defs;
+     char *arg;
 {
   register BUILTIN_DESC *builtin;
 
@@ -812,8 +822,9 @@ docname_handler (self, defs, arg)
 /* How to handle the $SHORT_DOC directive. */
 int
 short_doc_handler (self, defs, arg)
-     char *self, *arg;
+     char *self;
      DEF_FILE *defs;
+     char *arg;
 {
   register BUILTIN_DESC *builtin;
 
@@ -830,9 +841,10 @@ short_doc_handler (self, defs, arg)
 
 /* How to handle the $COMMENT directive. */
 int
-comment_handler (self, defs)
+comment_handler (self, defs, arg)
      char *self;
      DEF_FILE *defs;
+     char *arg;
 {
   return (0);
 }
@@ -840,8 +852,9 @@ comment_handler (self, defs)
 /* How to handle the $DEPENDS_ON directive. */
 int
 depends_on_handler (self, defs, arg)
-     char *self, *arg;
+     char *self;
      DEF_FILE *defs;
+     char *arg;
 {
   register BUILTIN_DESC *builtin;
   char *dependent;
@@ -860,8 +873,9 @@ depends_on_handler (self, defs, arg)
 /* How to handle the $PRODUCES directive. */
 int
 produces_handler (self, defs, arg)
-     char *self, *arg;
+     char *self;
      DEF_FILE *defs;
+     char *arg;
 {
   /* If just hacking documentation, don't change any of the production
      files. */
@@ -893,8 +907,9 @@ produces_handler (self, defs, arg)
 /* How to handle the $END directive. */
 int
 end_handler (self, defs, arg)
-     char *self, *arg;
+     char *self;
      DEF_FILE *defs;
+     char *arg;
 {
   must_be_building (self, defs);
   building_builtin = 0;
@@ -990,9 +1005,9 @@ copy_builtin (builtin)
 
   new = (BUILTIN_DESC *)xmalloc (sizeof (BUILTIN_DESC));
 
-  new->name         = savestring (builtin->name);
-  new->shortdoc     = savestring (builtin->shortdoc);
-  new->longdoc      = copy_string_array (builtin->longdoc);
+  new->name = savestring (builtin->name);
+  new->shortdoc = savestring (builtin->shortdoc);
+  new->longdoc = copy_string_array (builtin->longdoc);
   new->dependencies = copy_string_array (builtin->dependencies);
 
   new->function =
@@ -1036,7 +1051,7 @@ char *structfile_header[] = {
   "",
   "   Bash is free software; you can redistribute it and/or modify it",
   "   under the terms of the GNU General Public License as published by",
-  "   the Free Software Foundation; either version 1, or (at your option)",
+  "   the Free Software Foundation; either version 2, or (at your option)",
   "   any later version.",
   "",
   "   Bash is distributed in the hope that it will be useful, but WITHOUT",
@@ -1046,7 +1061,7 @@ char *structfile_header[] = {
   "",
   "   You should have received a copy of the GNU General Public License",
   "   along with Bash; see the file COPYING.  If not, write to the Free",
-  "   Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA. */",
+  "   Software Foundation, 59 Temple Place, Suite 330, Boston, MA 02111 USA. */",
   "",
   "/* The list of shell builtins.  Each element is name, function, flags,",
   "   long-doc, short-doc.  The long-doc field contains a pointer to an array",
@@ -1056,7 +1071,7 @@ char *structfile_header[] = {
   "",
   "   Functions which need to look at only the simple commands (e.g.",
   "   the enable_builtin ()), should ignore entries where",
-  "   (array[i].function == (Function *)NULL).  Such entries are for",
+  "   (array[i].function == (sh_builtin_func_t *)NULL).  Such entries are for",
   "   the list of shell reserved control structures, like `if' and `while'.",
   "   The end of the list is denoted with a NULL name field. */",
   "",
@@ -1065,7 +1080,7 @@ char *structfile_header[] = {
   };
 
 char *structfile_footer[] = {
-  "  { (char *)0x0, (Function *)0x0, 0, (char **)0x0, (char *)0x0 }",
+  "  { (char *)0x0, (sh_builtin_func_t *)0x0, 0, (char **)0x0, (char *)0x0 }",
   "};",
   "",
   "struct builtin *shell_builtins = static_shell_builtins;",
@@ -1147,11 +1162,11 @@ write_builtins (defs, structfile, externfile)
 	      if (externfile)
 		{
 		  if (builtin->function)
-		    fprintf (externfile, "extern int %s ();\n",
+		    fprintf (externfile, "extern int %s __P((WORD_LIST *));\n",
 			     builtin->function);
 
 		  fprintf (externfile, "extern char *%s_doc[];\n",
-			   builtin->docname ?builtin->docname : builtin->name);
+			   builtin->docname ? builtin->docname : builtin->name);
 		}
 
 	      /* Write the structure definition. */
@@ -1162,7 +1177,7 @@ write_builtins (defs, structfile, externfile)
 		  if (builtin->function)
 		    fprintf (structfile, "%s, ", builtin->function);
 		  else
-		    fprintf (structfile, "(Function *)0x0, ");
+		    fprintf (structfile, "(sh_builtin_func_t *)0x0, ");
 
 		  fprintf (structfile, "%s%s%s, %s_doc,\n",
 		    "BUILTIN_ENABLED | STATIC_BUILTIN",

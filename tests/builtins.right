@@ -45,11 +45,11 @@ $BVAR
 foo
 bar
 xxx
-022
+0022
 u=rwx,g=rx,o=rx
-002
+0002
 u=rwx,g=rwx,o=rx
-umask 002
+umask 0002
 umask -S u=rwx,g=rwx,o=rx
 u=rwx,g=rwx,o=rwx
 enable .
@@ -124,4 +124,9 @@ ok
 ok
 ./builtins.tests: kill: bad signal number: 4096
 1
+a\n\n\nb
+a
+
+
+b
 ./builtins.tests: exit: bad non-numeric arg `status'

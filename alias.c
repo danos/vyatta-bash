@@ -7,7 +7,7 @@
 
    Bash is free software; you can redistribute it and/or modify it
    under the terms of the GNU General Public License as published by
-   the Free Software Foundation; either version 1, or (at your option)
+   the Free Software Foundation; either version 2, or (at your option)
    any later version.
 
    Bash is distributed in the hope that it will be useful, but WITHOUT
@@ -17,7 +17,7 @@
 
    You should have received a copy of the GNU General Public License
    along with Bash; see the file COPYING.  If not, write to the Free
-   Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA. */
+   Software Foundation, 59 Temple Place, Suite 330, Boston, MA 02111 USA. */
 
 #include "config.h"
 
@@ -31,13 +31,29 @@
 #endif
 
 #include <stdio.h>
+#include "chartypes.h"
 #include "bashansi.h"
 #include "command.h"
 #include "general.h"
 #include "externs.h"
 #include "alias.h"
 
-static int qsort_alias_compare ();
+#if defined (PROGRAMMABLE_COMPLETION)
+#  include "pcomplete.h"
+#endif
+
+typedef int sh_alias_map_func_t __P((alias_t *));
+
+static void free_alias_data __P((PTR_T));
+static alias_t **map_over_aliases __P((sh_alias_map_func_t *));
+static void sort_aliases __P((alias_t **));
+static int qsort_alias_compare __P((alias_t **, alias_t **));
+
+#if defined (READLINE)
+static int skipquotes __P((char *, int));
+static int skipws __P((char *, int));
+static int rd_token __P((char *, int));
+#endif
 
 /* Non-zero means expand all words on the line.  Otherwise, expand
    after first expansion if the expansion ends in a space. */
@@ -121,13 +137,16 @@ add_alias (name, value)
 
       elt = add_hash_item (savestring (name), aliases);
       elt->data = (char *)temp;
+#if defined (PROGRAMMABLE_COMPLETION)
+      set_itemlist_dirty (&it_aliases);
+#endif
     }
 }
 
 /* Delete a single alias structure. */
 static void
 free_alias_data (data)
-     char *data;
+     PTR_T data;
 {
   register alias_t *a;
 
@@ -155,6 +174,9 @@ remove_alias (name)
       free_alias_data (elt->data);
       free (elt->key);		/* alias name */
       free (elt);		/* XXX */
+#if defined (PROGRAMMABLE_COMPLETION)
+      set_itemlist_dirty (&it_aliases);
+#endif
       return (aliases->nentries);
     }
   return (-1);
@@ -170,13 +192,16 @@ delete_all_aliases ()
   flush_hash_table (aliases, free_alias_data);
   dispose_hash_table (aliases);
   aliases = (HASH_TABLE *)NULL;
+#if defined (PROGRAMMABLE_COMPLETION)
+  set_itemlist_dirty (&it_aliases);
+#endif
 }
 
 /* Return an array of aliases that satisfy the conditions tested by FUNCTION.
    If FUNCTION is NULL, return all aliases. */
 static alias_t **
 map_over_aliases (function)
-     Function *function;
+     sh_alias_map_func_t *function;
 {
   register int i;
   register BUCKET_CONTENTS *tlist;
@@ -195,8 +220,11 @@ map_over_aliases (function)
 	  if (!function || (*function) (alias))
 	    {
 	      if (list_index + 1 >= list_size)
-		list = (alias_t **)
-		  xrealloc ((char *)list, (list_size += 20) * sizeof (alias_t *));
+	        {
+	          list_size += 20;
+		  list = (alias_t **)xrealloc (list,
+					       list_size * sizeof (alias_t *));
+	        }
 
 	      list[list_index++] = alias;
 	      list[list_index] = (alias_t *)NULL;
@@ -211,7 +239,7 @@ static void
 sort_aliases (array)
      alias_t **array;
 {
-  qsort (array, array_len ((char **)array), sizeof (alias_t *), qsort_alias_compare);
+  qsort (array, array_len ((char **)array), sizeof (alias_t *), (QSFUNC *)qsort_alias_compare);
 }
 
 static int
@@ -235,7 +263,7 @@ all_aliases ()
   if (!aliases)
     return ((alias_t **)NULL);
 
-  list = map_over_aliases ((Function *)NULL);
+  list = map_over_aliases ((sh_alias_map_func_t *)NULL);
   if (list)
     sort_aliases (list);
   return (list);
@@ -311,12 +339,13 @@ skipws (string, start)
      char *string;
      int start;
 {
-  register int i = 0;
-  int pass_next, backslash_quoted_word, peekc;
+  register int i;
+  int pass_next, backslash_quoted_word;
+  unsigned char peekc;
 
   /* skip quoted strings, in ' or ", and words in which a character is quoted
      with a `\'. */
-  backslash_quoted_word = pass_next = 0;
+  i = backslash_quoted_word = pass_next = 0;
 
   /* Skip leading whitespace (or separator characters), and quoted words.
      But save it in the output.  */
@@ -338,7 +367,7 @@ skipws (string, start)
       if (string[i] == '\\')
 	{
 	  peekc = string[i+1];
-	  if (isletter (peekc))
+	  if (ISLETTER (peekc))
 	    backslash_quoted_word++;	/* this is a backslash-quoted word */
 	  else
 	    pass_next++;
@@ -359,7 +388,7 @@ skipws (string, start)
 	    break;
 
 	  peekc = string[i + 1];
-	  if (isletter (peekc))
+	  if (ISLETTER (peekc))
 	    backslash_quoted_word++;
 	  continue;
 	}
@@ -433,21 +462,22 @@ char *
 alias_expand (string)
      char *string;
 {
-  int line_len = 1 + strlen (string);
-  char *line = (char *)xmalloc (line_len);
   register int i, j, start;
-  char *token = xmalloc (line_len);
-  int tl, real_start, expand_next, expand_this_token;
+  char *line, *token;
+  int line_len, tl, real_start, expand_next, expand_this_token;
   alias_t *alias;
+
+  line_len = strlen (string) + 1;
+  line = (char *)xmalloc (line_len);
+  token = (char *)xmalloc (line_len);
 
   line[0] = i = 0;
   expand_next = 0;
   command_word = 1; /* initialized to expand the first word on the line */
 
   /* Each time through the loop we find the next word in line.  If it
-     has an alias, substitute
-     the alias value.  If the value ends in ` ', then try again
-     with the next word.  Else, if there is no value, or if
+     has an alias, substitute the alias value.  If the value ends in ` ',
+     then try again with the next word.  Else, if there is no value, or if
      the value does not end in space, we are done. */
 
   for (;;)

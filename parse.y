@@ -6,7 +6,7 @@
 
    Bash is free software; you can redistribute it and/or modify it under
    the terms of the GNU General Public License as published by the Free
-   Software Foundation; either version 1, or (at your option) any later
+   Software Foundation; either version 2, or (at your option) any later
    version.
 
    Bash is distributed in the hope that it will be useful, but WITHOUT ANY
@@ -16,13 +16,15 @@
 
    You should have received a copy of the GNU General Public License along
    with Bash; see the file LICENSE.  If not, write to the Free Software
-   Foundation, 675 Mass Ave, Cambridge, MA 02139, USA. */
+   Foundation, 59 Temple Place, Suite 330, Boston, MA 02111 USA. */
 
 %{
 #include "config.h"
 
 #include "bashtypes.h"
 #include "bashansi.h"
+
+#include "filecntl.h"
 
 #if defined (HAVE_UNISTD_H)
 #  include <unistd.h>
@@ -33,6 +35,7 @@
 #endif
 
 #include <stdio.h>
+#include "chartypes.h"
 #include <signal.h>
 
 #include "memalloc.h"
@@ -42,6 +45,7 @@
 #include "flags.h"
 #include "parser.h"
 #include "mailcheck.h"
+#include "test.h"
 #include "builtins/common.h"
 #include "builtins/builtext.h"
 
@@ -77,16 +81,12 @@
 #define YYDEBUG 0
 
 #if defined (EXTENDED_GLOB)
-#define PATTERN_CHAR(c) \
-	((c) == '@' || (c) == '*' || (c) == '+' || (c) == '?' || (c) == '!')
-
 extern int extended_glob;
 #endif
 
 extern int eof_encountered;
 extern int no_line_editing, running_under_emacs;
 extern int current_command_number;
-extern int interactive, interactive_shell, login_shell;
 extern int sourcelevel;
 extern int posixly_correct;
 extern int last_command_exit_value;
@@ -95,38 +95,84 @@ extern char *shell_name, *current_host_name;
 extern char *dist_version;
 extern int patch_level;
 extern int dump_translatable_strings, dump_po_strings;
-extern Function *last_shell_builtin, *this_shell_builtin;
+extern sh_builtin_func_t *last_shell_builtin, *this_shell_builtin;
 #if defined (BUFFERED_INPUT)
 extern int bash_input_fd_changed;
 #endif
 
+extern int errno;
 /* **************************************************************** */
 /*								    */
 /*		    "Forward" declarations			    */
 /*								    */
 /* **************************************************************** */
 
-static char *ansiexpand ();
-static char *localeexpand ();
-static int reserved_word_acceptable ();
-static int read_token ();
-static int yylex ();
-static int parse_arith_cmd ();
+#ifdef DEBUG
+static void debug_parser __P((int));
+#endif
+
+static int yy_getc __P((void));
+static int yy_ungetc __P((int));
+
+#if defined (READLINE)
+static int yy_readline_get __P((void));
+static int yy_readline_unget __P((int));
+#endif
+
+static int yy_string_get __P((void));
+static int yy_string_unget __P((int));
+static int yy_stream_get __P((void));
+static int yy_stream_unget __P((int));
+
+static int shell_getc __P((int));
+static void shell_ungetc __P((int));
+static void discard_until __P((int));
+
+#if defined (ALIAS) || defined (DPAREN_ARITHMETIC)
+static void push_string __P((char *, int, alias_t *));
+static void pop_string __P((void));
+static void free_string_list __P((void));
+#endif
+
+static char *read_a_line __P((int));
+
+static char *ansiexpand __P((char *, int, int, int *));
+static char *mk_msgstr __P((char *, int *));
+static char *localeexpand __P((char *, int, int, int, int *));
+static int reserved_word_acceptable __P((int));
+static int yylex __P((void));
+static int alias_expand_token __P((char *));
+static int time_command_acceptable __P((void));
+static int special_case_tokens __P((char *));
+static int read_token __P((int));
+static char *parse_matched_pair __P((int, int, int, int *, int));
+#if defined (DPAREN_ARITHMETIC) || defined (ARITH_FOR_COMMAND)
+static int parse_arith_cmd __P((char **));
+#endif
 #if defined (COND_COMMAND)
-static COMMAND *parse_cond_command ();
+static COND_COM *cond_expr __P((void));
+static COND_COM *cond_or __P((void));
+static COND_COM *cond_and __P((void));
+static COND_COM *cond_term __P((void));
+static int cond_skip_newlines __P((void));
+static COMMAND *parse_cond_command __P((void));
 #endif
-static int read_token_word ();
-static void discard_parser_constructs ();
+static int read_token_word __P((int));
+static void discard_parser_constructs __P((int));
 
-static void report_syntax_error ();
-static void handle_eof_input_unit ();
-static void prompt_again ();
+static void report_syntax_error __P((char *));
+static void handle_eof_input_unit __P((void));
+static void prompt_again __P((void));
 #if 0
-static void reset_readline_prompt ();
+static void reset_readline_prompt __P((void));
 #endif
-static void print_prompt ();
+static void print_prompt __P((void));
 
-extern int yyerror ();
+#if defined (HISTORY)
+char *history_delimiting_chars __P((void));
+#endif
+
+extern int yyerror __P((const char *));
 
 /* Default prompt strings */
 char *primary_prompt = PPROMPT;
@@ -177,6 +223,9 @@ static int function_dstart;
 /* The line number in a script on which a function body starts. */
 static int function_bstart;
 
+/* The line number in a script at which an arithmetic for command starts. */
+static int arith_for_lineno;
+
 static REDIRECTEE redir;
 %}
 
@@ -196,12 +245,12 @@ static REDIRECTEE redir;
    third group are recognized only under special circumstances. */
 %token IF THEN ELSE ELIF FI CASE ESAC FOR SELECT WHILE UNTIL DO DONE FUNCTION
 %token COND_START COND_END COND_ERROR
-%token IN BANG TIME TIMEOPT 
+%token IN BANG TIME TIMEOPT
 
 /* More general tokens. yylex () knows how to make these. */
 %token <word> WORD ASSIGNMENT_WORD
 %token <number> NUMBER
-%token <word_list> ARITH_CMD
+%token <word_list> ARITH_CMD ARITH_FOR_EXPRS
 %token <command> COND_CMD
 %token AND_AND OR_OR GREATER_GREATER LESS_LESS LESS_AND
 %token GREATER_AND SEMI_SEMI LESS_LESS_MINUS AND_GREATER LESS_GREATER
@@ -215,7 +264,8 @@ static REDIRECTEE redir;
 %type <command> for_command select_command case_command group_command
 %type <command> arith_command
 %type <command> cond_command
-%type <command> function_def if_command elif_clause subshell
+%type <command> arith_for_command
+%type <command> function_def function_body if_command elif_clause subshell
 %type <redirect> redirection redirection_list
 %type <element> simple_command_element
 %type <word_list> word_list pattern
@@ -374,22 +424,22 @@ redirection:	'>' WORD
 			}
 	|	GREATER_AND '-'
 			{
-			  redir.dest = 0L;
+			  redir.dest = 0;
 			  $$ = make_redirection (1, r_close_this, redir);
 			}
 	|	NUMBER GREATER_AND '-'
 			{
-			  redir.dest = 0L;
+			  redir.dest = 0;
 			  $$ = make_redirection ($1, r_close_this, redir);
 			}
 	|	LESS_AND '-'
 			{
-			  redir.dest = 0L;
+			  redir.dest = 0;
 			  $$ = make_redirection (0, r_close_this, redir);
 			}
 	|	NUMBER LESS_AND '-'
 			{
-			  redir.dest = 0L;
+			  redir.dest = 0;
 			  $$ = make_redirection ($1, r_close_this, redir);
 			}
 	|	AND_GREATER WORD
@@ -457,17 +507,6 @@ command:	simple_command
 			  COMMAND *tc;
 
 			  tc = $1;
-			  /* According to Posix.2 3.9.5, redirections
-			     specified after the body of a function should
-			     be attached to the function and performed when
-			     the function is executed, not as part of the
-			     function definition command. */
-			  if (tc->type == cm_function_def)
-			    {
-			      tc = tc->value.Function_def->command;
-			      if (tc->type == cm_group)
-			        tc = tc->value.Group->command;
-			    }
 			  if (tc->redirects)
 			    {
 			      register REDIRECT *t;
@@ -479,6 +518,8 @@ command:	simple_command
 			    tc->redirects = $2;
 			  $$ = $1;
 			}
+	|	function_def
+			{ $$ = $1; }
 	;
 
 shell_command:	for_command
@@ -501,7 +542,7 @@ shell_command:	for_command
 			{ $$ = $1; }
 	|	cond_command
 			{ $$ = $1; }
-	|	function_def
+	|	arith_for_command
 			{ $$ = $1; }
 	;
 
@@ -517,6 +558,20 @@ for_command:	FOR WORD newline_list DO compound_list DONE
 			{ $$ = make_for_command ($2, REVERSE_LIST ($5, WORD_LIST *), $9); }
 	|	FOR WORD newline_list IN word_list list_terminator newline_list '{' compound_list '}'
 			{ $$ = make_for_command ($2, REVERSE_LIST ($5, WORD_LIST *), $9); }
+	|	FOR WORD newline_list IN list_terminator newline_list DO compound_list DONE
+			{ $$ = make_for_command ($2, (WORD_LIST *)NULL, $8); }
+	|	FOR WORD newline_list IN list_terminator newline_list '{' compound_list '}'
+			{ $$ = make_for_command ($2, (WORD_LIST *)NULL, $8); }
+	;
+
+arith_for_command:	FOR ARITH_FOR_EXPRS list_terminator newline_list DO compound_list DONE
+				{ $$ = make_arith_for_command ($2, $6, arith_for_lineno); }
+	|		FOR ARITH_FOR_EXPRS list_terminator newline_list '{' compound_list '}'
+				{ $$ = make_arith_for_command ($2, $6, arith_for_lineno); }
+	|		FOR ARITH_FOR_EXPRS DO compound_list DONE
+				{ $$ = make_arith_for_command ($2, $4, arith_for_lineno); }
+	|		FOR ARITH_FOR_EXPRS '{' compound_list '}'
+				{ $$ = make_arith_for_command ($2, $4, arith_for_lineno); }
 	;
 
 select_command:	SELECT WORD newline_list DO list DONE
@@ -553,19 +608,55 @@ case_command:	CASE WORD newline_list IN newline_list ESAC
 			{ $$ = make_case_command ($2, $5); }
 	;
 
-function_def:	WORD '(' ')' newline_list group_command
+function_def:	WORD '(' ')' newline_list function_body
 			{ $$ = make_function_def ($1, $5, function_dstart, function_bstart); }
 
-
-	|	FUNCTION WORD '(' ')' newline_list group_command
+	|	FUNCTION WORD '(' ')' newline_list function_body
 			{ $$ = make_function_def ($2, $6, function_dstart, function_bstart); }
 
-	|	FUNCTION WORD newline_list group_command
+	|	FUNCTION WORD newline_list function_body
 			{ $$ = make_function_def ($2, $4, function_dstart, function_bstart); }
 	;
 
+
+function_body:	shell_command
+			{ $$ = $1; }
+	|	shell_command redirection_list
+			{
+			  COMMAND *tc;
+
+			  tc = $1;
+			  /* According to Posix.2 3.9.5, redirections
+			     specified after the body of a function should
+			     be attached to the function and performed when
+			     the function is executed, not as part of the
+			     function definition command. */
+			  /* XXX - I don't think it matters, but we might
+			     want to change this in the future to avoid
+			     problems differentiating between a function
+			     definition with a redirection and a function
+			     definition containing a single command with a
+			     redirection.  The two are semantically equivalent,
+			     though -- the only difference is in how the
+			     command printing code displays the redirections. */
+			  if (tc->redirects)
+			    {
+			      register REDIRECT *t;
+			      for (t = tc->redirects; t->next; t = t->next)
+				;
+			      t->next = $2;
+			    }
+			  else
+			    tc->redirects = $2;
+			  $$ = $1;
+			}
+	;
+
 subshell:	'(' compound_list ')'
-			{ $2->flags |= CMD_WANT_SUBSHELL; $$ = $2; }
+			{
+			  $$ = make_subshell_command ($2);
+			  $$->flags |= CMD_WANT_SUBSHELL;
+			}
 	;
 
 if_command:	IF compound_list THEN compound_list FI
@@ -577,7 +668,7 @@ if_command:	IF compound_list THEN compound_list FI
 	;
 
 
-group_command:	'{' list '}'
+group_command:	'{' compound_list '}'
 			{ $$ = make_group_command ($2); }
 	;
 
@@ -744,7 +835,7 @@ pipeline_command: pipeline
 			}
 	|	timespec BANG pipeline
 			{
-			  $3->flags |= $1;
+			  $3->flags |= $1|CMD_INVERT_RETURN;
 			  $$ = $3;
 			}
 	|	BANG timespec pipeline
@@ -779,20 +870,12 @@ timespec:	TIME
 #define PST_CASESTMT	0x080		/* parsing a case statement */
 #define PST_CONDCMD	0x100		/* parsing a [[...]] command */
 #define PST_CONDEXPR	0x200		/* parsing the guts of [[...]] */
+#define PST_ARITHFOR	0x400		/* parsing an arithmetic for command */
 
 /* Initial size to allocate for tokens, and the
    amount to grow them by. */
 #define TOKEN_DEFAULT_INITIAL_SIZE 496
 #define TOKEN_DEFAULT_GROW_SIZE 512
-
-/* Shell meta-characters that, when unquoted, separate words. */
-#define shellmeta(c)	(strchr (shell_meta_chars, (c)) != 0)
-#define shellbreak(c)	(strchr (shell_break_chars, (c)) != 0)
-#define shellquote(c)	((c) == '"' || (c) == '`' || (c) == '\'')
-#define shellexp(c)	((c) == '$' || (c) == '<' || (c) == '>')
-
-char *shell_meta_chars = "()<>;&|";
-char *shell_break_chars = "()<>;&| \t\n";
 
 /* The token currently being read. */
 static int current_token;
@@ -820,7 +903,8 @@ static int parser_state;
 /* Global var is non-zero when end of file has been reached. */
 int EOF_Reached = 0;
 
-void
+#ifdef DEBUG
+static void
 debug_parser (i)
      int i;
 {
@@ -828,6 +912,7 @@ debug_parser (i)
   yydebug = i;
 #endif
 }
+#endif
 
 /* yy_getc () returns the next available character from input or EOF.
    yy_ungetc (c) makes `c' the next character to read.
@@ -858,17 +943,18 @@ initialize_bash_input ()
   bash_input.name = (char *)NULL;
   bash_input.location.file = (FILE *)NULL;
   bash_input.location.string = (char *)NULL;
-  bash_input.getter = (Function *)NULL;
-  bash_input.ungetter = (Function *)NULL;
+  bash_input.getter = (sh_cget_func_t *)NULL;
+  bash_input.ungetter = (sh_cunget_func_t *)NULL;
 }
 
 /* Set the contents of the current bash input stream from
    GET, UNGET, TYPE, NAME, and LOCATION. */
 void
 init_yy_io (get, unget, type, name, location)
-     Function *get, *unget;
+     sh_cget_func_t *get;
+     sh_cunget_func_t *unget;
      enum stream_type type;
-     char *name;
+     const char *name;
      INPUT_STREAM location;
 {
   bash_input.type = type;
@@ -886,7 +972,7 @@ init_yy_io (get, unget, type, name, location)
 }
 
 /* Call this to get the next character of input. */
-int
+static int
 yy_getc ()
 {
   return (*(bash_input.getter)) ();
@@ -894,7 +980,7 @@ yy_getc ()
 
 /* Call this to unget C.  That is, to make C the next character
    to be read. */
-int
+static int
 yy_ungetc (c)
      int c;
 {
@@ -902,6 +988,7 @@ yy_ungetc (c)
 }
 
 #if defined (BUFFERED_INPUT)
+#ifdef INCLUDE_UNUSED
 int
 input_file_descriptor ()
 {
@@ -916,6 +1003,7 @@ input_file_descriptor ()
       return (fileno (stdin));
     }
 }
+#endif
 #endif /* BUFFERED_INPUT */
 
 /* **************************************************************** */
@@ -933,7 +1021,8 @@ static int
 yy_readline_get ()
 {
   SigHandler *old_sigint;
-  int line_len, c;
+  int line_len;
+  unsigned char c;
 
   if (!current_readline_line)
     {
@@ -942,9 +1031,10 @@ yy_readline_get ()
 
 #if defined (JOB_CONTROL)
       if (job_control)
-	give_terminal_to (shell_pgrp);
+	give_terminal_to (shell_pgrp, 0);
 #endif /* JOB_CONTROL */
 
+      old_sigint = (SigHandler *)NULL;
       if (signal_is_ignored (SIGINT) == 0)
 	{
 	  old_sigint = (SigHandler *)set_signal_handler (SIGINT, sigint_sighandler);
@@ -954,7 +1044,7 @@ yy_readline_get ()
       current_readline_line = readline (current_readline_prompt ?
       					  current_readline_prompt : "");
 
-      if (signal_is_ignored (SIGINT) == 0)
+      if (signal_is_ignored (SIGINT) == 0 && old_sigint)
 	{
 	  interrupt_immediately--;
 	  set_signal_handler (SIGINT, old_sigint);
@@ -971,7 +1061,7 @@ yy_readline_get ()
       current_readline_line_index = 0;
       line_len = strlen (current_readline_line);
 
-      current_readline_line = xrealloc (current_readline_line, 2 + line_len);
+      current_readline_line = (char *)xrealloc (current_readline_line, 2 + line_len);
       current_readline_line[line_len++] = '\n';
       current_readline_line[line_len] = '\0';
     }
@@ -984,7 +1074,7 @@ yy_readline_get ()
     }
   else
     {
-      c = (unsigned char)current_readline_line[current_readline_line_index++];
+      c = current_readline_line[current_readline_line_index++];
       return (c);
     }
 }
@@ -1030,18 +1120,19 @@ static int
 yy_string_get ()
 {
   register char *string;
-  register int c;
+  register unsigned char c;
 
   string = bash_input.location.string;
-  c = EOF;
 
   /* If the string doesn't exist, or is empty, EOF found. */
   if (string && *string)
     {
-      c = *(unsigned char *)string++;
+      c = *string++;
       bash_input.location.string = string;
+      return (c);
     }
-  return (c);
+  else
+    return (EOF);
 }
 
 static int
@@ -1054,7 +1145,8 @@ yy_string_unget (c)
 
 void
 with_input_from_string (string, name)
-     char *string, *name;
+     char *string;
+     const char *name;
 {
   INPUT_STREAM location;
 
@@ -1068,20 +1160,21 @@ with_input_from_string (string, name)
 /*								    */
 /* **************************************************************** */
 
+/* These two functions used to test the value of the HAVE_RESTARTABLE_SYSCALLS
+   define, and just use getc/ungetc if it was defined, but since bash
+   installs its signal handlers without the SA_RESTART flag, some signals
+   (like SIGCHLD, SIGWINCH, etc.) received during a read(2) will not cause
+   the read to be restarted.  We need to restart it ourselves. */
+
 static int
 yy_stream_get ()
 {
-  int result = EOF;
+  int result;
 
+  result = EOF;
   if (bash_input.location.file)
-    {
-#if !defined (HAVE_RESTARTABLE_SYSCALLS)
-      result = getc_with_restart (bash_input.location.file);
-#else /* HAVE_RESTARTABLE_SYSCALLS */
-      result = getc (bash_input.location.file);
-      result = (feof (bash_input.location.file)) ? EOF : (unsigned char)result;
-#endif /* HAVE_RESTARTABLE_SYSCALLS */
-    }
+    result = getc_with_restart (bash_input.location.file);
+
   return (result);
 }
 
@@ -1089,17 +1182,13 @@ static int
 yy_stream_unget (c)
      int c;
 {
-#if !defined (HAVE_RESTARTABLE_SYSCALLS)
   return (ungetc_with_restart (c, bash_input.location.file));
-#else /* HAVE_RESTARTABLE_SYSCALLS */
-  return (ungetc (c, bash_input.location.file));
-#endif /* HAVE_RESTARTABLE_SYSCALLS */
 }
 
 void
 with_input_from_stream (stream, name)
      FILE *stream;
-     char *name;
+     const char *name;
 {
   INPUT_STREAM location;
 
@@ -1175,18 +1264,20 @@ pop_stream ()
 	 save stack, update the buffered fd to the new file descriptor and
 	 re-establish the buffer <-> bash_input fd correspondence. */
       if (bash_input.type == st_bstream && bash_input.location.buffered_fd >= 0)
-        {
-          if (bash_input_fd_changed)
+	{
+	  if (bash_input_fd_changed)
 	    {
 	      bash_input_fd_changed = 0;
 	      if (default_buffered_input >= 0)
 		{
 		  bash_input.location.buffered_fd = default_buffered_input;
 		  saver->bstream->b_fd = default_buffered_input;
+		  SET_CLOSE_ON_EXEC (default_buffered_input);
 		}
 	    }
+	  /* XXX could free buffered stream returned as result here. */
 	  set_buffered_stream (bash_input.location.buffered_fd, saver->bstream);
-        }
+	}
 #endif /* BUFFERED_INPUT */
 
       line_number = saver->line;
@@ -1207,6 +1298,30 @@ stream_on_stack (type)
     if (s->bash_input.type == type)
       return 1;
   return 0;
+}
+
+/* Save the current token state and return it in a malloced array. */
+int *
+save_token_state ()
+{
+  int *ret;
+
+  ret = (int *)xmalloc (3 * sizeof (int));
+  ret[0] = last_read_token;
+  ret[1] = token_before_that;
+  ret[2] = two_tokens_ago;
+  return ret;
+}
+
+void
+restore_token_state (ts)
+     int *ts;
+{
+  if (ts == 0)
+    return;
+  last_read_token = ts[0];
+  token_before_that = ts[1];
+  two_tokens_ago = ts[2];
 }
 
 /*
@@ -1261,7 +1376,7 @@ push_string (s, expand, ap)
      int expand;
      alias_t *ap;
 {
-  STRING_SAVER *temp = (STRING_SAVER *) xmalloc (sizeof (STRING_SAVER));
+  STRING_SAVER *temp = (STRING_SAVER *)xmalloc (sizeof (STRING_SAVER));
 
   temp->expand_alias = expand;
   temp->saved_line = shell_input_line;
@@ -1367,8 +1482,14 @@ read_a_line (remove_quoted_newline)
       /* Allow immediate exit if interrupted during input. */
       QUIT;
 
+      /* Ignore null bytes in input. */
       if (c == 0)
-	continue;
+	{
+#if 0
+	  internal_warning ("read_a_line: ignored null byte in input");
+#endif
+	  continue;
+	}
 
       /* If there is no more input, then we return NULL. */
       if (c == EOF)
@@ -1390,10 +1511,10 @@ read_a_line (remove_quoted_newline)
 	 need to treat the backslash specially only if a backslash
 	 quoting a backslash-newline pair appears in the line. */
       if (pass_next)
-        {
+	{
 	  line_buffer[indx++] = c;
 	  pass_next = 0;
-        }
+	}
       else if (c == '\\' && remove_quoted_newline)
 	{
 	  peekc = yy_getc ();
@@ -1471,8 +1592,8 @@ STRING_INT_ALIST word_token_alist[] = {
 };
 
 /* XXX - we should also have an alist with strings for other tokens, so we
-         can give more descriptive error messages.  Look at y.tab.h for the
-         other tokens. */
+	 can give more descriptive error messages.  Look at y.tab.h for the
+	 other tokens. */
 
 /* These are used by read_token_word, but appear up here so that shell_getc
    can use them to decide when to add otherwise blank lines to the history. */
@@ -1494,7 +1615,7 @@ static struct dstack temp_dstack = { (char *)NULL, 0, 0 };
   do \
     { \
       if (ds.delimiter_depth + 2 > ds.delimiter_space) \
-	ds.delimiters = xrealloc \
+	ds.delimiters = (char *)xrealloc \
 	  (ds.delimiters, (ds.delimiter_space += 10) * sizeof (char)); \
       ds.delimiters[ds.delimiter_depth] = character; \
       ds.delimiter_depth++; \
@@ -1508,15 +1629,28 @@ static struct dstack temp_dstack = { (char *)NULL, 0, 0 };
    read the next line.  This is called by read_token when the shell is
    processing normal command input. */
 
+/* This implements one-character lookahead/lookbehind across physical input
+   lines, to avoid something being lost because it's pushed back with
+   shell_ungetc when we're at the start of a line. */
+static int eol_ungetc_lookahead = 0;
+
 static int
 shell_getc (remove_quoted_newline)
      int remove_quoted_newline;
 {
   register int i;
   int c;
+  unsigned char uc;
   static int mustpop = 0;
 
   QUIT;
+
+  if (eol_ungetc_lookahead)
+    {
+      c = eol_ungetc_lookahead;
+      eol_ungetc_lookahead = 0;
+      return (c);
+    }
 
 #if defined (ALIAS) || defined (DPAREN_ARITHMETIC)
   /* If shell_input_line[shell_input_line_index] == 0, but there is
@@ -1559,10 +1693,20 @@ shell_getc (remove_quoted_newline)
       if (bash_input.type == st_stream)
 	clearerr (stdin);
 
-      while (c = yy_getc ())
+      while (1)
 	{
+	  c = yy_getc ();
+
 	  /* Allow immediate exit if interrupted during input. */
 	  QUIT;
+
+	  if (c == '\0')
+	    {
+#if 0
+	      internal_warning ("shell_getc: ignored null byte in input");
+#endif
+	      continue;
+	    }
 
 	  RESIZE_MALLOCED_BUFFER (shell_input_line, i, 2, shell_input_line_size, 256);
 
@@ -1587,6 +1731,7 @@ shell_getc (remove_quoted_newline)
 	      break;
 	    }
 	}
+
       shell_input_line_index = 0;
       shell_input_line_len = i;		/* == strlen (shell_input_line) */
 
@@ -1618,20 +1763,29 @@ shell_getc (remove_quoted_newline)
 		current_command_line_count--;
 
 	      /* We have to force the xrealloc below because we don't know
-	         the true allocated size of shell_input_line anymore. */
+		 the true allocated size of shell_input_line anymore. */
 	      shell_input_line_size = shell_input_line_len;
 	    }
 	}
-      /* XXX - this is grotesque */
+      /* Try to do something intelligent with blank lines encountered while
+	 entering multi-line commands.  XXX - this is grotesque */
       else if (remember_on_history && shell_input_line &&
 	       shell_input_line[0] == '\0' &&
-	       current_command_line_count > 1 && current_delimiter (dstack))
+	       current_command_line_count > 1)
 	{
-	  /* We know shell_input_line[0] == 0 and we're reading some sort of
-	     quoted string.  This means we've got a line consisting of only
-	     a newline in a quoted string.  We want to make sure this line
-	     gets added to the history. */
-	  maybe_add_history (shell_input_line);
+	  if (current_delimiter (dstack))
+	    /* We know shell_input_line[0] == 0 and we're reading some sort of
+	       quoted string.  This means we've got a line consisting of only
+	       a newline in a quoted string.  We want to make sure this line
+	       gets added to the history. */
+	    maybe_add_history (shell_input_line);
+	  else
+	    {
+	      char *hdcs;
+	      hdcs = history_delimiting_chars ();
+	      if (hdcs && hdcs[0] == ';')
+		maybe_add_history (shell_input_line);
+	    }
 	}
 
 #endif /* HISTORY */
@@ -1657,7 +1811,7 @@ shell_getc (remove_quoted_newline)
       if (shell_input_line_terminator != EOF)
 	{
 	  if (shell_input_line_len + 3 > shell_input_line_size)
-	    shell_input_line = xrealloc (shell_input_line,
+	    shell_input_line = (char *)xrealloc (shell_input_line,
 					1 + (shell_input_line_size += 2));
 
 	  shell_input_line[shell_input_line_len] = '\n';
@@ -1665,12 +1819,12 @@ shell_getc (remove_quoted_newline)
 	}
     }
 
-  c = shell_input_line[shell_input_line_index];
+  uc = shell_input_line[shell_input_line_index];
 
-  if (c)
+  if (uc)
     shell_input_line_index++;
 
-  if (c == '\\' && remove_quoted_newline &&
+  if (uc == '\\' && remove_quoted_newline &&
       shell_input_line[shell_input_line_index] == '\n')
     {
 	prompt_again ();
@@ -1679,33 +1833,33 @@ shell_getc (remove_quoted_newline)
     }
 
 #if defined (ALIAS) || defined (DPAREN_ARITHMETIC)
-  /* If C is NULL, we have reached the end of the current input string.  If
+  /* If UC is NULL, we have reached the end of the current input string.  If
      pushed_string_list is non-empty, it's time to pop to the previous string
      because we have fully consumed the result of the last alias expansion.
      Do it transparently; just return the next character of the string popped
      to. */
-  if (!c && (pushed_string_list != (STRING_SAVER *)NULL))
+  if (!uc && (pushed_string_list != (STRING_SAVER *)NULL))
     {
       if (mustpop)
-        {
-          pop_string ();
-          c = shell_input_line[shell_input_line_index];
-	  if (c)
+	{
+	  pop_string ();
+	  uc = shell_input_line[shell_input_line_index];
+	  if (uc)
 	    shell_input_line_index++;
 	  mustpop--;
-        }
+	}
       else
-        {
-          mustpop++;
-          c = ' ';
-        }
+	{
+	  mustpop++;
+	  uc = ' ';
+	}
     }
 #endif /* ALIAS || DPAREN_ARITHMETIC */
 
-  if (!c && shell_input_line_terminator == EOF)
+  if (!uc && shell_input_line_terminator == EOF)
     return ((shell_input_line_index != 0) ? '\n' : EOF);
 
-  return ((unsigned char)c);
+  return (uc);
 }
 
 /* Put C back into the input for the shell. */
@@ -1715,14 +1869,19 @@ shell_ungetc (c)
 {
   if (shell_input_line && shell_input_line_index)
     shell_input_line[--shell_input_line_index] = c;
+  else
+    eol_ungetc_lookahead = c;
 }
 
+#ifdef INCLUDE_UNUSED
+/* Back the input pointer up by one, effectively `ungetting' a character. */
 static void
 shell_ungetchar ()
 {
   if (shell_input_line && shell_input_line_index)
     shell_input_line_index--;
 }
+#endif
 
 /* Discard input until CHARACTER is seen, then push that character back
    onto the input stream. */
@@ -1743,7 +1902,7 @@ void
 execute_prompt_command (command)
      char *command;
 {
-  Function *temp_last, *temp_this;
+  sh_builtin_func_t *temp_last, *temp_this;
   char *last_lastarg;
   int temp_exit_value, temp_eof_encountered;
 
@@ -1885,8 +2044,8 @@ static int open_brace_count;
        Special cases that disqualify:
 	 In a pattern list in a case statement (parser_state & PST_CASEPAT). */
 static int
-alias_expand_token (token)
-     char *token;
+alias_expand_token (tokstr)
+     char *tokstr;
 {
   char *expanded;
   alias_t *ap;
@@ -1894,7 +2053,7 @@ alias_expand_token (token)
   if (((parser_state & PST_ALEXPNEXT) || command_token_position (last_read_token)) &&
 	(parser_state & PST_CASEPAT) == 0)
     {
-      ap = find_alias (token);
+      ap = find_alias (tokstr);
 
       /* Currently expanding this token. */
       if (ap && (ap->flags & AL_BEINGEXPANDED))
@@ -1929,8 +2088,8 @@ time_command_acceptable ()
     case DO:
     case THEN:
     case ELSE:
-    case '{':
-    case '(':
+    case '{':		/* } */
+    case '(':		/* ) */
       return 1;
     default:
       return 0;
@@ -1951,9 +2110,10 @@ time_command_acceptable ()
 	to be set
 
 	`{' is recognized if the last token as WORD and the token
-	before that was FUNCTION.
+	before that was FUNCTION, or if we just parsed an arithmetic
+	`for' command.
 
-	`}' is recognized if there is an unclosed `{' prsent.
+	`}' is recognized if there is an unclosed `{' present.
 
 	`-p' is returned as TIMEOPT if the last read token was TIME.
 
@@ -1965,8 +2125,8 @@ time_command_acceptable ()
 */
 
 static int
-special_case_tokens (token)
-     char *token;
+special_case_tokens (tokstr)
+     char *tokstr;
 {
   if ((last_read_token == WORD) &&
 #if defined (SELECT_COMMAND)
@@ -1974,7 +2134,7 @@ special_case_tokens (token)
 #else
       ((token_before_that == FOR) || (token_before_that == CASE)) &&
 #endif
-      (token[0] == 'i' && token[1] == 'n' && token[2] == 0))
+      (tokstr[0] == 'i' && tokstr[1] == 'n' && tokstr[2] == 0))
     {
       if (token_before_that == CASE)
 	{
@@ -1990,7 +2150,7 @@ special_case_tokens (token)
 #else
       (token_before_that == FOR) &&
 #endif
-      (token[0] == 'd' && token[1] == 'o' && token[2] == '\0'))
+      (tokstr[0] == 'd' && tokstr[1] == 'o' && tokstr[2] == '\0'))
     return (DO);
 
   /* Ditto for ESAC in the CASE case.
@@ -2002,7 +2162,7 @@ special_case_tokens (token)
   if (esacs_needed_count)
     {
       esacs_needed_count--;
-      if (STREQ (token, "esac"))
+      if (STREQ (tokstr, "esac"))
 	{
 	  parser_state &= ~PST_CASEPAT;
 	  return (ESAC);
@@ -2013,7 +2173,7 @@ special_case_tokens (token)
   if (parser_state & PST_ALLOWOPNBRC)
     {
       parser_state &= ~PST_ALLOWOPNBRC;
-      if (token[0] == '{' && token[1] == '\0')		/* } */
+      if (tokstr[0] == '{' && tokstr[1] == '\0')		/* } */
 	{
 	  open_brace_count++;
 	  function_bstart = line_number;
@@ -2021,7 +2181,17 @@ special_case_tokens (token)
 	}
     }
 
-  if (open_brace_count && reserved_word_acceptable (last_read_token) && token[0] == '}' && !token[1])
+  /* We allow a `do' after a for ((...)) without an intervening
+     list_terminator */
+  if (last_read_token == ARITH_FOR_EXPRS && tokstr[0] == 'd' && tokstr[1] == 'o' && !tokstr[2])
+    return (DO);
+  if (last_read_token == ARITH_FOR_EXPRS && tokstr[0] == '{' && tokstr[1] == '\0')	/* } */
+    {
+      open_brace_count++;
+      return ('{');			/* } */
+    }
+
+  if (open_brace_count && reserved_word_acceptable (last_read_token) && tokstr[0] == '}' && !tokstr[1])
     {
       open_brace_count--;		/* { */
       return ('}');
@@ -2029,7 +2199,7 @@ special_case_tokens (token)
 
 #if defined (COMMAND_TIMING)
   /* Handle -p after `time'. */
-  if (last_read_token == TIME && token[0] == '-' && token[1] == 'p' && !token[2])
+  if (last_read_token == TIME && tokstr[0] == '-' && tokstr[1] == 'p' && !tokstr[2])
     return (TIMEOPT);
 #endif
 
@@ -2039,7 +2209,7 @@ special_case_tokens (token)
 #endif /* COMMAND_TIMING */
 
 #if defined (COND_COMMAND) /* [[ */
-  if ((parser_state & PST_CONDEXPR) && token[0] == ']' && token[1] == ']' && token[2] == '\0')
+  if ((parser_state & PST_CONDEXPR) && tokstr[0] == ']' && tokstr[1] == ']' && tokstr[2] == '\0')
     return (COND_END);
 #endif
 
@@ -2204,8 +2374,36 @@ read_token (command)
 	    case '|':
 	      return (OR_OR);
 
-#if defined (DPAREN_ARITHMETIC)
+#if defined (DPAREN_ARITHMETIC) || defined (ARITH_FOR_COMMAND)
 	    case '(':		/* ) */
+#  if defined (ARITH_FOR_COMMAND)
+	      if (last_read_token == FOR)
+		{
+		  int cmdtyp, len;
+		  char *wval, *wv2;
+		  WORD_DESC *wd;
+
+		  arith_for_lineno = line_number;
+		  cmdtyp = parse_arith_cmd (&wval);
+		  if (cmdtyp == 1)
+		    {
+		      /* parse_arith_cmd adds quotes at the beginning and end
+			 of the string it returns; we need to take those out. */
+		      len = strlen (wval);
+		      wv2 = (char *)xmalloc (len);
+		      strncpy (wv2, wval + 1, len - 2);
+		      wv2[len - 2] = '\0';
+		      wd = make_word (wv2);
+		      yylval.word_list = make_word_list (wd, (WORD_LIST *)NULL);
+		      free (wval);
+		      free (wv2);
+		      return (ARITH_FOR_EXPRS);
+		    }
+		  else
+		    return -1;		/* ERROR */
+		}
+#  endif
+#  if defined (DPAREN_ARITHMETIC)
 	      if (reserved_word_acceptable (last_read_token))
 		{
 		  int cmdtyp, sline;
@@ -2233,6 +2431,7 @@ read_token (command)
 		    return -1;
 		}
 	      break;
+#  endif
 #endif
 	    }
 	}
@@ -2268,7 +2467,7 @@ read_token (command)
 	parser_state |= PST_SUBSHELL;
       /*(*/
       else if ((parser_state & PST_CASEPAT) && character == ')')
-        parser_state &= ~PST_CASEPAT;
+	parser_state &= ~PST_CASEPAT;
       /*(*/
       else if ((parser_state & PST_SUBSHELL) && character == ')')
 	parser_state &= ~PST_SUBSHELL;
@@ -2302,6 +2501,7 @@ read_token (command)
    correct error values if it reads EOF. */
 
 #define P_FIRSTCLOSE	0x01
+#define P_ALLOWESC	0x02
 
 static char matched_pair_error;
 static char *
@@ -2311,20 +2511,20 @@ parse_matched_pair (qc, open, close, lenp, flags)
      int *lenp, flags;
 {
   int count, ch, was_dollar;
-  int pass_next_character, nestlen, start_lineno;
-  char *ret, *nestret;
+  int pass_next_character, nestlen, ttranslen, start_lineno;
+  char *ret, *nestret, *ttrans;
   int retind, retsize;
 
   count = 1;
   pass_next_character = was_dollar = 0;
 
-  ret = xmalloc (retsize = 64);
+  ret = (char *)xmalloc (retsize = 64);
   retind = 0;
 
   start_lineno = line_number;
   while (count)
     {
-      ch = shell_getc (qc != '\'' && pass_next_character == 0);
+      ch = shell_getc ((qc != '\'' || (flags & P_ALLOWESC)) && pass_next_character == 0);
       if (ch == EOF)
 	{
 	  free (ret);
@@ -2362,6 +2562,11 @@ parse_matched_pair (qc, open, close, lenp, flags)
 	}
       else if (ch == close)		/* ending delimiter */
 	count--;
+#if 1
+      /* handle nested ${...} specially. */
+      else if (open != close && was_dollar && open == '{' && ch == open) /* } */
+	count++;
+#endif
       else if (((flags & P_FIRSTCLOSE) == 0) && ch == open)		/* nested begin */
 	count++;
 
@@ -2370,7 +2575,11 @@ parse_matched_pair (qc, open, close, lenp, flags)
       ret[retind++] = ch;
 
       if (open == '\'')			/* '' inside grouping construct */
-	continue;
+	{
+	  if ((flags & P_ALLOWESC) && ch == '\\')
+	    pass_next_character++;
+	  continue;
+	}
 
       if (ch == '\\')			/* backslashes */
 	pass_next_character++;
@@ -2381,12 +2590,39 @@ parse_matched_pair (qc, open, close, lenp, flags)
 	    {
 	      /* '', ``, or "" inside $(...) or other grouping construct. */
 	      push_delimiter (dstack, ch);
-	      nestret = parse_matched_pair (ch, ch, ch, &nestlen, 0);
+	      if (was_dollar && ch == '\'')	/* $'...' inside group */
+		nestret = parse_matched_pair (ch, ch, ch, &nestlen, P_ALLOWESC);
+	      else
+		nestret = parse_matched_pair (ch, ch, ch, &nestlen, 0);
 	      pop_delimiter (dstack);
 	      if (nestret == &matched_pair_error)
 		{
 		  free (ret);
 		  return &matched_pair_error;
+		}
+	      if (was_dollar && ch == '\'')
+		{
+		  /* Translate $'...' here. */
+		  ttrans = ansiexpand (nestret, 0, nestlen - 1, &ttranslen);
+		  xfree (nestret);
+		  nestret = sh_single_quote (ttrans);
+		  free (ttrans);
+		  nestlen = strlen (nestret);
+		  retind -= 2;		/* back up before the $' */
+		}
+	      else if (was_dollar && ch == '"')
+		{
+		  /* Locale expand $"..." here. */
+		  ttrans = localeexpand (nestret, 0, nestlen - 1, start_lineno, &ttranslen);
+		  xfree (nestret);
+		  nestret = (char *)xmalloc (ttranslen + 3);
+		  nestret[0] = '"';
+		  strcpy (nestret + 1, ttrans);
+		  nestret[ttranslen + 1] = '"';
+		  nestret[ttranslen += 2] = '\0';
+		  free (ttrans);
+		  nestlen = ttranslen;
+		  retind -= 2;		/* back up before the $" */
 		}
 	      if (nestlen)
 		{
@@ -2449,7 +2685,7 @@ parse_matched_pair (qc, open, close, lenp, flags)
   return ret;
 }
 
-#if defined (DPAREN_ARITHMETIC)
+#if defined (DPAREN_ARITHMETIC) || defined (ARITH_FOR_COMMAND)
 /* We've seen a `(('.  Look for the matching `))'.  If we get it, return 1.
    If not, assume it's a nested subshell for backwards compatibility and
    return 0.  In any case, put the characters we've consumed into a locally-
@@ -2460,7 +2696,7 @@ parse_arith_cmd (ep)
      char **ep;
 {
   int exp_lineno, rval, c;
-  char *ttok, *token;
+  char *ttok, *tokstr;
   int ttoklen;
 
   exp_lineno = line_number;
@@ -2473,34 +2709,29 @@ parse_arith_cmd (ep)
   if ((c = shell_getc (0)) != ')')
     rval = 0;
 
-  token = xmalloc(ttoklen + 4);
+  tokstr = (char *)xmalloc (ttoklen + 4);
 
   /* (( ... )) -> "..." */
-  token[0] = (rval == 1) ? '"' : '(';
-  strncpy (token + 1, ttok, ttoklen - 1);	/* don't copy the final `)' */
+  tokstr[0] = (rval == 1) ? '"' : '(';
+  strncpy (tokstr + 1, ttok, ttoklen - 1);	/* don't copy the final `)' */
   if (rval == 1)
     {
-      token[ttoklen] = '"';
-      token[ttoklen+1] = '\0';
+      tokstr[ttoklen] = '"';
+      tokstr[ttoklen+1] = '\0';
     }
   else
     {
-      token[ttoklen] = ')';
-      token[ttoklen+1] = c;
-      token[ttoklen+2] = '\0';
+      tokstr[ttoklen] = ')';
+      tokstr[ttoklen+1] = c;
+      tokstr[ttoklen+2] = '\0';
     }
-  *ep = token;
+  *ep = tokstr;
   FREE (ttok);
   return rval;
 }
-#endif /* DPAREN_ARITHMETIC */
+#endif /* DPAREN_ARITHMETIC || ARITH_FOR_COMMAND */
 
 #if defined (COND_COMMAND)
-static COND_COM *cond_term ();
-static COND_COM *cond_and ();
-static COND_COM *cond_or ();
-static COND_COM *cond_expr ();
-
 static COND_COM *
 cond_expr ()
 {
@@ -2604,7 +2835,7 @@ cond_term ()
 
       (void)cond_skip_newlines ();
     }
-  else		/* left argument to binary operator */
+  else if (tok == WORD)		/* left argument to binary operator */
     {
       /* lhs */
       tleft = make_cond_node (COND_TERM, yylval.word, (COND_COM *)NULL, (COND_COM *)NULL);
@@ -2612,14 +2843,16 @@ cond_term ()
       /* binop */
       tok = read_token (READ);
       if (tok == WORD && test_binop (yylval.word->word))
-        op = yylval.word;
+	op = yylval.word;
       else if (tok == '<' || tok == '>')
-        op = make_word_from_token (tok);
-      else if (tok == COND_END || tok == AND_AND || tok == OR_OR)
+	op = make_word_from_token (tok);  /* ( */
+      /* There should be a check before blindly accepting the `)' that we have
+	 seen the opening `('. */
+      else if (tok == COND_END || tok == AND_AND || tok == OR_OR || tok == ')')
 	{
 	  /* Special case.  [[ x ]] is equivalent to [[ -n x ]], just like
 	     the test command.  Similarly for [[ x && expr ]] or
-	     [[ x || expr ]] */
+	     [[ x || expr ]] or [[ (x) ]]. */
 	  op = make_word ("-n");
 	  term = make_cond_node (COND_UNARY, op, tleft, (COND_COM *)NULL);
 	  cond_token = tok;
@@ -2649,6 +2882,14 @@ cond_term ()
 
       (void)cond_skip_newlines ();
     }
+  else
+    {
+      if (tok < 256)
+	parser_error (line_number, "unexpected token `%c' in conditional command", tok);
+      else
+	parser_error (line_number, "unexpected token %d in conditional command", tok);
+      COND_RETURN_ERROR ();
+    }
   return (term);
 }      
 
@@ -2675,7 +2916,7 @@ read_token_word (character)
   int token_index;
 
   /* ALL_DIGITS becomes zero when we see a non-digit. */
-  int all_digits;
+  int all_digit_token;
 
   /* DOLLAR_PRESENT becomes non-zero if we see a `$'. */
   int dollar_present;
@@ -2692,12 +2933,13 @@ read_token_word (character)
   int result, peek_char;
   char *ttok, *ttrans;
   int ttoklen, ttranslen;
+  long lvalue;
 
   if (token_buffer_size < TOKEN_DEFAULT_INITIAL_SIZE)
-    token = xrealloc (token, token_buffer_size = TOKEN_DEFAULT_INITIAL_SIZE);
+    token = (char *)xrealloc (token, token_buffer_size = TOKEN_DEFAULT_INITIAL_SIZE);
 
   token_index = 0;
-  all_digits = digit (character);
+  all_digit_token = DIGIT (character);
   dollar_present = quoted = pass_next_character = 0;
 
   for (;;)
@@ -2732,7 +2974,7 @@ read_token_word (character)
 
 	      /* If the next character is to be quoted, note it now. */
 	      if (cd == 0 || cd == '`' ||
-		  (cd == '"' && member (peek_char, slashify_in_quotes)))
+		  (cd == '"' && peek_char >= 0 && (sh_syntaxtab[peek_char] & CBSDQUOTE)))
 		pass_next_character++;
 
 	      quoted = 1;
@@ -2753,7 +2995,7 @@ read_token_word (character)
 	  token[token_index++] = character;
 	  strcpy (token + token_index, ttok);
 	  token_index += ttoklen;
-	  all_digits = 0;
+	  all_digit_token = 0;
 	  quoted = 1;
 	  dollar_present |= (character == '"' && strchr (ttok, '$') != 0);
 	  FREE (ttok);
@@ -2762,7 +3004,7 @@ read_token_word (character)
 
 #ifdef EXTENDED_GLOB
       /* Parse a ksh-style extended pattern matching specification. */
-      if (extended_glob && PATTERN_CHAR(character))
+      if (extended_glob && PATTERN_CHAR (character))
 	{
 	  peek_char = shell_getc (1);
 	  if (peek_char == '(')		/* ) */
@@ -2780,7 +3022,7 @@ read_token_word (character)
 	      strcpy (token + token_index, ttok);
 	      token_index += ttoklen;
 	      FREE (ttok);
-	      dollar_present = all_digits = 0;
+	      dollar_present = all_digit_token = 0;
 	      goto next_character;
 	    }
 	  else
@@ -2790,11 +3032,7 @@ read_token_word (character)
 
       /* If the delimiter character is not single quote, parse some of
 	 the shell expansions that must be read as a single word. */
-#if defined (PROCESS_SUBSTITUTION)
-      if (character == '$' || character == '<' || character == '>')
-#else
-      if (character == '$')
-#endif /* !PROCESS_SUBSTITUTION */
+      if (shellexp (character))
 	{
 	  peek_char = shell_getc (1);
 	  /* $(...), <(...), >(...), $((...)), ${...}, and $[...] constructs */
@@ -2802,14 +3040,14 @@ read_token_word (character)
 		((peek_char == '{' || peek_char == '[') && character == '$'))	/* ) ] } */
 	    {
 	      if (peek_char == '{')		/* } */
-	        ttok = parse_matched_pair (cd, '{', '}', &ttoklen, P_FIRSTCLOSE);
+		ttok = parse_matched_pair (cd, '{', '}', &ttoklen, P_FIRSTCLOSE);
 	      else if (peek_char == '(')		/* ) */
 		{
 		  /* XXX - push and pop the `(' as a delimiter for use by
 		     the command-oriented-history code.  This way newlines
 		     appearing in the $(...) string get added to the
 		     history literally rather than causing a possibly-
-		     incorrect `;' to be added. */
+		     incorrect `;' to be added. ) */
 		  push_delimiter (dstack, peek_char);
 		  ttok = parse_matched_pair (cd, '(', ')', &ttoklen, 0);
 		  pop_delimiter (dstack);
@@ -2827,7 +3065,7 @@ read_token_word (character)
 	      token_index += ttoklen;
 	      FREE (ttok);
 	      dollar_present = 1;
-	      all_digits = 0;
+	      all_digit_token = 0;
 	      goto next_character;
 	    }
 	  /* This handles $'...' and $"..." new-style quoted strings. */
@@ -2836,31 +3074,56 @@ read_token_word (character)
 	      int first_line;
 
 	      first_line = line_number;
-	      ttok = parse_matched_pair (peek_char, peek_char, peek_char, &ttoklen, 0);
+	      push_delimiter (dstack, peek_char);
+	      ttok = parse_matched_pair (peek_char, peek_char, peek_char,
+					 &ttoklen,
+					 (peek_char == '\'') ? P_ALLOWESC : 0);
+	      pop_delimiter (dstack);
 	      if (ttok == &matched_pair_error)
 		return -1;
 	      if (peek_char == '\'')
-		ttrans = ansiexpand (ttok, 0, ttoklen - 1, &ttranslen);
+		{
+		  ttrans = ansiexpand (ttok, 0, ttoklen - 1, &ttranslen);
+		  free (ttok);
+		  /* Insert the single quotes and correctly quote any
+		     embedded single quotes (allowed because P_ALLOWESC was
+		     passed to parse_matched_pair). */
+		  ttok = sh_single_quote (ttrans);
+		  free (ttrans);
+		  ttrans = ttok;
+		  ttranslen = strlen (ttrans);
+		}
 	      else
-		ttrans = localeexpand (ttok, 0, ttoklen - 1, first_line, &ttranslen);
-	      free (ttok);
+		{
+		  /* Try to locale-expand the converted string. */
+		  ttrans = localeexpand (ttok, 0, ttoklen - 1, first_line, &ttranslen);
+		  free (ttok);
+
+		  /* Add the double quotes back */
+		  ttok = (char *)xmalloc (ttranslen + 3);
+		  ttok[0] = '"';
+		  strcpy (ttok + 1, ttrans);
+		  ttok[ttranslen + 1] = '"';
+		  ttok[ttranslen += 2] = '\0';
+		  free (ttrans);
+		  ttrans = ttok;
+		}
+
 	      RESIZE_MALLOCED_BUFFER (token, token_index, ttranslen + 2,
 				      token_buffer_size,
 				      TOKEN_DEFAULT_GROW_SIZE);
-	      token[token_index++] = peek_char;
 	      strcpy (token + token_index, ttrans);
 	      token_index += ttranslen;
-	      token[token_index++] = peek_char;
 	      FREE (ttrans);
 	      quoted = 1;
-	      all_digits = 0;
+	      all_digit_token = 0;
 	      goto next_character;
 	    }
 	  /* This could eventually be extended to recognize all of the
 	     shell's single-character parameter expansions, and set flags.*/
 	  else if (character == '$' && peek_char == '$')
 	    {
-	      ttok = xmalloc (3);
+	      ttok = (char *)xmalloc (3);
 	      ttok[0] = ttok[1] = '$';
 	      ttok[2] = '\0';
 	      RESIZE_MALLOCED_BUFFER (token, token_index, 3,
@@ -2869,7 +3132,7 @@ read_token_word (character)
 	      strcpy (token + token_index, ttok);
 	      token_index += 2;
 	      dollar_present = 1;
-	      all_digits = 0;
+	      all_digit_token = 0;
 	      FREE (ttok);
 	      goto next_character;
 	    }
@@ -2900,7 +3163,7 @@ read_token_word (character)
 	      strcpy (token + token_index, ttok);
 	      token_index += ttoklen;
 	      FREE (ttok);
-	      all_digits = 0;
+	      all_digit_token = 0;
 	      goto next_character;
 	    }
 	  else
@@ -2918,7 +3181,7 @@ read_token_word (character)
 
     got_character:
 
-      all_digits &= digit (character);
+      all_digit_token &= DIGIT (character);
       dollar_present |= character == '$';
 
       if (character == CTLESC || character == CTLNUL)
@@ -2949,11 +3212,14 @@ got_token:
      is a `<', or a `&', or the character which ended this token is
      a '>' or '<', then, and ONLY then, is this input token a NUMBER.
      Otherwise, it is just a word, and should be returned as such. */
-  if (all_digits && (character == '<' || character == '>' ||
+  if (all_digit_token && (character == '<' || character == '>' ||
 		    last_read_token == LESS_AND ||
 		    last_read_token == GREATER_AND))
       {
-	yylval.number = atoi (token);
+	if (legal_number (token, &lvalue) && (int)lvalue == lvalue)
+	  yylval.number = lvalue;
+	else
+	  yylval.number = -1;
 	return (NUMBER);
       }
 
@@ -2987,7 +3253,7 @@ got_token:
     CHECK_FOR_RESERVED_WORD (token);
 
   the_word = (WORD_DESC *)xmalloc (sizeof (WORD_DESC));
-  the_word->word = xmalloc (1 + token_index);
+  the_word->word = (char *)xmalloc (1 + token_index);
   the_word->flags = 0;
   strcpy (the_word->word, token);
   if (dollar_present)
@@ -3029,14 +3295,14 @@ ansiexpand (string, start, end, lenp)
   char *temp, *t;
   int len, tlen;
 
-  temp = xmalloc (end - start + 1);
+  temp = (char *)xmalloc (end - start + 1);
   for (tlen = 0, len = start; len < end; )
     temp[tlen++] = string[len++];
   temp[tlen] = '\0';
 
   if (*temp)
     {
-      t = ansicstr (temp, tlen, (int *)NULL, lenp);
+      t = ansicstr (temp, tlen, 0, (int *)NULL, lenp);
       free (temp);
       return (t);
     }
@@ -3046,6 +3312,52 @@ ansiexpand (string, start, end, lenp)
 	*lenp = 0;
       return (temp);
     }
+}
+
+/* Change a bash string into a string suitable for inclusion in a `po' file.
+   This backslash-escapes `"' and `\' and changes newlines into \\\n"\n". */
+static char *
+mk_msgstr (string, foundnlp)
+     char *string;
+     int *foundnlp;
+{
+  register int c, len;
+  char *result, *r, *s;
+
+  for (len = 0, s = string; s && *s; s++)
+    {
+      len++;
+      if (*s == '"' || *s == '\\')
+	len++;
+      else if (*s == '\n')
+	len += 5;
+    }
+  
+  r = result = (char *)xmalloc (len + 3);
+  *r++ = '"';
+
+  for (s = string; s && (c = *s); s++)
+    {
+      if (c == '\n')	/* <NL> -> \n"<NL>" */
+	{
+	  *r++ = '\\';
+	  *r++ = 'n';
+	  *r++ = '"';
+	  *r++ = '\n';
+	  *r++ = '"';
+	  if (foundnlp)
+	    *foundnlp = 1;
+	  continue;
+	}
+      if (c == '"' || c == '\\')
+	*r++ = '\\';
+      *r++ = c;
+    }
+
+  *r++ = '"';
+  *r++ = '\0';
+
+  return result;
 }
 
 /* $"..." -- Translate the portion of STRING between START and END
@@ -3060,22 +3372,35 @@ localeexpand (string, start, end, lineno, lenp)
      char *string;
      int start, end, lineno, *lenp;
 {
-  int len, tlen;
-  char *temp, *t;
+  int len, tlen, foundnl;
+  char *temp, *t, *t2;
 
-  temp = xmalloc (end - start + 1);
+  temp = (char *)xmalloc (end - start + 1);
   for (tlen = 0, len = start; len < end; )
     temp[tlen++] = string[len++];
   temp[tlen] = '\0';
 
-  /* If we're just dumping translatable strings, don't do anything. */
+  /* If we're just dumping translatable strings, don't do anything with the
+     string itself, but if we're dumping in `po' file format, convert it into a form more palatable to gettext(3)
+     and friends by quoting `"' and `\' with backslashes and converting <NL>
+     into `\n"<NL>"'.  If we find a newline in TEMP, we first output a
+     `msgid ""' line and then the translated string; otherwise we output the
+     `msgid' and translated string all on one line. */
   if (dump_translatable_strings)
     {
       if (dump_po_strings)
-	printf ("#: %s:%d\nmsgid \"%s\"\nmsgstr \"\"\n",
-		(bash_input.name ? bash_input.name : "stdin"), lineno, temp);
+	{
+	  foundnl = 0;
+	  t = mk_msgstr (temp, &foundnl);
+	  t2 = foundnl ? "\"\"\n" : "";
+
+	  printf ("#: %s:%d\nmsgid %s%s\nmsgstr \"\"\n",
+		  (bash_input.name ? bash_input.name : "stdin"), lineno, t2, t);
+	  free (t);
+	}
       else
 	printf ("\"%s\"\n", temp);
+
       if (lenp)
 	*lenp = tlen;
       return (temp);
@@ -3096,31 +3421,31 @@ localeexpand (string, start, end, lineno, lenp)
     }
 }
 
-/* Return 1 if TOKEN is a token that after being read would allow
+/* Return 1 if TOKSYM is a token that after being read would allow
    a reserved word to be seen, else 0. */
 static int
-reserved_word_acceptable (token)
-     int token;
+reserved_word_acceptable (toksym)
+     int toksym;
 {
-  if (token == '\n' || token == ';' || token == '(' || token == ')' ||
-      token == '|' || token == '&' || token == '{' ||
-      token == '}' ||			/* XXX */
-      token == AND_AND ||
-      token == BANG ||
-      token == TIME || token == TIMEOPT ||
-      token == DO ||
-      token == ELIF ||
-      token == ELSE ||
-      token == FI ||
-      token == IF ||
-      token == OR_OR ||
-      token == SEMI_SEMI ||
-      token == THEN ||
-      token == UNTIL ||
-      token == WHILE ||
-      token == DONE ||		/* XXX these two are experimental */
-      token == ESAC ||
-      token == 0)
+  if (toksym == '\n' || toksym == ';' || toksym == '(' || toksym == ')' ||
+      toksym == '|' || toksym == '&' || toksym == '{' ||
+      toksym == '}' ||			/* XXX */
+      toksym == AND_AND ||
+      toksym == BANG ||
+      toksym == TIME || toksym == TIMEOPT ||
+      toksym == DO ||
+      toksym == ELIF ||
+      toksym == ELSE ||
+      toksym == FI ||
+      toksym == IF ||
+      toksym == OR_OR ||
+      toksym == SEMI_SEMI ||
+      toksym == THEN ||
+      toksym == UNTIL ||
+      toksym == WHILE ||
+      toksym == DONE ||		/* XXX these two are experimental */
+      toksym == ESAC ||
+      toksym == 0)
     return (1);
   else
     return (0);
@@ -3129,12 +3454,12 @@ reserved_word_acceptable (token)
 /* Return the index of TOKEN in the alist of reserved words, or -1 if
    TOKEN is not a shell reserved word. */
 int
-find_reserved_word (token)
-     char *token;
+find_reserved_word (tokstr)
+     char *tokstr;
 {
   int i;
   for (i = 0; word_token_alist[i].word; i++)
-    if (STREQ (token, word_token_alist[i].word))
+    if (STREQ (tokstr, word_token_alist[i].word))
       return i;
   return -1;
 }
@@ -3157,7 +3482,7 @@ reset_readline_prompt ()
 
       if (temp_prompt == 0)
 	{
-	  temp_prompt = xmalloc (1);
+	  temp_prompt = (char *)xmalloc (1);
 	  temp_prompt[0] = '\0';
 	}
 
@@ -3204,12 +3529,23 @@ history_delimiting_chars ()
       /* This does not work for subshells inside case statement
 	 command lists.  It's a suboptimal solution. */
       else if (parser_state & PST_CASESTMT)	/* case statement pattern */
-        return " ";
+	return " ";
       else	
-        return "; ";				/* (...) subshell */
+	return "; ";				/* (...) subshell */
     }
   else if (token_before_that == WORD && two_tokens_ago == FUNCTION)
     return " ";		/* function def using `function name' without `()' */
+
+  else if (token_before_that == WORD && two_tokens_ago == FOR)
+    {
+      /* Tricky.  `for i\nin ...' should not have a semicolon, but
+	 `for i\ndo ...' should.  We do what we can. */
+      for (i = shell_input_line_index; whitespace(shell_input_line[i]); i++)
+	;
+      if (shell_input_line[i] && shell_input_line[i] == 'i' && shell_input_line[i+1] == 'n')
+	return " ";
+      return ";";
+    }
 
   for (i = 0; no_semi_successors[i]; i++)
     {
@@ -3243,7 +3579,7 @@ prompt_again ()
 
   if (temp_prompt == 0)
     {
-      temp_prompt = xmalloc (1);
+      temp_prompt = (char *)xmalloc (1);
       temp_prompt[0] = '\0';
     }
 
@@ -3264,6 +3600,20 @@ prompt_again ()
     }
 }
 
+int
+get_current_prompt_level ()
+{
+  return ((current_prompt_string && current_prompt_string == ps2_prompt) ? 2 : 1);
+}
+
+void
+set_current_prompt_level (x)
+     int x;
+{
+  prompt_string_pointer = (x == 2) ? &ps2_prompt : &ps1_prompt;
+  current_prompt_string = *prompt_string_pointer;
+}
+      
 static void
 print_prompt ()
 {
@@ -3279,6 +3629,8 @@ print_prompt ()
 	\d	the date in Day Mon Date format
 	\h	the hostname up to the first `.'
 	\H	the hostname
+	\j	the number of active jobs
+	\l	the basename of the shell's tty device name
 	\n	CRLF
 	\s	the name of the shell
 	\t	the time in 24-hour hh:mm:ss format
@@ -3305,13 +3657,14 @@ decode_prompt_string (string)
   WORD_LIST *list;
   char *result, *t;
   struct dstack save_dstack;
+  int last_exit_value;
 #if defined (PROMPT_STRING_DECODE)
   int result_size, result_index;
   int c, n;
   char *temp, octal_string[4];
   time_t the_time;
 
-  result = xmalloc (result_size = PROMPT_GROWTH);
+  result = (char *)xmalloc (result_size = PROMPT_GROWTH);
   result[result_index = 0] = 0;
   temp = (char *)NULL;
 
@@ -3353,11 +3706,10 @@ decode_prompt_string (string)
 	      octal_string[3] = '\0';
 
 	      n = read_octal (octal_string);
-	      temp = xmalloc (3);
+	      temp = (char *)xmalloc (3);
 
 	      if (n == CTLESC || n == CTLNUL)
 		{
-		  string += 3;
 		  temp[0] = CTLESC;
 		  temp[1] = n;
 		  temp[2] = '\0';
@@ -3369,10 +3721,12 @@ decode_prompt_string (string)
 		}
 	      else
 		{
-		  string += 3;
 		  temp[0] = n;
 		  temp[1] = '\0';
 		}
+
+	      for (c = 0; n != -1 && c < 3 && ISOCTAL (*string); c++)
+		string++;
 
 	      c = 0;
 	      goto add_string;
@@ -3381,12 +3735,14 @@ decode_prompt_string (string)
 	    case 'd':
 	    case 'T':
 	    case '@':
+	    case 'A':
 	      /* Make the current time/date into a string. */
 	      the_time = time (0);
 	      temp = ctime (&the_time);
 
 	      temp = (c != 'd') ? savestring (temp + 11) : savestring (temp);
 	      temp[(c != 'd') ? 8 : 10] = '\0';
+	      temp[(c != 'A') ? 10 : 5] = '\0';
 
 	      /* quick and dirty conversion to 12-hour time */
 	      if (c == 'T' || c == '@')
@@ -3413,13 +3769,13 @@ decode_prompt_string (string)
 	      goto add_string;
 
 	    case 'r':
-	      temp = xmalloc (2);
+	      temp = (char *)xmalloc (2);
 	      temp[0] = '\r';
 	      temp[1] = '\0';
 	      goto add_string;
 
 	    case 'n':
-	      temp = xmalloc (3);
+	      temp = (char *)xmalloc (3);
 	      temp[0] = no_line_editing ? '\n' : '\r';
 	      temp[1] = no_line_editing ? '\0' : '\n';
 	      temp[2] = '\0';
@@ -3432,7 +3788,7 @@ decode_prompt_string (string)
 
 	    case 'v':
 	    case 'V':
-	      temp = xmalloc (8);
+	      temp = (char *)xmalloc (8);
 	      if (c == 'v')
 		strcpy (temp, dist_version);
 	      else
@@ -3452,7 +3808,7 @@ decode_prompt_string (string)
 		  {
 		    if (getcwd (t_string, sizeof(t_string)) == 0)
 		      {
-		        t_string[0] = '.';
+			t_string[0] = '.';
 			tlen = 1;
 		      }
 		    else
@@ -3465,12 +3821,19 @@ decode_prompt_string (string)
 		  }
 		t_string[tlen] = '\0';
 
+#define ROOT_PATH(x)	((x)[0] == '/' && (x)[1] == 0)
+#define DOUBLE_SLASH_ROOT(x)	((x)[0] == '/' && (x)[1] == '/' && (x)[2] == 0)
 		if (c == 'W')
 		  {
-		    t = strrchr (t_string, '/');
-		    if (t && t != t_string)
-		      strcpy (t_string, t + 1);
+		    if (ROOT_PATH (t_string) == 0 && DOUBLE_SLASH_ROOT (t_string) == 0)
+		      {
+			t = strrchr (t_string, '/');
+			if (t)
+			  strcpy (t_string, t + 1);
+		      }
 		  }
+#undef ROOT_PATH
+#undef DOUBLE_SLASH_ROOT
 		else
 		  /* polite_directory_format is guaranteed to return a string
 		     no longer than PATH_MAX - 1 characters. */
@@ -3479,7 +3842,10 @@ decode_prompt_string (string)
 		/* If we're going to be expanding the prompt string later,
 		   quote the directory name. */
 		if (promptvars || posixly_correct)
-		  temp = backslash_quote (t_string);
+		  /* Make sure that expand_prompt_string is called with a
+		     second argument of Q_DOUBLE_QUOTE if we use this
+		     function here. */
+		  temp = sh_backslash_quote_for_double_quotes (t_string);
 		else
 		  temp = savestring (t_string);
 
@@ -3487,6 +3853,8 @@ decode_prompt_string (string)
 	      }
 
 	    case 'u':
+	      if (current_user.user_name == 0)
+		get_current_user_info ();
 	      temp = savestring (current_user.user_name);
 	      goto add_string;
 
@@ -3510,17 +3878,31 @@ decode_prompt_string (string)
 	      goto add_string;
 
 	    case '$':
-	      t = temp = xmalloc (3);
+	      t = temp = (char *)xmalloc (3);
 	      if ((promptvars || posixly_correct) && (current_user.euid != 0))
 		*t++ = '\\';
 	      *t++ = current_user.euid == 0 ? '#' : '$';
 	      *t = '\0';
 	      goto add_string;
 
+	    case 'j':
+	      temp = itos (count_all_jobs ());
+	      goto add_string;
+
+	    case 'l':
+#if defined (HAVE_TTYNAME)
+	      temp = (char *)ttyname (fileno (stdin));
+	      t = temp ? base_pathname (temp) : "tty";
+	      temp = savestring (t);
+#else
+	      temp = savestring ("tty");
+#endif /* !HAVE_TTYNAME */
+	      goto add_string;
+
 #if defined (READLINE)
 	    case '[':
 	    case ']':
-	      temp = xmalloc (3);
+	      temp = (char *)xmalloc (3);
 	      temp[0] = '\001';
 	      temp[1] = (c == '[') ? RL_PROMPT_START_IGNORE : RL_PROMPT_END_IGNORE;
 	      temp[2] = '\0';
@@ -3528,20 +3910,20 @@ decode_prompt_string (string)
 #endif /* READLINE */
 
 	    case '\\':
-	      temp = xmalloc (2);
+	      temp = (char *)xmalloc (2);
 	      temp[0] = c;
 	      temp[1] = '\0';
 	      goto add_string;
 
 	    case 'a':
 	    case 'e':
-	      temp = xmalloc (2);
+	      temp = (char *)xmalloc (2);
 	      temp[0] = (c == 'a') ? '\07' : '\033';
 	      temp[1] = '\0';
 	      goto add_string;
 
 	    default:
-	      temp = xmalloc (3);
+	      temp = (char *)xmalloc (3);
 	      temp[0] = '\\';
 	      temp[1] = c;
 	      temp[2] = '\0';
@@ -3578,10 +3960,12 @@ decode_prompt_string (string)
      the prompt string. */
   if (promptvars || posixly_correct)
     {
-      list = expand_string_unsplit (result, Q_DOUBLE_QUOTES);
+      last_exit_value = last_command_exit_value;
+      list = expand_prompt_string (result, Q_DOUBLE_QUOTES);
       free (result);
       result = string_list (list);
       dispose_words (list);
+      last_command_exit_value = last_exit_value;
     }
   else
     {
@@ -3598,7 +3982,8 @@ decode_prompt_string (string)
 /* Report a syntax error, and restart the parser.  Call here for fatal
    errors. */
 int
-yyerror ()
+yyerror (msg)
+     const char *msg;
 {
   report_syntax_error ((char *)NULL);
   reset_parser ();
@@ -3653,11 +4038,7 @@ report_syntax_error (message)
       if (token_end || (i == 0 && token_end == 0))
 	{
 	  if (token_end)
-	    {
-	      msg = xmalloc (1 + (token_end - i));
-	      strncpy (msg, t + i, token_end - i);
-	      msg[token_end - i] = '\0';
-	    }
+	    msg = substring (t, i, token_end);
 	  else	/* one-character token */
 	    {
 	      msg2[0] = t[i];
@@ -3760,4 +4141,81 @@ handle_eof_input_unit ()
       /* We don't write history files, etc., for non-interactive shells. */
       EOF_Reached = 1;
     }
+}
+
+static WORD_LIST parse_string_error;
+
+/* Take a string and run it through the shell parser, returning the
+   resultant word list.  Used by compound array assignment. */
+WORD_LIST *
+parse_string_to_word_list (s, whom)
+     char *s;
+     const char *whom;
+{
+  WORD_LIST *wl;
+  int tok, orig_line_number, orig_input_terminator;
+  int orig_line_count;
+#if defined (HISTORY)
+  int old_remember_on_history, old_history_expansion_inhibited;
+#endif
+
+#if defined (HISTORY)
+  old_remember_on_history = remember_on_history;
+#  if defined (BANG_HISTORY)
+  old_history_expansion_inhibited = history_expansion_inhibited;
+#  endif
+  bash_history_disable ();
+#endif
+
+  orig_line_number = line_number;
+  orig_line_count = current_command_line_count;
+  orig_input_terminator = shell_input_line_terminator;
+
+  push_stream (1);
+  last_read_token = '\n';
+  current_command_line_count = 0;
+
+  with_input_from_string (s, whom);
+  wl = (WORD_LIST *)NULL;
+  while ((tok = read_token (READ)) != yacc_EOF)
+    {
+      if (tok == '\n' && *bash_input.location.string == '\0')
+	break;
+      if (tok == '\n')		/* Allow newlines in compound assignments */
+	continue;
+      if (tok != WORD && tok != ASSIGNMENT_WORD)
+	{
+	  line_number = orig_line_number + line_number - 1;
+	  yyerror ((char *)NULL);	/* does the right thing */
+	  if (wl)
+	    dispose_words (wl);
+	  wl = &parse_string_error;
+	  break;
+	}
+      wl = make_word_list (yylval.word, wl);
+    }
+  
+  last_read_token = '\n';
+  pop_stream ();
+
+#if defined (HISTORY)
+  remember_on_history = old_remember_on_history;
+#  if defined (BANG_HISTORY)
+  history_expansion_inhibited = old_history_expansion_inhibited;
+#  endif /* BANG_HISTORY */
+#endif /* HISTORY */
+
+  current_command_line_count = orig_line_count;
+  shell_input_line_terminator = orig_input_terminator;
+
+  if (wl == &parse_string_error)
+    {
+      last_command_exit_value = EXECUTION_FAILURE;
+      if (interactive_shell == 0 && posixly_correct)
+	jump_to_top_level (FORCE_EOF);
+      else
+	jump_to_top_level (DISCARD);
+    }
+
+  return (REVERSE_LIST (wl, WORD_LIST *));
 }

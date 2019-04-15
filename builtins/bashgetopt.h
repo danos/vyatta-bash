@@ -16,12 +16,14 @@
 
    You should have received a copy of the GNU General Public License along
    with Bash; see the file COPYING.  If not, write to the Free Software
-   Foundation, 675 Mass Ave, Cambridge, MA 02139, USA. */
+   Foundation, 59 Temple Place, Suite 330, Boston, MA 02111 USA. */
 
 /* See getopt.h for the explanation of these variables. */
 
 #if !defined (__BASH_GETOPT_H)
 #  define __BASH_GETOPT_H
+
+#include <stdc.h>
 
 extern char *list_optarg;
 
@@ -30,8 +32,8 @@ extern int list_optopt;
 extern WORD_LIST *lcurrent;
 extern WORD_LIST *loptend;
 
-extern int internal_getopt ();
-extern void reset_internal_getopt ();
-extern void report_bad_option ();
+extern int internal_getopt __P((WORD_LIST *, char *));
+extern void reset_internal_getopt __P((void));
+extern void report_bad_option __P((void));
 
 #endif /* !__BASH_GETOPT_H */
