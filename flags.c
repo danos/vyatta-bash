@@ -129,7 +129,8 @@ int interactive_comments = 1;
    disallows: changing directories, command or path names containing `/',
    unsetting or resetting the values of $PATH and $SHELL, and any type of
    output redirection. */
-int restricted = 0;
+int restricted = 0;		/* currently restricted */
+int restricted_shell = 0;	/* shell was started in restricted mode. */
 #endif /* RESTRICTED_SHELL */
 
 /* Non-zero means that this shell is running in `privileged' mode.  This
@@ -209,8 +210,8 @@ find_flag (name)
 }
 
 /* Change the state of a flag, and return it's original value, or return
-   FLAG_ERROR if there is no flag called NAME.  ON_OR_OFF should be one
-   of FLAG_ON or FLAG_OFF. */
+   FLAG_ERROR if there is no flag FLAG.  ON_OR_OFF must be either
+   FLAG_ON or FLAG_OFF. */
 int
 change_flag (flag, on_or_off)
   int flag;
@@ -226,17 +227,12 @@ change_flag (flag, on_or_off)
     return (FLAG_ERROR);
 #endif /* RESTRICTED_SHELL */
 
-  if (value == (int *)FLAG_UNKNOWN)
+  if ((value == (int *)FLAG_UNKNOWN) || (on_or_off != FLAG_ON && on_or_off != FLAG_OFF))
     return (FLAG_ERROR);
 
   old_value = *value;
 
-  if (on_or_off == FLAG_ON)
-    *value = 1;
-  else if (on_or_off == FLAG_OFF)
-    *value = 0;
-  else
-    return (FLAG_ERROR);
+  *value = (on_or_off == FLAG_ON) ? 1 : 0;
 
   /* Special cases for a few flags. */
   switch (flag)

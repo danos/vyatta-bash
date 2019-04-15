@@ -23,19 +23,23 @@ $PRODUCES umask.c
 
 $BUILTIN umask
 $FUNCTION umask_builtin
-$SHORT_DOC umask [-S] [mode]
+$SHORT_DOC umask [-p] [-S] [mode]
 The user file-creation mask is set to MODE.  If MODE is omitted, or if
 `-S' is supplied, the current value of the mask is printed.  The `-S'
 option makes the output symbolic; otherwise an octal number is output.
-If MODE begins with a digit, it is interpreted as an octal number,
-otherwise it is a symbolic mode string like that accepted by chmod(1).
+If `-p' is supplied, and MODE is omitted, the output is in a form
+that may be used as input.  If MODE begins with a digit, it is
+interpreted as an octal number, otherwise it is a symbolic mode string
+like that accepted by chmod(1).
 $END
 
 #include <config.h>
 
 #include "../bashtypes.h"
 #include "../filecntl.h"
-#include <sys/file.h>
+#ifndef _MINIX
+#  include <sys/file.h>
+#endif
 
 #if defined (HAVE_UNISTD_H)
 #include <unistd.h>
@@ -63,17 +67,20 @@ int
 umask_builtin (list)
      WORD_LIST *list;
 {
-  int print_symbolically, opt, umask_value;
+  int print_symbolically, opt, umask_value, pflag;
   mode_t umask_arg;
 
-  print_symbolically = 0;
+  print_symbolically = pflag = 0;
   reset_internal_getopt ();
-  while ((opt = internal_getopt (list, "S")) != -1)
+  while ((opt = internal_getopt (list, "Sp")) != -1)
     {
       switch (opt)
 	{
 	case 'S':
 	  print_symbolically++;
+	  break;
+	case 'p':
+	  pflag++;
 	  break;
 	default:
 	  builtin_usage ();
@@ -116,6 +123,8 @@ umask_builtin (list)
       umask_arg = umask (022);
       umask (umask_arg);
 
+      if (pflag)
+	printf ("umask%s ", (print_symbolically ? " -S" : ""));
       if (print_symbolically)
 	print_symbolic_umask (umask_arg);
       else
@@ -165,29 +174,15 @@ print_symbolic_umask (um)
   printf ("u=%s,g=%s,o=%s\n", ubits, gbits, obits);
 }
 
-/* Set the umask from a symbolic mode string similar to that accepted
-   by chmod.  If the -S argument is given, then print the umask in a
-   symbolic form. */
-static int
-symbolic_umask (list)
-     WORD_LIST *list;
+int
+parse_symbolic_mode (mode, initial_bits)
+     char *mode;
+     int initial_bits;
 {
-  int um, umc, c;
-  int who, op, perm, mask;
+  int who, op, perm, mask, bits, c;
   char *s;
 
-  /* Get the initial umask.  Don't change it yet. */
-  um = umask (022);
-  umask (um);
-
-  /* All work below is done with the complement of the umask -- it's
-     more intuitive and easier to deal with.  It is complemented
-     again before being returned. */
-  umc = ~um;
-
-  s = list->word->word;
-
-  for (;;)
+  for (s = mode, bits = initial_bits;;)
     {
       who = op = perm = mask = 0;
 
@@ -196,20 +191,20 @@ symbolic_umask (list)
         {
 	  switch (c = *s++)
 	    {
-	      case 'u':
-	        who |= S_IRWXU;
-	        continue;
-	      case 'g':
-	        who |= S_IRWXG;
-	        continue;
-	      case 'o':
-	        who |= S_IRWXO;
-	        continue;
-	      case 'a':
-	        who |= S_IRWXU | S_IRWXG | S_IRWXO;
-	        continue;
-	      default:
-	        break;
+	    case 'u':
+	      who |= S_IRWXU;
+	      continue;
+	    case 'g':
+	      who |= S_IRWXG;
+	      continue;
+	    case 'o':
+	      who |= S_IRWXO;
+	      continue;
+	    case 'a':
+	      who |= S_IRWXU | S_IRWXG | S_IRWXO;
+	      continue;
+	    default:
+	      break;
 	    }
 	}
 
@@ -217,13 +212,13 @@ symbolic_umask (list)
       op = *s++;
       switch (op)
 	{
-	  case '+':
-	  case '-':
-	  case '=':
-	    break;
-	  default:
-	    builtin_error ("bad symbolic mode operator: %c", op);
-	    return (-1);
+	case '+':
+	case '-':
+	case '=':
+	  break;
+	default:
+	  builtin_error ("bad symbolic mode operator: %c", op);
+	  return (-1);
 	}
 
       /* Parse out the `perm' section of the symbolic mode clause. */
@@ -233,17 +228,15 @@ symbolic_umask (list)
 
 	  switch (c)
 	    {
-	      case 'r':
-		perm |= S_IRUGO;
-		break;
-
-	      case 'w':
-		perm |= S_IWUGO;
-		break;
-
-	      case 'x':
-		perm |= S_IXUGO;
-		break;
+	    case 'r':
+	      perm |= S_IRUGO;
+	      break;
+	    case 'w':
+	      perm |= S_IWUGO;
+	      break;
+	    case 'x':
+	      perm |= S_IXUGO;
+	      break;
 	    }
 	}
 
@@ -256,32 +249,22 @@ symbolic_umask (list)
 
 	  switch (op)
 	    {
-	      case '+':
-	        umc |= perm;
-	        break;
-
-	      case '-':
-	        umc &= ~perm;
-	        break;
-
-	      case '=':
-	        umc &= ~who;
-	        umc |= perm;
-	        break;
-
-#if 0
-	      /* No other values are possible. */
-	      default:
-	      	builtin_error ("bad symbolic mode operator: %c", op);
-	      	return (-1);
-#endif
-	    }
-
-	  if (!*s)
-	    {
-	      um = ~umc & 0777;
+	    case '+':
+	      bits |= perm;
 	      break;
+	    case '-':
+	      bits &= ~perm;
+	      break;
+	    case '=':
+	      bits &= ~who;
+	      bits |= perm;
+	      break;
+
+	    /* No other values are possible. */
 	    }
+
+	  if (*s == '\0')
+	    break;
 	  else
 	    s++;	/* skip past ',' */
 	}
@@ -291,5 +274,28 @@ symbolic_umask (list)
 	  return (-1);
 	}
     }
+
+  return (bits);
+}
+
+/* Set the umask from a symbolic mode string similar to that accepted
+   by chmod.  If the -S argument is given, then print the umask in a
+   symbolic form. */
+static int
+symbolic_umask (list)
+     WORD_LIST *list;
+{
+  int um, bits;
+
+  /* Get the initial umask.  Don't change it yet. */
+  um = umask (022);
+  umask (um);
+
+  /* All work is done with the complement of the umask -- it's
+     more intuitive and easier to deal with.  It is complemented
+     again before being returned. */
+  bits = parse_symbolic_mode (list->word->word, ~um);
+
+  um = ~bits & 0777;
   return (um);
 }

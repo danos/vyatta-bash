@@ -1,4 +1,4 @@
-./type.tests: type: unknown option: f
+./type.tests: type: illegal option: -f
 type: usage: type [-apt] name [name ...]
 ./type.tests: type: notthere: not found
 ./type.tests: command: notthere: not found
@@ -6,6 +6,7 @@ function
 keyword
 alias
 builtin
+file
 file
 file
 func is a function
@@ -39,3 +40,7 @@ builtin is a shell builtin
 /bin/sh
 /tmp/bash
 bash is hashed (/tmp/bash)
+file
+hits	command
+   1	/bin/sh
+   3	/tmp/bash

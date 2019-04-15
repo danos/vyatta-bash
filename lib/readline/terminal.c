@@ -232,6 +232,16 @@ _rl_set_screen_size (rows, cols)
   screenchars = screenwidth * screenheight;
 }
 
+void
+rl_resize_terminal ()
+{
+  if (readline_echoing_p)
+    {
+      _rl_get_screen_size (fileno (rl_instream), 1);
+      _rl_redisplay_after_sigwinch ();
+    }
+}
+
 struct _tc_string {
      char *tc_var;
      char **tc_value;
@@ -434,13 +444,21 @@ rl_reset_terminal (terminal_name)
 }
 
 /* A function for the use of tputs () */
+#ifdef _MINIX
+void
+_rl_output_character_function (c)
+     int c;
+{
+  putc (c, _rl_out_stream);
+}
+#else /* !_MINIX */
 int
 _rl_output_character_function (c)
      int c;
 {
   return putc (c, _rl_out_stream);
 }
-
+#endif /* !_MINIX */
 /* Write COUNT characters from STRING to the output stream. */
 void
 _rl_output_some_chars (string, count)
@@ -519,18 +537,11 @@ ding ()
 /*								    */
 /* **************************************************************** */
 
-static int
-outchar (c)
-     int c;
-{
-  return putc (c, rl_outstream);
-}
-
 void
 _rl_enable_meta_key ()
 {
   if (term_has_meta && term_mm)
-    tputs (term_mm, 1, outchar);
+    tputs (term_mm, 1, _rl_output_character_function);
 }
 
 void
@@ -538,7 +549,7 @@ _rl_control_keypad (on)
      int on;
 {
   if (on && term_ks)
-    tputs (term_ks, 1, outchar);
+    tputs (term_ks, 1, _rl_output_character_function);
   else if (!on && term_ke)
-    tputs (term_ke, 1, outchar);
+    tputs (term_ke, 1, _rl_output_character_function);
 }

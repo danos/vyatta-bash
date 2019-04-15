@@ -43,6 +43,9 @@ $END
 #include <stdio.h>
 
 #if defined (HAVE_UNISTD_H)
+#  ifdef _MINIX
+#    include <sys/types.h>
+#  endif
 #  include <unistd.h>
 #endif
 
@@ -186,6 +189,7 @@ read_builtin (list)
 	  c = rlbuf[rlind++];
 	}
       else
+	{
 #endif
 
       while (((retval = read (0, &c, 1)) < 0) && errno == EINTR)
@@ -195,6 +199,10 @@ read_builtin (list)
 	  eof = 1;
 	  break;
 	}
+
+#if defined (READLINE)
+	}
+#endif
 
       if (i + 2 >= size)
 	input_string = xrealloc (input_string, size += 128);
@@ -395,11 +403,13 @@ bind_read_variable (name, value)
 #if defined (ARRAY_VARS)
   if (valid_array_reference (name) == 0)
     {
+#if 0
       if (legal_identifier (name) == 0)
         {
 	  builtin_error ("`%s': not a valid identifier", name);
 	  return ((SHELL_VAR *)NULL);
         }
+#endif
       return (bind_variable (name, value));
     }
   else

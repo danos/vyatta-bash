@@ -64,6 +64,7 @@ extern int _rl_defining_kbd_macro;
 extern char *_rl_executing_macro;
 
 /* Pseudo-global functions imported from other library files. */
+extern void _rl_replace_text ();
 extern void _rl_pop_executing_macro ();
 extern void _rl_set_the_line ();
 extern void _rl_init_argument ();
@@ -124,7 +125,7 @@ rl_tty_status (count, key)
 {
 #if defined (TIOCSTAT)
   ioctl (1, TIOCSTAT, (char *)0);
-  rl_refresh_line ();
+  rl_refresh_line (count, key);
 #else
   ding ();
 #endif
@@ -164,6 +165,58 @@ rl_extend_line_buffer (len)
     }
 
   _rl_set_the_line ();
+}
+
+
+/* A function for simple tilde expansion. */
+int
+rl_tilde_expand (ignore, key)
+     int ignore, key;
+{
+  register int start, end;
+  char *homedir, *temp;
+  int len;
+
+  end = rl_point;
+  start = end - 1;
+
+  if (rl_point == rl_end && rl_line_buffer[rl_point] == '~')
+    {
+      homedir = tilde_expand ("~");
+      _rl_replace_text (homedir, start, end);
+      return (0);
+    }
+  else if (rl_line_buffer[start] != '~')
+    {
+      for (; !whitespace (rl_line_buffer[start]) && start >= 0; start--)
+        ;
+      start++;
+    }
+
+  end = start;
+  do
+    end++;
+  while (whitespace (rl_line_buffer[end]) == 0 && end < rl_end);
+
+  if (whitespace (rl_line_buffer[end]) || end >= rl_end)
+    end--;
+
+  /* If the first character of the current word is a tilde, perform
+     tilde expansion and insert the result.  If not a tilde, do
+     nothing. */
+  if (rl_line_buffer[start] == '~')
+    {
+      len = end - start + 1;
+      temp = xmalloc (len + 1);
+      strncpy (temp, rl_line_buffer + start, len);
+      temp[len] = '\0';
+      homedir = tilde_expand (temp);
+      free (temp);
+
+      _rl_replace_text (homedir, start, end);
+    }
+
+  return (0);
 }
 
 /* **************************************************************** */
@@ -299,4 +352,14 @@ _rl_digit_value (c)
      int c;
 {
   return (isdigit (c) ? c - '0' : c);
+}
+
+/* Backwards compatibility, now that savestring has been removed from
+   all `public' readline header files. */
+#undef _rl_savestring
+char *
+_rl_savestring (s)
+     char *s;
+{
+  return ((char *)strcpy (xmalloc (1 + (int)strlen (s)), (s)));
 }

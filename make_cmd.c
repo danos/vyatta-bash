@@ -23,7 +23,9 @@ Foundation, 675 Mass Ave, Cambridge, MA 02139, USA. */
 
 #include <stdio.h>
 #include "bashtypes.h"
-#include <sys/file.h>
+#ifndef _MINIX
+#  include <sys/file.h>
+#endif
 #include "filecntl.h"
 #include "bashansi.h"
 #if defined (HAVE_UNISTD_H)
@@ -100,7 +102,6 @@ make_word (string)
   return (make_word_flags (temp, string));
 }
 
-#ifdef INCLUDE_UNUSED
 WORD_DESC *
 make_word_from_token (token)
      int token;
@@ -112,7 +113,6 @@ make_word_from_token (token)
 
   return (make_word (tokenizer));
 }
-#endif
 
 WORD_LIST *
 make_word_list (word, link)
@@ -288,6 +288,73 @@ make_until_command (test, action)
 }
 
 COMMAND *
+make_arith_command (exp)
+     WORD_LIST *exp;
+{
+#if defined (DPAREN_ARITHMETIC)
+  COMMAND *command;
+  ARITH_COM *temp;
+
+  command = (COMMAND *)xmalloc (sizeof (COMMAND));
+  command->value.Arith = temp = (ARITH_COM *)xmalloc (sizeof (ARITH_COM));
+
+  temp->flags = 0;
+  temp->line = line_number;
+  temp->exp = exp;
+
+  command->type = cm_arith;
+  command->redirects = (REDIRECT *)NULL;
+  command->flags = 0;
+
+  return (command);
+#else
+  return ((COMMAND *)NULL);
+#endif
+}
+
+#if defined (COND_COMMAND)
+struct cond_com *
+make_cond_node (type, op, left, right)
+     int type;
+     WORD_DESC *op;
+     struct cond_com *left, *right;
+{
+  COND_COM *temp;
+
+  temp = (COND_COM *)xmalloc (sizeof (COND_COM));
+  temp->flags = 0;
+  temp->line = line_number;
+  temp->type = type;
+  temp->op = op;
+  temp->left = left;
+  temp->right = right;
+
+  return (temp);
+}
+#endif
+
+COMMAND *
+make_cond_command (cond_node)
+     COND_COM *cond_node;
+{
+#if defined (COND_COMMAND)
+  COMMAND *command;
+
+  command = (COMMAND *)xmalloc (sizeof (COMMAND));
+  command->value.Cond = cond_node;
+
+  command->type = cm_cond;
+  command->redirects = (REDIRECT *)NULL;
+  command->flags = 0;
+  command->line = cond_node ? cond_node->line : 0;
+
+  return (command);
+#else
+  return ((COMMAND *)NULL);
+#endif
+}
+
+COMMAND *
 make_bare_simple_command ()
 {
   COMMAND *command;
@@ -426,7 +493,7 @@ make_here_document (temp)
       len = strlen (line);
       if (len + document_index >= document_size)
 	{
-	  document_size = document_size ? 2 * (document_size + len) : 1000;
+	  document_size = document_size ? 2 * (document_size + len) : len + 2;
 	  document = xrealloc (document, document_size);
 	}
 
@@ -516,7 +583,7 @@ make_function_def (name, command, lineno, lstart)
   temp->command = command;
   temp->name = name;
   temp->line = lineno;
-  temp->ignore = 0;
+  temp->flags = 0;
   command->line = lstart;
   return (make_command (cm_function_def, (SIMPLE_COM *)temp));
 }
@@ -529,7 +596,7 @@ clean_simple_command (command)
      COMMAND *command;
 {
   if (command->type != cm_simple)
-    programming_error ("clean_simple_command: bad command type `%d'", command->type);
+    command_error ("clean_simple_command", CMDERR_BADTYPE, command->type, 0);
   else
     {
       command->value.Simple->words =

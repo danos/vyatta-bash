@@ -35,7 +35,9 @@
 #include "config.h"
 
 #include "bashtypes.h"
-#include <sys/file.h>
+#ifndef _MINIX
+#  include <sys/file.h>
+#endif
 #include "posixstat.h"
 #include "bashansi.h"
 #include <stdio.h>
@@ -61,6 +63,7 @@
 
 #include "input.h"
 #include "execute_cmd.h"
+#include "findcmd.h"
 
 #if defined (HISTORY)
 #  include "bashhist.h"
@@ -70,12 +73,20 @@
 #include <tilde/tilde.h>
 #include <glob/fnmatch.h>
 
+#if defined (__OPENNT)
+#  include <opennt/opennt.h>
+#endif
+
 #if !defined (HAVE_GETPW_DECLS)
 extern struct passwd *getpwuid ();
 #endif /* !HAVE_GETPW_DECLS */
 
 #if !defined (errno)
 extern int errno;
+#endif
+
+#if defined (NO_MAIN_ENV_ARG)
+extern char **environ;	/* used if no third argument to main() */
 #endif
 
 extern char *dist_version, *release_status;
@@ -86,6 +97,7 @@ extern int line_number;
 extern char *primary_prompt, *secondary_prompt;
 extern int expand_aliases;
 extern char *this_command_name;
+extern int array_needs_making;
 
 /* Non-zero means that this shell has already been run; i.e. you should
    call shell_reinitialize () if you need to start afresh. */
@@ -106,7 +118,7 @@ char *current_host_name = (char *)NULL;
    Specifically:
    0 = not login shell.
    1 = login shell from getty (or equivalent fake out)
-  -1 = login shell from "-login" flag.
+  -1 = login shell from "--login" flag.
   -2 = both from getty, and from flag.
  */
 int login_shell = 0;
@@ -118,6 +130,10 @@ int interactive = 0;
 
 /* Non-zero means that the shell was started as an interactive shell. */
 int interactive_shell = 0;
+
+/* Non-zero means to send a SIGHUP to all jobs when an interactive login
+   shell exits. */
+int hup_on_exit = 0;
 
 /* Tells what state the shell was in when it started:
 	0 = non-interactive shell script
@@ -177,6 +193,8 @@ static int want_initial_help;		/* --help option */
 int no_line_editing = 0;	/* Don't do fancy line editing. */
 int posixly_correct = 0;	/* Non-zero means posix.2 superset. */
 int dump_translatable_strings;	/* Dump strings in $"...", don't execute. */
+int dump_po_strings;		/* Dump strings in $"..." in po format */
+int wordexp_only = 0;		/* Do word expansion only */
 
 /* Some long-winded argument names.  These are obviously new. */
 #define Int 1
@@ -188,6 +206,7 @@ struct {
   char **char_value;
 } long_args[] = {
   { "debug", Int, &debugging, (char **)0x0 },
+  { "dump-po-strings", Int, &dump_po_strings, (char **)0x0 },
   { "dump-strings", Int, &dump_translatable_strings, (char **)0x0 },
   { "help", Int, &want_initial_help, (char **)0x0 },
   { "login", Int, &make_login_shell, (char **)0x0 },
@@ -201,6 +220,7 @@ struct {
 #endif
   { "verbose", Int, &echo_input_at_read, (char **)0x0 },
   { "version", Int, &do_version, (char **)0x0 },
+  { "wordexp", Int, &wordexp_only, (char **)0x0 },
   { (char *)0x0, Int, (int *)0x0, (char **)0x0 }
 };
 
@@ -231,6 +251,7 @@ static int bind_args ();
 static int open_shell_script ();
 static void set_bash_input ();
 static int run_one_command ();
+static int run_wordexp ();
 
 static int uidget ();
 static int isnetconn ();
@@ -242,15 +263,44 @@ static void shell_reinitialize ();
 
 static void show_shell_usage ();
 
+#ifdef __CYGWIN32__
+static void
+_cygwin32_check_tmp ()
+{
+  struct stat sb;
+
+  if (stat ("/tmp", &sb) < 0)
+    internal_warning ("could not find /tmp, please create!");
+  else
+    {
+      if (S_ISDIR (sb.st_mode) == 0)
+	internal_warning ("/tmp must be a valid directory name");
+    }
+}
+#endif /* __CYGWIN32__ */
+
+#if defined (NO_MAIN_ENV_ARG)
+/* systems without third argument to main() */
+int
+main (argc, argv)
+     int argc;
+     char **argv;
+#else /* !NO_MAIN_ENV_ARG */
 int
 main (argc, argv, env)
      int argc;
      char **argv, **env;
+#endif /* !NO_MAIN_ENV_ARG */
 {
   register int i;
-  int code, saverst;
+  int code, saverst, old_errexit_flag;
   volatile int locally_skip_execution;
   volatile int arg_index, top_level_arg_index;
+#ifdef __OPENNT
+  char **env;
+
+  env = environ;
+#endif /* __OPENNT */
 
   /* Catch early SIGINTs. */
   code = setjmp (top_level);
@@ -258,6 +308,10 @@ main (argc, argv, env)
     exit (2);
 
   check_dev_tty ();
+
+#ifdef __CYGWIN32__
+  _cygwin32_check_tmp ();
+#endif
 
   /* Wait forever if we are debugging a login shell. */
   while (debugging_login_shell);
@@ -339,6 +393,9 @@ main (argc, argv, env)
   this_command_name = shell_name;	/* for error reporting */
   arg_index = parse_shell_options (argv, arg_index, argc);
 
+  if (dump_po_strings)
+    dump_translatable_strings = 1;
+
   if (dump_translatable_strings)
     read_but_dont_execute = 1;
 
@@ -371,6 +428,7 @@ main (argc, argv, env)
 
   if (forced_interactive ||		/* -i flag */
       (!local_pending_command &&	/* No -c command and ... */
+       wordexp_only == 0 &&		/* No --wordexp and ... */
        ((arg_index == argc) ||		/*   no remaining args or... */
 	read_from_stdin) &&		/*   -s flag with args, and */
        isatty (fileno (stdin)) &&	/* Input is a terminal and */
@@ -424,6 +482,7 @@ main (argc, argv, env)
     }
 
   top_level_arg_index = arg_index;
+  old_errexit_flag = exit_immediately_on_error;
 
   /* Give this shell a place to longjmp to before executing the
      startup files.  This allows users to press C-c to abort the
@@ -439,6 +498,9 @@ main (argc, argv, env)
 	  /* Reset job control, since run_startup_files turned it off. */
 	  set_job_control (interactive_shell);
 #endif
+	  /* Reset value of `set -e', since it's turned off before running
+	     the startup files. */
+	  exit_immediately_on_error += old_errexit_flag;
 	  locally_skip_execution++;
 	}
     }
@@ -460,14 +522,27 @@ main (argc, argv, env)
     }
 
 #if defined (RESTRICTED_SHELL)
+  /* Set restricted_shell based on whether the basename of $0 indicates that
+     the shell should be restricted or if the `-r' option was supplied at
+     startup. */
+  restricted_shell = shell_is_restricted (shell_name);
+
   /* If the `-r' option is supplied at invocation, make sure that the shell
      is not in restricted mode when running the startup files. */
-    saverst = restricted;
-    restricted = 0;
+  saverst = restricted;
+  restricted = 0;
 #endif
 
+  /* The startup files are run with `set -e' temporarily disabled. */
   if (locally_skip_execution == 0 && running_setuid == 0)
-    run_startup_files ();
+    {
+      old_errexit_flag = exit_immediately_on_error;
+      exit_immediately_on_error = 0;
+
+      run_startup_files ();
+
+      exit_immediately_on_error += old_errexit_flag;
+    }
 
   /* If we are invoked as `sh', turn on Posix mode. */
   if (act_like_sh)
@@ -480,12 +555,19 @@ main (argc, argv, env)
     }
 
 #if defined (RESTRICTED_SHELL)
-  /* Turn on the restrictions after parsing the startup files.  This
+  /* Turn on the restrictions after executing the startup files.  This
      means that `bash -r' or `set -r' invoked from a startup file will
      turn on the restrictions after the startup files are executed. */
   restricted = saverst || restricted;
   maybe_make_restricted (shell_name);
 #endif /* RESTRICTED_SHELL */
+
+  if (wordexp_only)
+    {
+      startup_state = 3;
+      last_command_exit_value = run_wordexp (argv[arg_index]);
+      exit_shell (last_command_exit_value);
+    }
 
   if (local_pending_command)
     {
@@ -650,7 +732,7 @@ parse_shell_options (argv, arg_start, arg_end)
 	      o_option = argv[next_arg];
 	      if (o_option == 0)
 		{
-		  list_minus_o_opts (-1);
+		  list_minus_o_opts (-1, (on_or_off == '-') ? 0 : 1);
 		  break;
 		}
 	      if (set_minus_o_option (on_or_off, o_option) != EXECUTION_SUCCESS)
@@ -680,7 +762,7 @@ parse_shell_options (argv, arg_start, arg_end)
 }
 
 /* Exit the shell with status S. */
-int
+void
 exit_shell (s)
      int s;
 {
@@ -699,6 +781,11 @@ exit_shell (s)
 #endif /* HISTORY */
 
 #if defined (JOB_CONTROL)
+  /* If the user has run `shopt -s huponexit', hangup all jobs when we exit
+     an interactive login shell.  ksh does this unconditionally. */
+  if (interactive_shell && login_shell && hup_on_exit)
+    hangup_all_jobs ();
+
   /* If this shell is interactive, terminate all stopped jobs and
      restore the original terminal process group. */
   end_job_control ();
@@ -763,16 +850,67 @@ run_startup_files ()
 #if defined (JOB_CONTROL)
   int old_job_control;
 #endif
+  int sourced_login, run_by_ssh;
+  SHELL_VAR *sshvar;
 
-  /* get the rshd case out of the way first. */
+  /* get the rshd/sshd case out of the way first. */
   if (interactive_shell == 0 && no_rc == 0 && login_shell == 0 &&
-      act_like_sh == 0 && local_pending_command && isnetconn (fileno (stdin)))
+      act_like_sh == 0 && local_pending_command)
     {
+      /* Find out if we were invoked by ssh.  If so, set RUN_BY_SSH to 1. */
+      sshvar = find_variable ("SSH_CLIENT");
+      if (sshvar)
+	{
+	  run_by_ssh = 1;
+	  /* Now that we've tested the variable, we need to unexport it. */
+	  sshvar->attributes &= ~att_exported;
+	  array_needs_making = 1;
+	}
+      else
+	run_by_ssh = 0;
+
+      /* If we were run by sshd or we think we were run by rshd, execute
+	 ~/.bashrc. */
+      if (run_by_ssh || isnetconn (fileno (stdin)))
+	{
 #ifdef SYS_BASHRC
-      maybe_execute_file (SYS_BASHRC, 1);
+#  if defined (__OPENNT)
+	  maybe_execute_file (_prefixInstallPath(SYS_BASHRC, NULL, 0), 1);
+#  else
+	  maybe_execute_file (SYS_BASHRC, 1);
+#  endif
 #endif
-      maybe_execute_file (bashrc_file, 1);
-      return;
+	  maybe_execute_file (bashrc_file, 1);
+	  return;
+	}
+    }
+
+#if defined (JOB_CONTROL)
+  /* Startup files should be run without job control enabled. */
+  old_job_control = interactive_shell ? set_job_control (0) : 0;
+#endif
+
+  sourced_login = 0;
+
+  if (login_shell < 0 && posixly_correct == 0)	/* --login flag and not posix */
+    {
+      /* We don't execute .bashrc for login shells. */
+      no_rc++;
+
+      /* Execute /etc/profile and one of the personal login shell
+	 initialization files. */
+      if (no_profile == 0)
+	{
+	  maybe_execute_file (SYS_PROFILE, 1);
+
+	  if (act_like_sh)	/* sh */
+	    maybe_execute_file ("~/.profile", 1);
+	  else if ((maybe_execute_file ("~/.bash_profile", 1) == 0) &&
+		   (maybe_execute_file ("~/.bash_login", 1) == 0))	/* bash */
+	    maybe_execute_file ("~/.profile", 1);
+	}
+
+      sourced_login = 1;
     }
 
   /* A non-interactive shell not named `sh' and not in posix mode reads and
@@ -787,36 +925,37 @@ run_startup_files ()
       return;
     }
 
-#if defined (JOB_CONTROL)
-  /* Startup files should be run without job control enabled. */
-  old_job_control = set_job_control (0);
-#endif
-
   /* Interactive shell or `-su' shell. */
   if (posixly_correct == 0)		  /* bash, sh */
     {
-      /* We don't execute .bashrc for login shells. */
-      if (login_shell)
-	no_rc++;
+      if (login_shell && sourced_login++ == 0)
+	{
+	  /* We don't execute .bashrc for login shells. */
+	  no_rc++;
 
-      /* Execute /etc/profile and one of the personal login shell
-	 initialization files. */
-      if (login_shell && no_profile == 0)
-        {
-	  maybe_execute_file (SYS_PROFILE, 1);
+	  /* Execute /etc/profile and one of the personal login shell
+	     initialization files. */
+	  if (no_profile == 0)
+	    {
+	      maybe_execute_file (SYS_PROFILE, 1);
 
-          if (act_like_sh)	/* sh */
-            maybe_execute_file ("~/.profile", 1);
-          else if ((maybe_execute_file ("~/.bash_profile", 1) == 0) &&
-		   (maybe_execute_file ("~/.bash_login", 1) == 0))	/* bash */
-	    maybe_execute_file ("~/.profile", 1);
-        }
+	      if (act_like_sh)	/* sh */
+		maybe_execute_file ("~/.profile", 1);
+	      else if ((maybe_execute_file ("~/.bash_profile", 1) == 0) &&
+		       (maybe_execute_file ("~/.bash_login", 1) == 0))	/* bash */
+		maybe_execute_file ("~/.profile", 1);
+	    }
+	}
 
       /* bash */
       if (act_like_sh == 0 && no_rc == 0)
 	{
 #ifdef SYS_BASHRC
+#  if defined (__OPENNT)
+	  maybe_execute_file (_prefixInstallPath(SYS_BASHRC, NULL, 0), 1);
+#  else
 	  maybe_execute_file (SYS_BASHRC, 1);
+#  endif`
 #endif
           maybe_execute_file (bashrc_file, 1);
 	}
@@ -837,10 +976,26 @@ run_startup_files ()
 }
 
 #if defined (RESTRICTED_SHELL)
+/* Return 1 if the shell should be a restricted one based on NAME or the
+   value of `restricted'.  Don't actually do anything, just return a
+   boolean value. */
+int
+shell_is_restricted (name)
+     char *name;
+{
+  char *temp;
+
+  if (restricted)
+    return 1;
+  temp = base_pathname (name);
+  return (STREQ (temp, RESTRICTED_SHELL_NAME));
+}
+
 /* Perhaps make this shell a `restricted' one, based on NAME.  If the
    basename of NAME is "rbash", then this shell is restricted.  The
    name of the restricted shell is a configurable option, see config.h.
-   In a restricted shell, PATH and SHELL are read-only and non-unsettable.
+   In a restricted shell, PATH, SHELL, ENV, and BASH_ENV are read-only
+   and non-unsettable.
    Do this also if `restricted' is already set to 1; maybe the shell was
    started with -r. */
 int
@@ -854,6 +1009,8 @@ maybe_make_restricted (name)
     {
       set_var_read_only ("PATH");
       set_var_read_only ("SHELL");
+      set_var_read_only ("ENV");
+      set_var_read_only ("BASH_ENV");
       restricted++;
     }
   return (restricted);
@@ -894,6 +1051,75 @@ disable_priv_mode ()
   current_user.egid = current_user.gid;
 }
 
+static int
+run_wordexp (words)
+     char *words;
+{
+  int code, nw, nb;
+  WORD_DESC *w;
+  WORD_LIST *wl, *result;
+
+  code = setjmp (top_level);
+
+  if (code != NOT_JUMPED)
+    {
+      switch (code)
+	{
+	  /* Some kind of throw to top_level has occured. */
+	case FORCE_EOF:
+	  return last_command_exit_value = 127;
+	case EXITPROG:
+	  return last_command_exit_value;
+	case DISCARD:
+	  return last_command_exit_value = 1;
+	default:
+	  command_error ("run_wordexp", CMDERR_BADJUMP, code, 0);
+	}
+    }
+
+  /* Run it through the parser to get a list of words and expand them */
+  if (words && *words)
+    {
+      with_input_from_string (words, "--wordexp");
+      if (parse_command () != 0)
+        return (126);
+      if (global_command == 0)
+	{
+	  printf ("0\n0\n");
+	  return (0);
+	}
+      if (global_command->type != cm_simple)
+        return (126);
+      wl = global_command->value.Simple->words;
+      result = wl ? expand_words_no_vars (wl) : (WORD_LIST *)0;
+    }
+  else
+    result = (WORD_LIST *)0;
+
+  last_command_exit_value = 0;
+
+  if (result == 0)
+    {
+      printf ("0\n0\n");
+      return (0);
+    }
+
+  /* Count up the number of words and bytes, and print them.  Don't count
+     the trailing NUL byte. */
+  for (nw = nb = 0, wl = result; wl; wl = wl->next)
+    {
+      nw++;
+      nb += strlen (wl->word->word);
+    }
+  printf ("%u\n%u\n", nw, nb);
+  /* Print each word on a separate line.  This will have to be changed when
+     the interface to glibc is completed. */
+  for (wl = result; wl; wl = wl->next)
+    printf ("%s\n", wl->word->word);
+
+  return (0);
+}
+
 #if defined (ONESHOT)
 /* Run one command, given as the argument to the -c option.  Tell
    parse_and_execute not to fork for a simple command. */
@@ -920,7 +1146,7 @@ run_one_command (command)
 	case DISCARD:
 	  return last_command_exit_value = 1;
 	default:
-	  programming_error ("run_one_command: bad jump: code %d", code);
+	  command_error ("run_one_command", CMDERR_BADJUMP, code, 0);
 	}
     }
    return (parse_and_execute (savestring (command), "-c", SEVAL_NOHIST));
@@ -1044,7 +1270,7 @@ open_shell_script (script_name)
 #else /* !BUFFERED_INPUT */
   /* Open the script.  But try to move the file descriptor to a randomly
      large one, in the hopes that any descriptors used by the script will
-      not match with ours. */
+     not match with ours. */
   fd = move_to_high_fd (fd, 0, -1);
 
   default_input = fdopen (fd, "r");
@@ -1109,6 +1335,31 @@ set_bash_input ()
     with_input_from_stream (default_input, dollar_vars[0]);
 #endif /* !BUFFERED_INPUT */
 }
+
+/* Close the current shell script input source and forget about it.  This is
+   extern so execute_cmd.c:initialize_subshell() can call it.  If CHECK_ZERO
+   is non-zero, we close default_buffered_input even if it's the standard
+   input (fd 0). */
+void
+unset_bash_input (check_zero)
+     int check_zero;
+{
+#if defined (BUFFERED_INPUT)
+  if ((check_zero && default_buffered_input >= 0) ||
+      (check_zero == 0 && default_buffered_input > 0))
+    {
+      close_buffered_fd (default_buffered_input);
+      default_buffered_input = bash_input.location.buffered_fd = -1;
+    }
+#else /* !BUFFERED_INPUT */
+  if (default_input)
+    {
+      fclose (default_input);
+      default_input = (FILE *)NULL;
+    }
+#endif /* !BUFFERED_INPUT */
+}
+      
 
 #if !defined (PROGRAM)
 #  define PROGRAM "bash"
@@ -1201,8 +1452,11 @@ shell_initialize ()
   char hostname[256];
 
   /* Line buffer output for stderr and stdout. */
-  setlinebuf (stderr);
-  setlinebuf (stdout);
+  if (shell_initialized == 0)
+    {
+      setlinebuf (stderr);
+      setlinebuf (stdout);
+    }
 
   /* Sort the array of shell builtins so that the binary search in
      find_shell_builtin () works correctly. */
@@ -1254,8 +1508,14 @@ shell_initialize ()
   /* Initialize input streams to null. */
   initialize_bash_input ();
 
-  /* Initialize the shell options. */
-  initialize_shell_options ();
+  /* Initialize the shell options.  Don't import the shell options
+     from the environment variable $SHELLOPTS if we are running in
+     privileged or restricted mode or if the shell is running setuid. */
+#if defined (RESTRICTED_SHELL)
+  initialize_shell_options (privileged_mode||restricted||running_setuid);
+#else
+  initialize_shell_options (privileged_mode||running_setuid);
+#endif
 }
 
 /* Function called by main () when it appears that the shell has already
@@ -1361,15 +1621,15 @@ static int
 isnetconn (fd)
      int fd;
 {
-#if defined (HAVE_GETPEERNAME) && !defined (SVR4_2)
+#if defined (HAVE_GETPEERNAME) && !defined (SVR4_2) && !defined (__BEOS__)
   int rv, l;
   struct sockaddr sa;
 
   l = sizeof(sa);
-  rv = getpeername(0, &sa, &l);
+  rv = getpeername(fd, &sa, &l);
   /* Solaris 2.5 getpeername() returns EINVAL if the fd is not a socket. */
   return ((rv < 0 && (errno == ENOTSOCK || errno == EINVAL)) ? 0 : 1);
-#else /* !HAVE_GETPEERNAME || SVR4_2 */
+#else /* !HAVE_GETPEERNAME || SVR4_2 || __BEOS__ */
 #  if defined (SVR4) || defined (SVR4_2)
   /* Sockets on SVR4 and SVR4.2 are character special (streams) devices. */
   struct stat sb;
@@ -1384,15 +1644,15 @@ isnetconn (fd)
 #    endif /* S_ISFIFO */
   return (S_ISCHR (sb.st_mode));
 #  else /* !SVR4 && !SVR4_2 */
-#    if defined (S_ISSOCK)
+#    if defined (S_ISSOCK) && !defined (__BEOS__)
   struct stat sb;
 
   if (fstat (fd, &sb) < 0)
     return (0);
   return (S_ISSOCK (sb.st_mode));
-#    else /* !S_ISSOCK */
+#    else /* !S_ISSOCK || __BEOS__ */
   return (0);
-#    endif /* !S_ISSOCK */
+#    endif /* !S_ISSOCK || __BEOS__ */
 #  endif /* !SVR4 && !SVR4_2 */
-#endif /* !HAVE_GETPEERNAME || SVR4_2 */
+#endif /* !HAVE_GETPEERNAME || SVR4_2 || __BEOS__ */
 }
