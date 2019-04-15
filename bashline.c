@@ -1720,6 +1720,7 @@ command_word_completion_function (hint_text, state)
   static char *path = (char *)NULL;
   static char *val = (char *)NULL;
   static char *filename_hint = (char *)NULL;
+  static char *fnhint = (char *)NULL;
   static char *dequoted_hint = (char *)NULL;
   static char *directory_part = (char *)NULL;
   static char **glob_matches = (char **)NULL;
@@ -1799,7 +1800,7 @@ command_word_completion_function (hint_text, state)
 	  if (filename_hint)
 	    free (filename_hint);
 
-	  filename_hint = savestring (hint);
+	  fnhint = filename_hint = savestring (hint);
 
 	  istate = 0;
 
@@ -2007,15 +2008,25 @@ globword:
       if (current_path[0] == '.' && current_path[1] == '\0')
 	dot_in_path = 1;
 
+      if (fnhint && fnhint != filename_hint)
+	free (fnhint);
       if (filename_hint)
 	free (filename_hint);
 
       filename_hint = sh_makepath (current_path, hint, 0);
+      /* Need a quoted version (though it doesn't matter much in most
+	 cases) because rl_filename_completion_function dequotes the
+	 filename it gets, assuming that it's been quoted as part of
+	 the input line buffer. */
+      if (strpbrk (filename_hint, "\"'\\"))
+	fnhint = sh_backslash_quote (filename_hint, filename_bstab, 0);
+      else
+	fnhint = filename_hint;
       free (current_path);		/* XXX */
     }
 
  inner:
-  val = rl_filename_completion_function (filename_hint, istate);
+  val = rl_filename_completion_function (fnhint, istate);
   if (mapping_over == 4 && dircomplete_expand)
     set_directory_hook ();
 

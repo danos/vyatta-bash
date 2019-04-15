@@ -1,15 +1,15 @@
 # Polish translation of bash
-# Copyright (C) 2007, 2010, 2011, 2013 Free Software Foundation, Inc.
+# Copyright (C) 2007, 2010, 2011, 2013, 2014 Free Software Foundation, Inc.
 # This file is distributed under the same license as the bash package.
 # Andrzej M. Krzysztofowicz <ankry@mif.pg.gda.pl> 2006,2007.
-# Jakub Bogusz <qboosh@pld-linux.org> 2010-2013.
+# Jakub Bogusz <qboosh@pld-linux.org> 2010-2014.
 #
 msgid ""
 msgstr ""
-"Project-Id-Version: bash 4.3-pre2\n"
+"Project-Id-Version: bash 4.3-rc2\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2014-01-23 16:04-0500\n"
-"PO-Revision-Date: 2013-08-18 11:22+0200\n"
+"POT-Creation-Date: 2014-02-11 11:19-0500\n"
+"PO-Revision-Date: 2014-01-30 20:40+0100\n"
 "Last-Translator: Jakub Bogusz <qboosh@pld-linux.org>\n"
 "Language-Team: Polish <translation-team-pl@lists.sourceforge.net>\n"
 "Language: pl\n"
@@ -49,22 +49,22 @@ msgid "%s: cannot create: %s"
 msgstr "%s: nie można utworzyć: %s"
 
 # ???
-#: bashline.c:3971
+#: bashline.c:3982
 msgid "bash_execute_unix_command: cannot find keymap for command"
 msgstr ""
 "bash_execute_unix_command: nie można znaleźć mapy klawiszy dla polecenia"
 
-#: bashline.c:4058
+#: bashline.c:4069
 #, c-format
 msgid "%s: first non-whitespace character is not `\"'"
 msgstr "%s: pierwszym drukowalnym znakiem nie jest `\"'"
 
-#: bashline.c:4087
+#: bashline.c:4098
 #, c-format
 msgid "no closing `%c' in %s"
 msgstr "brak zamykającego `%c' w %s"
 
-#: bashline.c:4121
+#: bashline.c:4132
 #, c-format
 msgid "%s: missing colon separator"
 msgstr "%s: brak separującego dwukropka"
@@ -72,17 +72,19 @@ msgstr "%s: brak separującego dwukropka"
 #: braces.c:321
 #, c-format
 msgid "brace expansion: cannot allocate memory for %s"
-msgstr ""
+msgstr "rozwijanie nawiasów: nie można przydzielić pamięci dla %s"
 
 #: braces.c:413
 #, c-format
 msgid "brace expansion: failed to allocate memory for %d elements"
 msgstr ""
+"rozwijanie nawiasów: nie udało się przydzielić pamięci dla elementów w "
+"liczbie %d"
 
 #: braces.c:452
 #, c-format
 msgid "brace expansion: failed to allocate memory for `%s'"
-msgstr ""
+msgstr "rozwijanie nawiasów: nie udało się przydzielić pamięci dla `%s'"
 
 #: builtins/alias.def:132
 #, c-format
@@ -147,7 +149,7 @@ msgstr ""
 msgid "HOME not set"
 msgstr "Nie ustawiono HOME"
 
-#: builtins/cd.def:327 builtins/common.c:166 test.c:855
+#: builtins/cd.def:327 builtins/common.c:166 test.c:876
 msgid "too many arguments"
 msgstr "za dużo argumentów"
 
@@ -195,7 +197,7 @@ msgstr "%s: nieprawidłowa opcja"
 msgid "%s: invalid option name"
 msgstr "%s: nieprawidłowa nazwa opcji"
 
-#: builtins/common.c:228 general.c:234 general.c:239
+#: builtins/common.c:228 general.c:235 general.c:240
 #, c-format
 msgid "`%s': not a valid identifier"
 msgstr "`%s': nieprawidłowy identyfikator"
@@ -335,7 +337,7 @@ msgstr "%s: zmienna referencyjna nie może wskazywać na siebie"
 msgid "cannot use `-f' to make functions"
 msgstr "nie można używać `-f' do tworzenia funkcji"
 
-#: builtins/declare.def:410 execute_cmd.c:5349
+#: builtins/declare.def:410 execute_cmd.c:5361
 #, c-format
 msgid "%s: readonly function"
 msgstr "%s: funkcja tylko do odczytu"
@@ -374,7 +376,7 @@ msgstr "%s: nie jest ładowany dynamicznie"
 msgid "%s: cannot delete: %s"
 msgstr "%s: nie można usunąć: %s"
 
-#: builtins/evalfile.c:140 builtins/hash.def:171 execute_cmd.c:5196
+#: builtins/evalfile.c:140 builtins/hash.def:171 execute_cmd.c:5208
 #: shell.c:1481
 #, c-format
 msgid "%s: is a directory"
@@ -604,7 +606,7 @@ msgstr "uwaga: %s: %s"
 #: builtins/printf.def:768
 #, c-format
 msgid "format parsing problem: %s"
-msgstr ""
+msgstr "problem z analizą formatu: %s"
 
 #: builtins/printf.def:865
 msgid "missing hex digit for \\x"
@@ -952,42 +954,42 @@ msgstr "TIMEFORMAT: `%c': nieprawidłowy znak formatujący"
 msgid "pipe error"
 msgstr "błąd potoku"
 
-#: execute_cmd.c:4374
+#: execute_cmd.c:4386
 #, c-format
 msgid "%s: maximum function nesting level exceeded (%d)"
 msgstr "%s: przekroczono maksymalny poziom zagnieżdżenia funkcji (%d)"
 
-#: execute_cmd.c:4872
+#: execute_cmd.c:4884
 #, c-format
 msgid "%s: restricted: cannot specify `/' in command names"
 msgstr "%s: ograniczony: nie można podawać `/' w nazwach poleceń"
 
-#: execute_cmd.c:4961
+#: execute_cmd.c:4973
 #, c-format
 msgid "%s: command not found"
 msgstr "%s: nie znaleziono polecenia"
 
-#: execute_cmd.c:5194
+#: execute_cmd.c:5206
 #, c-format
 msgid "%s: %s"
 msgstr "%s: %s"
 
-#: execute_cmd.c:5231
+#: execute_cmd.c:5243
 #, c-format
 msgid "%s: %s: bad interpreter"
 msgstr "%s: %s: zły interpreter"
 
-#: execute_cmd.c:5268
+#: execute_cmd.c:5280
 #, c-format
 msgid "%s: cannot execute binary file: %s"
 msgstr "%s: nie można uruchomić pliku binarnego: %s"
 
-#: execute_cmd.c:5340
+#: execute_cmd.c:5352
 #, c-format
 msgid "`%s': is a special builtin"
 msgstr "`%s' jest specjalnym poleceniem wewnętrznym"
 
-#: execute_cmd.c:5392
+#: execute_cmd.c:5404
 #, c-format
 msgid "cannot duplicate fd %d to fd %d"
 msgstr "nie można skopiować deskryptora pliku %d do %d"
@@ -1060,7 +1062,7 @@ msgstr "wartość za duża na podstawę"
 msgid "%s: expression error\n"
 msgstr "%s: błąd w wyrażeniu\n"
 
-#: general.c:61
+#: general.c:62
 msgid "getcwd: cannot access parent directories"
 msgstr "getcwd: niemożliwy dostęp do katalogów nadrzędnych"
 
@@ -1069,12 +1071,12 @@ msgstr "getcwd: niemożliwy dostęp do katalogów nadrzędnych"
 msgid "cannot reset nodelay mode for fd %d"
 msgstr "nie można wyłączyć trybu nieblokującego dla deskryptora %d"
 
-#: input.c:269
+#: input.c:271
 #, c-format
 msgid "cannot allocate new file descriptor for bash input from fd %d"
 msgstr "nie można przydzielić nowego deskryptora pliku dla wejścia basha z %d"
 
-#: input.c:277
+#: input.c:279
 #, c-format
 msgid "save_bash_input: buffer already exists for new fd %d"
 msgstr "save_bash_input: bufor dla nowego deskryptora %d już istnieje"
@@ -1377,99 +1379,99 @@ msgstr ""
 msgid "make_redirection: redirection instruction `%d' out of range"
 msgstr "make_redirection: instrukcja przekierowania `%d' poza zakresem"
 
-#: parse.y:3273 parse.y:3556
+#: parse.y:3278 parse.y:3561
 #, c-format
 msgid "unexpected EOF while looking for matching `%c'"
 msgstr "nieoczekiwany EOF podczas poszukiwania pasującego `%c'"
 
-#: parse.y:4163
+#: parse.y:4170
 msgid "unexpected EOF while looking for `]]'"
 msgstr "nieoczekiwany EOF podczas poszukiwania `]]'"
 
-#: parse.y:4168
+#: parse.y:4175
 #, c-format
 msgid "syntax error in conditional expression: unexpected token `%s'"
 msgstr "błąd składni w wyrażeniu warunkowym: nieoczekiwany znacznik `%s'"
 
-#: parse.y:4172
+#: parse.y:4179
 msgid "syntax error in conditional expression"
 msgstr "błąd składni w wyrażeniu warunkowym"
 
-#: parse.y:4250
+#: parse.y:4257
 #, c-format
 msgid "unexpected token `%s', expected `)'"
 msgstr "nieoczekiwany znacznik `%s', oczekiwano `)'"
 
-#: parse.y:4254
+#: parse.y:4261
 msgid "expected `)'"
 msgstr "oczekiwano `)'"
 
-#: parse.y:4282
+#: parse.y:4289
 #, c-format
 msgid "unexpected argument `%s' to conditional unary operator"
 msgstr "nieoczekiwany argument `%s' jednoargumentowego operatora warunkowego"
 
-#: parse.y:4286
+#: parse.y:4293
 msgid "unexpected argument to conditional unary operator"
 msgstr "nieoczekiwany argument jednoargumentowego operatora warunkowego"
 
-#: parse.y:4332
+#: parse.y:4339
 #, c-format
 msgid "unexpected token `%s', conditional binary operator expected"
 msgstr "nieoczekiwany argument `%s', oczekiwano dwuarg. operatora warunkowego"
 
-#: parse.y:4336
+#: parse.y:4343
 msgid "conditional binary operator expected"
 msgstr "oczekiwano dwuargumentowego operatora warunkowego"
 
-#: parse.y:4358
+#: parse.y:4365
 #, c-format
 msgid "unexpected argument `%s' to conditional binary operator"
 msgstr "nieoczekiwany argument `%s' dwuargumentowego operatora warunkowego"
 
-#: parse.y:4362
+#: parse.y:4369
 msgid "unexpected argument to conditional binary operator"
 msgstr "nieoczekiwany argument dwuargumentowego operatora warunkowego"
 
-#: parse.y:4373
+#: parse.y:4380
 #, c-format
 msgid "unexpected token `%c' in conditional command"
 msgstr "nieoczekiwany znacznik `%c' w poleceniu warunkowym"
 
-#: parse.y:4376
+#: parse.y:4383
 #, c-format
 msgid "unexpected token `%s' in conditional command"
 msgstr "nieoczekiwany znacznik `%s' w poleceniu warunkowym"
 
-#: parse.y:4380
+#: parse.y:4387
 #, c-format
 msgid "unexpected token %d in conditional command"
 msgstr "nieoczekiwany znacznik %d w poleceniu warunkowym"
 
-#: parse.y:5730
+#: parse.y:5737
 #, c-format
 msgid "syntax error near unexpected token `%s'"
 msgstr "błąd składni przy nieoczekiwanym znaczniku `%s'"
 
-#: parse.y:5748
+#: parse.y:5755
 #, c-format
 msgid "syntax error near `%s'"
 msgstr "błąd składni przy `%s'"
 
-#: parse.y:5758
+#: parse.y:5765
 msgid "syntax error: unexpected end of file"
 msgstr "błąd składni: nieoczekiwany koniec pliku"
 
-#: parse.y:5758
+#: parse.y:5765
 msgid "syntax error"
 msgstr "błąd składni"
 
-#: parse.y:5820
+#: parse.y:5827
 #, c-format
 msgid "Use \"%s\" to leave the shell.\n"
 msgstr "Użyj \"%s\", aby opuścić tę powłokę.\n"
 
-#: parse.y:5982
+#: parse.y:5989
 msgid "unexpected EOF while looking for matching `)'"
 msgstr "nieoczekiwany EOF podczas poszukiwania pasującego `)'"
 
@@ -1891,17 +1893,17 @@ msgstr "oczekiwano `)'"
 msgid "`)' expected, found %s"
 msgstr "oczekiwano `)', znaleziono %s"
 
-#: test.c:281 test.c:721 test.c:724
+#: test.c:281 test.c:742 test.c:745
 #, c-format
 msgid "%s: unary operator expected"
 msgstr "%s: oczekiwano operatora jednoargumentowego"
 
-#: test.c:468 test.c:764
+#: test.c:468 test.c:785
 #, c-format
 msgid "%s: binary operator expected"
 msgstr "%s: oczekiwano operatora dwuargumentowego"
 
-#: test.c:839
+#: test.c:860
 msgid "missing `]'"
 msgstr "brakujący `]'"
 
@@ -1938,9 +1940,9 @@ msgid "shell level (%d) too high, resetting to 1"
 msgstr "poziom powłoki (%d) jest za duży, ustawiono na 1"
 
 #: variables.c:1865
-#, fuzzy, c-format
+#, c-format
 msgid "%s: circular name reference"
-msgstr "%s: nieprawidłowa nazwa zmiennej przy odwołaniu do nazwy"
+msgstr "%s: cykliczne odwołanie do nazwy"
 
 #: variables.c:2228
 msgid "make_local_variable: no function context at current scope"
@@ -1999,9 +2001,8 @@ msgid "%s: %s: compatibility value out of range"
 msgstr "%s: %s: wartość kompatybilna poza zakresem"
 
 #: version.c:46
-#, fuzzy
 msgid "Copyright (C) 2013 Free Software Foundation, Inc."
-msgstr "Copyright (C) 2012 Free Software Foundation, Inc."
+msgstr "Copyright (C) 2013 Free Software Foundation, Inc."
 
 #: version.c:47 version2.c:47
 msgid ""
@@ -2084,9 +2085,8 @@ msgid "caller [expr]"
 msgstr "caller [wyrażenie]"
 
 #: builtins.c:64
-#, fuzzy
 msgid "cd [-L|[-P [-e]] [-@]] [dir]"
-msgstr "cd [-L|[-P [-e]]] [katalog]"
+msgstr "cd [-L|[-P [-e]] [-@]] [katalog]"
 
 #: builtins.c:66
 msgid "pwd [-LP]"
@@ -2641,7 +2641,6 @@ msgstr ""
 "    jest nieprawidłowe."
 
 #: builtins.c:385
-#, fuzzy
 msgid ""
 "Change the shell working directory.\n"
 "    \n"
@@ -2710,6 +2709,8 @@ msgstr ""
 "    \tprzetworzeniem wszystkich `..'\n"
 "        -e\tjeśli podano opcję -P, a nie można określić bieżącego katalogu,\n"
 "    \tpolecenie kończy się stanem niezerowym\n"
+"        -@  na systemach obsługujących je, zaprezentowanie pliku mającego\n"
+"            rozszerzone atrybuty jako katalogu zawierającego atrybuty pliku\n"
 "    \n"
 "    Domyślne jest śledzenie dowiązań symbolicznych, jak z opcją `-L'.\n"
 "    `..' jest przetwarzane przez usunięcie bezpośredniego poprzedniego\n"
@@ -3351,7 +3352,6 @@ msgstr ""
 "    lub wystąpi błąd."
 
 #: builtins.c:784
-#, fuzzy
 msgid ""
 "Remember or display program locations.\n"
 "    \n"
@@ -3506,6 +3506,7 @@ msgstr ""
 "    Zwracana jest prawda, chyba że podano błędną opcję lub wystąpi błąd."
 
 #: builtins.c:869
+#, fuzzy
 msgid ""
 "Display status of jobs.\n"
 "    \n"
@@ -3514,7 +3515,7 @@ msgid ""
 "    \n"
 "    Options:\n"
 "      -l\tlists process IDs in addition to the normal information\n"
-"      -n\tlist only processes that have changed status since the last\n"
+"      -n\tlists only processes that have changed status since the last\n"
 "    \tnotification\n"
 "      -p\tlists process IDs only\n"
 "      -r\trestrict output to running jobs\n"
@@ -4088,7 +4089,6 @@ msgstr ""
 "    Zwracana jest prawda, chyba że podano nieprawidłową opcję lub NAZWĘ."
 
 #: builtins.c:1167
-#, fuzzy
 msgid ""
 "Mark shell variables as unchangeable.\n"
 "    \n"
@@ -4120,8 +4120,9 @@ msgstr ""
 "      -a\tdziałanie na zmiennych tablicowych indeksowanych\n"
 "      -A\tdziałanie na zmiennych tablicowych asocjacyjnych\n"
 "      -f\tdziałanie na funkcjach powłoki\n"
-"      -p\twyświetlenie listy wszystkich zmiennych i funkcji tylko do "
-"odczytu\n"
+"      -p\twyświetlenie listy wszystkich zmiennych lub funkcji tylko do "
+"odczytu,\n"
+"            w zależności od tego, czy podano opcję -f\n"
 "    \n"
 "    Argument `--' wyłącza dalsze przetwarzanie opcji.\n"
 "    \n"

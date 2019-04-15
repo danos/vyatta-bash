@@ -5716,3 +5716,135 @@ support/shobj-conf
 	  idea is that the minor versions should all be API/ABI compatible,
 	  and it is better to link automatically with the latest one.  Idea
 	  from Max Horn <max@quendi.de>
+
+				   1/29
+				   ----
+[bash-4.3-rc2 released]
+
+				   1/30
+				   ----
+lib/readline/readline.h
+	- rl_clear_history, rl_free_keymap: add extern declarations.  Report
+	  from Hiroo Hayashi <hiroo.hayashi@computer.org>
+
+general.c
+	- include trap.h for any_signals_trapped() prototype
+
+lib/sh/unicode.c
+	- include <stdio.h> for sprintf prototype
+
+				   1/31
+				   ----
+execute_cmd.c
+	- execute_simple_command: only posix-mode shells should exit on an
+	  assignment failure in the temporary environment preceding a special
+	  builtin. This is what the documentation and code comments have
+	  always said
+	- execute_simple_command: make sure redirection errors, word expansion
+	  errors, and assignment errors to Posix special builtins cause a
+	  non-interactive posix mode shell to exit.  Previously the shell
+	  would not exit if the failed special builtin was on the LHS of ||
+	  or &&
+
+pathexp.c
+	- quote_string_for_globbing: when quoting a regular expression
+	  (QGLOB_REGEXP), allow an unquoted backslash to pass through
+	  unaltered. Don't use it as a quote character or quote it.  More
+	  investigation from 1/24 and report by Mike Frysinger
+	  <vapier@gentoo.org>
+	- quote_string_for_globbing: when quoting a regular expression
+	  (QGLOB_REGEXP), turn CTLESC CTLESC into CTLESC without adding a
+	  backslash to quote it. We should not have to quote it because it is
+	  not a character special to EREs. More investigation from 1/24
+
+lib/glob/glob.c
+	- glob_testdir: now takes a second flags argument (currently unused);
+	  changed prototype and callers
+
+				    2/1
+				    ---
+lib/glob/glob.c
+	- glob_testdir: if flags argument includes GX_ALLDIRS (globstar), use
+	  lstat so we skip symlinks when traversing the directory tree.
+	  Originally reported by Chris Down <chris@chrisdown.name>
+
+				    2/2
+				    ---
+lib/readline/undo.c
+	- rl_do_undo: make sure CUR is non-zero before dereferencing it to
+	  check cur->data against rl_undo_list.  Report and fix from
+	  Andreas Schwab <schwab@linux-m68k.org>
+
+doc/{bash.1,bashref.texi}
+	- added slight clarifying language to the description of $*,
+	  describing what happens when the expansion is not within double
+	  quotes
+
+				    2/4
+				    ---
+test.c
+	- unary_test: add code to -v case so that it interprets `bare' array
+	  references (foo[1]) and returns true if that index has a value
+
+				    2/5
+				    ---
+trap.c
+	- restore_default_signal: fix SIGCHLD special case for SIG_TRAPPED flag
+	  off but SIG_INPROGRESS mode set and handler IMPOSSIBLE_TRAP_HANDLER;
+	  continue with resetting handler in this case. maybe_set_sigchld_trap
+	  will check these things before resetting sigchld trap from
+	  run_sigchld_trap.  Fixes (apparently long-standing?) problem reported
+	  by Alexandru Damian <alexandru.damian@intel.com>
+
+				    2/6
+				    ---
+lib/sh/strtrans.c
+	- ansic_quote: fixed a bug when copying a printable character that
+	  consumes more than one byte; byte counter was not being incremented.
+	  Bug report from jidanni@jidanni.org
+
+				    2/7
+				    ---
+input.c
+	- getc_with_restart: if read(2) returns -1/EINTR and interrupt_state or
+	  terminating_signal is set (which means QUIT; will longjmp out of this
+	  function), make sure the local buffer variables are zeroed out to
+	  avoid reading past the end of the buffer on the next call.  Bug report
+	  from Dan Jacobson <jidanni@jidanni.org>
+
+				    2/9
+				    ---
+bashline.c
+	- command_word_completion_function: if a directory in $PATH contains
+	  quote characters, we need to quote them before passing the candidate
+	  path to rl_filename_completion_function, which performs dequoting on
+	  the pathname it's passed.  Fixes bug reported by Ilyushkin Nikita
+	  <ilyushkeane@gmail.com>
+
+				   2/11
+				   ----
+parse.y
+	- xparse_dolparen: save and restore shell_eof_token around call to
+	  parse_string, intead of just leaving it set to ')'
+	- shell_getc: when -v is set, only print the command line when
+	  shell_eof_token is 0, so we don't print it multiple times when
+	  recursively entering the parser to parse $(...) commands.  Fixes
+	  bug reported by Greg Wooledge <wooledg@eeg.ccf.org>
+
+[changed release status to 4.3-release]
+
+				   2/13
+				   ----
+lib/sh/strtrans.c
+	- ansic_quote: handle case where mbrtowc reports that the multibyte
+	  sequence is incomplete or invalid.  Fixes bug reported by
+	  Eduardo A. Bustamante López <dualbus@gmail.com>
+
+				   2/14
+				   ----
+variables.c
+	- find_variable_nameref_context: fix a problem that caused the loop
+	  to go one context too close to the global context.  In some cases,
+	  simple variable assignment would set a variable in the global
+	  context instead of a local context.  Bug report from
+	  Geir Hauge <geir.hauge@gmail.com>
