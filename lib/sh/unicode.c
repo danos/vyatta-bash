@@ -1,6 +1,6 @@
 /* unicode.c - functions to convert unicode characters */
 
-/* Copyright (C) 2010-2012 Free Software Foundation, Inc.
+/* Copyright (C) 2010-2015 Free Software Foundation, Inc.
 
    This file is part of GNU Bash, the Bourne Again SHell.
 
@@ -78,13 +78,15 @@ stub_charset ()
   s = strrchr (locale, '.');
   if (s)
     {
-      strcpy (charsetbuf, s+1);
+      strncpy (charsetbuf, s+1, sizeof (charsetbuf) - 1);
+      charsetbuf[sizeof (charsetbuf) - 1] = '\0';
       t = strchr (charsetbuf, '@');
       if (t)
 	*t = 0;
       return charsetbuf;
     }
-  strcpy (charsetbuf, locale);
+  strncpy (charsetbuf, locale, sizeof (charsetbuf) - 1);
+  charsetbuf[sizeof (charsetbuf) - 1] = '\0';
   return charsetbuf;
 }
 #endif
@@ -234,7 +236,7 @@ u32toutf16 (c, s)
 }
 
 /* convert a single unicode-32 character into a multibyte string and put the
-   result in S, which must be large enough (at least MB_LEN_MAX bytes) */
+   result in S, which must be large enough (at least max(10,MB_LEN_MAX) bytes) */
 int
 u32cconv (c, s)
      unsigned long c;

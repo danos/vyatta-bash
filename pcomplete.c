@@ -117,7 +117,7 @@ static int it_init_setopts __P((ITEMLIST *));
 static int it_init_shopts __P((ITEMLIST *));
 
 static int shouldexp_filterpat __P((char *));
-static char *preproc_filterpat __P((char *, char *));
+static char *preproc_filterpat __P((char *, const char *));
 
 static void init_itemlist_from_varlist __P((ITEMLIST *, SVFUNC *));
 
@@ -183,6 +183,7 @@ ITEMLIST it_variables = { LIST_DYNAMIC, it_init_variables, (STRINGLIST *)0 };
 
 COMPSPEC *pcomp_curcs;
 const char *pcomp_curcmd;
+const char *pcomp_curtxt;
 
 #ifdef DEBUG
 /* Debugging code */
@@ -272,7 +273,7 @@ shouldexp_filterpat (s)
 static char *
 preproc_filterpat (pat, text)
      char *pat;
-     char *text;
+     const char *text;
 {
   char *ret;
 
@@ -288,7 +289,8 @@ preproc_filterpat (pat, text)
 STRINGLIST *
 filter_stringlist (sl, filterpat, text)
      STRINGLIST *sl;
-     char *filterpat, *text;
+     char *filterpat;
+     const char *text;
 {
   int i, m, not;
   STRINGLIST *ret;
@@ -299,13 +301,17 @@ filter_stringlist (sl, filterpat, text)
 
   npat = shouldexp_filterpat (filterpat) ? preproc_filterpat (filterpat, text) : filterpat;
 
+#if defined (EXTENDED_GLOB)
+  not = (npat[0] == '!' && (extended_glob == 0 || npat[1] != '('));	/*)*/
+#else
   not = (npat[0] == '!');
+#endif
   t = not ? npat + 1 : npat;
 
   ret = strlist_create (sl->list_size);
   for (i = 0; i < sl->list_len; i++)
     {
-      m = strmatch (t, sl->list[i], FNMATCH_EXTFLAG);
+      m = strmatch (t, sl->list[i], FNMATCH_EXTFLAG | FNMATCH_IGNCASE);
       if ((not && m == FNM_NOMATCH) || (not == 0 && m != FNM_NOMATCH))
 	free (sl->list[i]);
       else
@@ -753,6 +759,32 @@ pcomp_filename_completion_function (text, state)
 	     quoted strings. */
 	  dfn = (*rl_filename_dequoting_function) ((char *)text, rl_completion_quote_character);
 	}
+      /* Intended to solve a mismatched assumption by bash-completion.  If
+	 the text to be completed is empty, but bash-completion turns it into
+	 a quoted string ('') assuming that this code will dequote it before
+	 calling readline, do the dequoting. */
+      else if (iscompgen && iscompleting &&
+	       pcomp_curtxt && *pcomp_curtxt == 0 &&
+	       text && (*text == '\'' || *text == '"') && text[1] == text[0] && text[2] == 0 && 
+	       rl_filename_dequoting_function)
+	dfn = (*rl_filename_dequoting_function) ((char *)text, rl_completion_quote_character);
+      /* Another mismatched assumption by bash-completion.  If compgen is being
+      	 run as part of bash-completion, and the argument to compgen is not
+      	 the same as the word originally passed to the programmable completion
+      	 code, dequote the argument if it has quote characters.  It's an
+      	 attempt to detect when bash-completion is quoting its filename
+      	 argument before calling compgen. */
+      /* We could check whether gen_shell_function_matches is in the call
+	 stack by checking whether the gen-shell-function-matches tag is in
+	 the unwind-protect stack, but there's no function to do that yet.
+	 We could simply check whether we're executing in a function by
+	 checking variable_context, and may end up doing that. */
+      else if (iscompgen && iscompleting && rl_filename_dequoting_function &&
+	       pcomp_curtxt && text &&
+	       STREQ (pcomp_curtxt, text) == 0 &&
+	       variable_context &&
+	       sh_contains_quotes (text))	/* guess */
+	dfn = (*rl_filename_dequoting_function) ((char *)text, rl_completion_quote_character);
       else
 	dfn = savestring (text);
     }
@@ -1160,9 +1192,9 @@ gen_shell_function_matches (cs, cmd, text, line, ind, lwords, nw, cw, foundp)
 /* Build a command string with
 	$0 == cs->command	(command to execute for completion list)
    	$1 == command name	(command being completed)
-   	$2 = word to be completed (possibly null)
-   	$3 = previous word
-   and run in with command substitution.  Parse the results, one word
+	$2 == word to be completed (possibly null)
+	$3 == previous word
+   and run it with command substitution.  Parse the results, one word
    per line, with backslashes allowed to escape newlines.  Build a
    STRINGLIST from the results and return it. */
 
@@ -1265,7 +1297,7 @@ command_line_to_word_list (line, llen, sentinel, nwp, cwp)
 #else
   delims = rl_completer_word_break_characters;
 #endif
-  ret = split_at_delims (line, llen, delims, sentinel, SD_NOQUOTEDELIM, nwp, cwp);
+  ret = split_at_delims (line, llen, delims, sentinel, SD_NOQUOTEDELIM|SD_COMPLETE, nwp, cwp);
   return (ret);
 }
 
@@ -1495,6 +1527,8 @@ pcomp_set_readline_variables (flags, nval)
      option is supposed to turn it off */
   if (flags & COPT_NOQUOTE)
     rl_filename_quoting_desired = 1 - nval;
+  if (flags & COPT_NOSORT)
+    rl_sort_completion_matches = 1 - nval;
 }
 
 /* Set or unset FLAGS in the options word of the current compspec.
@@ -1522,7 +1556,7 @@ gen_progcomp_completions (ocmd, cmd, word, start, end, foundp, retryp, lastcs)
      COMPSPEC **lastcs;
 {
   COMPSPEC *cs, *oldcs;
-  const char *oldcmd;
+  const char *oldcmd, *oldtxt;
   STRINGLIST *ret;
 
   cs = progcomp_search (ocmd);
@@ -1545,14 +1579,17 @@ gen_progcomp_completions (ocmd, cmd, word, start, end, foundp, retryp, lastcs)
 
   oldcs = pcomp_curcs;
   oldcmd = pcomp_curcmd;
+  oldtxt = pcomp_curtxt;
 
   pcomp_curcs = cs;
   pcomp_curcmd = cmd;
+  pcomp_curtxt = word;
 
   ret = gen_compspec_completions (cs, cmd, word, start, end, foundp);
 
   pcomp_curcs = oldcs;
   pcomp_curcmd = oldcmd;
+  pcomp_curtxt = oldtxt;
 
   /* We need to conditionally handle setting *retryp here */
   if (retryp)
