@@ -39,7 +39,7 @@ ifneq (,$(findstring nostrip,$(DEB_BUILD_OPTIONS)))
 endif
 
 
-dpkg_buildflags = DEB_CFLAGS_MAINT_APPEND="-Wall -no-pie" dpkg-buildflags
+dpkg_buildflags = DEB_CFLAGS_MAINT_APPEND=-Wall dpkg-buildflags
 CFLAGS := $(shell $(dpkg_buildflags) --get CFLAGS)
 CPPFLAGS := $(shell $(dpkg_buildflags) --get CPPFLAGS)
 LDFLAGS := $(shell $(dpkg_buildflags) --get LDFLAGS)
@@ -55,7 +55,7 @@ with_installed_rl = no
 
 debflags =
 
-p	= bash
+p	= vyatta-bash
 p_stat	= bash-static
 p_bins	= bash-builtins
 p_doc	= bash-doc
@@ -70,6 +70,7 @@ termcap_lib := $(if $(wildcard /usr/lib/libtinfo.so /usr/lib/$(DEB_HOST_MULTIARC
 		 -lncurses)
 
 conf_args = \
+	--with-curses \
 	--enable-largefile \
 	--prefix=/usr \
 	--infodir=/usr/share/info \
@@ -88,7 +89,7 @@ static_conf_args := $(conf_args) \
 	--without-bash-malloc \
 
 #build: bash-build static-build preinst-build check
-build: before-build bash-build static-build preinst-build check
+build: before-build bash-build check
 build-arch: build
 build-indep: build
 
@@ -166,6 +167,7 @@ clean:
 	rm -f debian/README.Debian
 	rm -rf locales
 	rm -f clear_console
+	rm -rf .pc
 	dh_clean
 
 preinst-build: debian/bash.preinst
@@ -188,15 +190,10 @@ bash-install: bash-build stamps/stamp-install-bash
 stamps/stamp-install-bash: before-build stamps/stamp-build-bash
 	dh_testdir
 	dh_testroot
-	dh_prep -p$(p) -p$(p_doc) -p$(p_bins)
+	dh_prep -p$(p)
 	dh_installdirs -p$(p) \
-		bin \
-		etc/skel \
-		usr/share/doc/$(p)
-	dh_installdirs -p$(p_doc) \
-		usr/share/doc/$(p)
-	dh_installdirs -p$(p_bins) \
-		usr/share/doc/$(p)/examples/loadables
+		bin
+	dh_configpackage
 
 ifeq ($(with_gfdl),yes)
 # XXXXX
@@ -207,55 +204,11 @@ endif
 	$(MAKE) -C build-bash install \
 		YACC="$(YACC)" \
 		DESTDIR=$(CURDIR)/$(d)
-	mv $(d)/usr/bin/bash $(d)/bin/.
-	chmod 755 $(d)/usr/bin/bashbug
-	$(ID) debian/bashbug.1 $(d)/usr/share/man/man1/
-ifneq ($(with_gfdl),yes)
-	mkdir -p $(d)/usr/share/man/man1
-	cp -p bash/doc/bash.1 $(d)/usr/share/man/man1/bash.1
-endif
-	rm -f $(d)/usr/share/doc/bash/*.html
-	rm -f $(d)/usr/share/info/*.info
-	rm -f $(d)/usr/share/info/dir*
+	mv $(d)/usr/bin/vbash $(d)/bin/.
+	mv  $(CURDIR)/clear_console $(d)/usr/bin/clear_console.vyatta
 
-	: # extra links
-	ln -sf bash $(d)/bin/rbash
-
-	: # skeleton files
-	$(ID) debian/etc.bash.bashrc $(d)/etc/bash.bashrc
-	$(ID) debian/skel.bashrc $(d)/etc/skel/.bashrc
-	$(ID) debian/skel.profile $(d)/etc/skel/.profile
-	$(ID) debian/skel.bash_logout $(d)/etc/skel/.bash_logout
-
-	: # clean_console
-ifneq (,$(findstring $(DEB_HOST_ARCH_OS), linux freebsd))
-	$(IX) clear_console $(d)/usr/bin/
-	$(ID) debian/clear_console.1 $(d)/usr/share/man/man1/
-endif
-
-	: # files for the bash-doc package
-
-	dh_installexamples -p$(p_doc) examples/*
-	mv $(d_doc)/usr/share/doc/$(p_doc)/examples \
-		$(d_doc)/usr/share/doc/$(p)/examples
-	rm -rf $(d_doc)/usr/share/doc/$(p)/examples/loadables
-	ln -sf ../$(p)/examples $(d_doc)/usr/share/doc/$(p_doc)/examples
-
-	rm -rf $(d_doc)/usr/share/doc/$(p)/examples/obashdb
-	cd $(d_doc)/usr/share/doc/$(p)/examples && chmod 755 \
-		misc/aliasconv.*sh misc/cshtobash
-
-	cd $(d_doc)/usr/share/doc/$(p)/examples && chmod 644 \
-		scripts/shprompt
-
-	: # files for the bash-builtins package
-	mv $(d)/usr/include $(d_bins)/usr/.
-	mv $(d)/usr/lib $(d_bins)/usr/.
-	$(ID) examples/loadables/{README,*.c} \
-		$(d_bins)/usr/share/doc/$(p)/examples/loadables
-	$(ID) build-bash/examples/loadables/Makefile \
-		$(d_bins)/usr/share/doc/$(p)/examples/loadables
-	ln -sf bash $(d_bins)/usr/share/doc/$(p_bins)
+# remove unwanted stuff
+	$(RM) -r $(CURDIR)/$(d)/usr/share $(CURDIR)/$(d)/usr/bin/bashbug
 
 #	cat debian/README stamps/stamp-patch > debian/README.Debian
 	cat debian/README > debian/README.Debian
@@ -292,28 +245,23 @@ endif
 	dh_md5sums -p$(p_doc)
 	dh_builddeb -p$(p_doc)
 
-binary-bash: bash-install debian/bash.preinst
+binary-bash: bash-install
 	dh_testdir
 	dh_testroot
-	dh_installchangelogs -p$(p)
-	dh_installdocs -p$(p) \
+	dh_installchangelogs
+	dh_installdocs  \
 		CHANGES NEWS COMPAT doc/INTRO POSIX \
 		debian/{README.Debian,README.abs-guide,README.commands} \
 		debian/inputrc.arrows
-	install -D -m 644 debian/bash.overrides \
-		debian/bash/usr/share/lintian/overrides/bash
-	install -D -m 644 debian/bash-builtins.overrides \
-		debian/bash-builtins/usr/share/lintian/overrides/bash-builtins
-	dh_installman -p$(p) doc/rbash.1 debian/bash-builtins.7
-	dh_installmenu -p$(p)
-	dh_strip -p$(p)
-	dh_compress -p$(p)
-	dh_fixperms -p$(p)
-	dh_shlibdeps -p$(p) -- -dPre-Depends $(d)/bin/bash debian/bash.preinst
-	dh_installdeb -p$(p)
-	dh_gencontrol -p$(p)
-	dh_md5sums -p$(p)
-	dh_builddeb -p$(p)
+	dh_lintian
+	dh_strip --dbg-package=$(p)-dbg
+	dh_compress
+	dh_fixperms
+	dh_shlibdeps -- -dPre-Depends $(d)/bin/vbash
+	dh_installdeb
+	dh_gencontrol
+	dh_md5sums
+	dh_builddeb
 
 # Even though it contains only headers and example files,
 # bash-builtins is NOT arch-independent because the config.h* files
@@ -351,8 +299,8 @@ binary-static: static-build
 	dh_md5sums -p$(p_stat)
 	dh_builddeb -p$(p_stat)
 
-binary-indep: binary-doc
-binary-arch: binary-bash binary-builtins binary-static
+binary-indep:
+binary-arch: binary-bash
 binary:	binary-indep binary-arch
 
 # ---------------------------------------------------------------------------
