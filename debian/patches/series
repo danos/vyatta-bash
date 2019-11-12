@@ -31,3 +31,6 @@ bash-aliases-repeat.diff
 use-system-texi2html.diff
 bzero.diff
 man-macro-warnings.diff
+vyatta/rename-to-vbash.patch
+vyatta/nofirstword-completion.patch
+vyatta/cmd-complete.patch
