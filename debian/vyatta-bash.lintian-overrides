@@ -1,6 +1,0 @@
-vyatta-bash: wrong-name-for-upstream-changelog
-vyatta-bash: binary-without-manpage bin/vbash
-vyatta-bash: missing-dependency-on-libc
-vyatta-bash: shlib-with-executable-bit
-vyatta-bash: pkg-config-bad-directive
-

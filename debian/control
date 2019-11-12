@@ -1,27 +1,13 @@
 Source: vyatta-bash
-Section: base
+Section: shells
 Priority: optional
 Maintainer: Vyatta Package Maintainers <DL-vyatta-help@att.com>
 Standards-Version: 3.9.8
-Build-Depends: autoconf, autotools-dev, bison, libncurses5-dev,
- texinfo, debhelper (>= 5), locales, gettext, sharutils, time,
- xz-utils, dpkg-dev (>= 1.16.1), config-package-dev (>= 5),
-Homepage: http://tiswww.case.edu/php/chet/bash/bashtop.html
-Vcs-Browser: https://code.launchpad.net/~doko/+junk/pkg-bash-debian
-Vcs-Bzr: http://bazaar.launchpad.net/~doko/+junk/pkg-bash-debian
+Build-Depends: debhelper (>= 9),
 
 Package: vyatta-bash
-Architecture: any
-Multi-Arch: foreign
-Pre-Depends: dash (>= 0.5.5.1-2.2), ${shlibs:Pre-Depends}, ${misc:Depends}
-Depends: base-files (>= 2.1.12), debianutils (>= 2.15)
-Recommends: bash-completion (>= 20060301-0)
-Conflicts: bash-completion (<< 20060301-0), ${diverted-files},
-Replaces: bash, bash-doc (<= 2.05-1), bash-completion (<< 20060301-0)
-Provides: ${diverted-files},
-Suggests: bash-doc
-Section: shells
-Priority: required
+Architecture: all
+Depends: ${misc:Depends}, bash (>= 5~),
 Description: Vyatta Shell based on GNU bash
  Vyatta Shell based on GNU Bourne Again SHell.
  .
@@ -34,13 +20,3 @@ Description: Vyatta Shell based on GNU bash
  .
  The Programmable Completion Code, by Ian Macdonald, is now found in
  the bash-completion package.
-
-Package: vyatta-bash-dbg
-Architecture: any
-Section: debug
-Priority: extra
-Depends:
-    vyatta-bash (= ${binary:Version}),
-    ${misc:Depends}
-Description: Debugging symbols for vyatta-bash
- This package contains the debugging symbols for vyatta-bash.
